@@ -33,12 +33,11 @@ Mục tiêu của hệ thống là:
 ---
 
 ## 🛠️ Công nghệ sử dụng
-- **Frontend & Backend:** [Next.js](https://nextjs.org/) + React  
-- **Ngôn ngữ:** TypeScript / JavaScript  
-- **Cơ sở dữ liệu:** [MySQL](https://www.mysql.com/)  
-- **Quản lý mã nguồn:** [GitHub](https://github.com/)  
-- **Triển khai (Deployment):** Hỗ trợ Vercel, Docker hoặc máy chủ riêng.  
+ **Frontend & Backend:** [Next.js](https://nextjs.org/) + React  
+ **Ngôn ngữ:** TypeScript / JavaScript  
+ **Cơ sở dữ liệu:** [MySQL](https://www.mysql.com/)  
+ **Quản lý mã nguồn:** [GitHub](https://github.com/)  
+ **Triển khai (Deployment):** Hỗ trợ Vercel, Docker hoặc máy chủ riêng.  
 
----
 
 
