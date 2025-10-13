@@ -1,4 +1,4 @@
-// models/Student.tsx
+
 export interface IContact {
   name?: string
   phone?: string
