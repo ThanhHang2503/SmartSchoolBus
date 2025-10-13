@@ -17,13 +17,12 @@ export const getBusById = (req: Request, res: Response) => {
 
 // Thêm bus mới
 export const createBus = (req: Request, res: Response) => {
-  const { id, plateNumber, capacity } = req.body;
+  const { plateNumber, capacity } = req.body;
 
-  if (!id || !plateNumber || !capacity)
+  if (!plateNumber || !capacity)
     return res.status(400).json({ message: "Missing required fields" });
 
-  if (buses.some((b) => b.id === id))
-    return res.status(400).json({ message: "Bus ID already exists" });
+  const id = `bus-0${buses.length + 1}`;
 
   const newBus = new Bus({ id, plateNumber, capacity });
   buses.push(newBus);
