@@ -11,11 +11,11 @@ import {
 
 const router = express.Router();
 
-//ThanhHang // Lấy tất cả học sinh khi không có middleware - ai cũng gọi được
-// router.get("/", getAllStudents);
+// Lấy tất cả học sinh khi không có middleware - ai cũng gọi được ThanhHang 
+router.get("/", getAllStudents);
 
-// myduyen test middleware : chỉ được gọi khi có token
-router.get("/secure", verifyToken, getAllStudents);
+// // myduyen test middleware : chỉ được gọi khi có token
+// router.get("/secure", verifyToken, getAllStudents);
 // Lấy học sinh theo id
 router.get("/:id", getStudentById);
 
