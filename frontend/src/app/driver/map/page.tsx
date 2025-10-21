@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Map from "@/compoments/Map";
 import {
   Box,
   Typography,
@@ -111,7 +112,7 @@ export default function MapAndStudentPage() {
               border: "2px dashed #9e9e9e",
             }}
           >
-            🗺️ Google Map hiển thị ở đây
+            <Map />
           </Paper>
         </Grid>
 
