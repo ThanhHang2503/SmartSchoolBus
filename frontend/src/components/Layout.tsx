@@ -1,17 +1,46 @@
-'use client';
+
+"use client";
 
 import { useAuth } from '@/context/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import { styled } from '@mui/material/styles';
+
+const StyledLayout = styled('div')({
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100vh',
+});
+
+const MainContent = styled('div')(({ theme }) => ({
+  display: 'flex',
+  flex: 1,
+  overflow: 'hidden',
+  [theme.breakpoints.down('xs')]: {
+    flexDirection: 'column',
+    height: 'auto',
+  },
+}));
+
+const Main = styled('main')(({ theme }) => ({
+  flex: 1,
+  padding: theme.spacing(2),
+  overflowY: 'auto',
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(1),
+  },
+  [theme.breakpoints.down('xs')]: {
+    padding: theme.spacing(0.5),
+  },
+}));
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
-  // Redirect nếu không có user và không ở trang đăng nhập
   useEffect(() => {
     const isDev = process.env.NODE_ENV !== 'production';
     if (isDev) console.log('Layout: User:', user, 'Role:', user?.role, 'Pathname:', pathname);
@@ -21,23 +50,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   }, [user, pathname, router]);
 
-  // Không render Header và Sidebar cho trang đăng nhập
   if (pathname === '/') {
     return <>{children}</>;
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
+    <StyledLayout>
       <Header user={user} />
-
-      {/* Nội dung chính: Sidebar và Main */}
-      <div className="flex flex-1 overflow-hidden">
+      <MainContent>
         <Sidebar user={user} logout={logout} />
-        <main className="flex-1 p-5 overflow-y-auto">
-          {children}
-        </main>
-      </div>
-    </div>
+        <Main>{children}</Main>
+      </MainContent>
+    </StyledLayout>
   );
 }

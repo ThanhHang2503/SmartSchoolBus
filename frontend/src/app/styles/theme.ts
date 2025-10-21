@@ -1,18 +1,18 @@
 "use client"
 
-import { createTheme } from "@mui/material/styles"
+import { createTheme, responsiveFontSizes } from "@mui/material/styles"
 
-const theme = createTheme({
+let theme = createTheme({
   palette: {
     primary: {
-      main: "#2d4f7f", // Màu chủ đạo (xanh đậm)
+      main: "#2d4f7f", // Main dark blue
     },
     secondary: {
-      main: "#7eb3d4", // Màu phụ
+      main: "#7eb3d4", // Light blue accent
     },
     background: {
-      default: "#f0f8ff", // Màu nền chính
-      paper: "#ffffff", // Màu nền cho các thành phần
+      default: "#f0f8ff", // Light background
+      paper: "#ffffff", // White for components
     },
     text: {
       primary: "#2d4f7f",
@@ -34,7 +34,7 @@ const theme = createTheme({
       fontSize: "1.5rem",
     },
     button: {
-      textTransform: "none", // Giữ nguyên chữ thường
+      textTransform: "none",
       fontWeight: 600,
     },
     body1: {
@@ -78,7 +78,26 @@ const theme = createTheme({
         },
       },
     },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#ffffff",
+          borderRadius: 8,
+        },
+      },
+    },
+  },
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 960,
+      lg: 1280,
+      xl: 1920,
+    },
   },
 })
+
+theme = responsiveFontSizes(theme)
 
 export default theme
