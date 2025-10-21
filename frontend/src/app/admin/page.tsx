@@ -1,4 +1,5 @@
 // src/pages/Dashboard.tsx
+"use client";
 import React from "react";
 import Grid from "@mui/material/Grid";
 import { Card, Typography, Box } from "@mui/material";

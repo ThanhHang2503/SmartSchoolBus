@@ -36,7 +36,7 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
         {user.role === 'admin' && (
           <ul className="space-y-3">
             <li className={menuItemBaseClasses}>
-              <Link href="/admin-overview" className={getLinkClasses('/admin-overview')}>
+              <Link href="/admin" className={getLinkClasses('/admin')}>
                 <FaHome className="text-lg" />
                 <span>Tổng quan</span>
               </Link>
@@ -65,7 +65,7 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
         {user.role === 'driver' && (
           <ul className="space-y-3">
             <li className={menuItemBaseClasses}>
-              <Link href="/driver-overview" className={getLinkClasses('/driver-overview')}>
+              <Link href="/driver" className={getLinkClasses('/driver')}>
                 <FaHome className="text-lg" />
                 <span>Tổng quan</span>
               </Link>
