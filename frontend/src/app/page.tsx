@@ -1,63 +1,42 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
-export default function Home() {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
+export default function Login() {
+  const { login, isLoading } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  useEffect(() => {
-    // fetch("http://localhost:5000/students", {
-    //   method: "GET",
-    //   credentials: "include"
-    // })
-    //   .then((res) => {
-    //     if (!res.ok) throw new Error("API lỗi hoặc bị chặn CORS");
-    //     return res.json();
-    //   })
-    //   .then((data) => setData(data))
-    //   .catch((err) => setError(err.message));
-    
-     fetch("http://localhost:5000/students", {
-      method: "GET",
-      credentials: "include"
-      // KHÔNG gửi Authorization
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("API lỗi hoặc bị chặn CORS");
-        return res.json();
-      })
-      .then((data) => setData(data))
-      .catch((err) => setError(err.message));
-    
-
-  }, []);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (isDev) console.log('Form submitted with email:', email, 'password:', password);
+    await login(email, password);
+  };
 
   return (
-    <div className="p-10 font-sans">
-      <h1 className="text-2xl font-bold text-blue-600 mb-4">Test CORS từ frontend</h1>
-
-      {error && <p className="text-red-500">❌ Lỗi: {error}</p>}
-
-      {data ? (
-        <div>
-          <h2 className="text-lg font-semibold mb-2">✅ Dữ liệu từ backend:</h2>
-          <pre className="bg-gray-100 p-4 rounded">{JSON.stringify(data, null, 2)}</pre>
-        </div>
-      ) : (
-        <p>⏳ Đang gọi API...</p>
-      )}
-
-      <div className="mt-10">
-        <Image
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto' }}>
+      <h1>Đăng nhập</h1>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value.trim())}
+          placeholder="Email"
+          style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
         />
-      </div>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value.trim())}
+          placeholder="Mật khẩu"
+          style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+        />
+        <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '10px' }}>
+          {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+        </button>
+      </form>
     </div>
   );
 }
