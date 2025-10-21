@@ -1,5 +1,3 @@
-
-
 "use client"
 
 import type React from "react"
@@ -7,9 +5,9 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/context/AuthContext"
 
-const RADIUS = 240
+const RADIUS = 233
 const BAR_COUNT = 66
-const BAR_LENGTH = 17
+const BAR_LENGTH = 15
 const BAR_WIDTH = 4
 
 export default function LoginPage() {
@@ -18,7 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [lightIndex, setLightIndex] = useState(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,7 +60,7 @@ export default function LoginPage() {
     ctx.font = "bold 24px Arial"
     ctx.textAlign = "center"
     ctx.textBaseline = "middle"
-    ctx.fillText("SMART SCHOOL BUS", centerX, 40)
+    ctx.fillText("ĐĂNG NHẬP HỆ THỐNG", centerX, 40)
 
     // Draw animated light bars
     for (let i = 0; i < BAR_COUNT; i++) {

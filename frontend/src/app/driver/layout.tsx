@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import Sidebar from './sidebar';
-import Header from '@/compoments/Header';
+import Header from '@/components/Header';
 
 const DriverLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
