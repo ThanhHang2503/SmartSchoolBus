@@ -61,12 +61,12 @@ export default function MapAndStudentPage() {
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
-  // ✅ Lọc danh sách học sinh
+  // Lọc danh sách học sinh
   const filteredStudents = studentsData.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ✅ State cảnh báo
+  // State cảnh báo
   const [alertType, setAlertType] = useState("");
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false);
@@ -93,7 +93,7 @@ export default function MapAndStudentPage() {
         Xe buýt: R001 - Tuyến: A-B
       </Typography>
 
-      {/* ✅ Khu vực bản đồ và cảnh báo (2 cột) */}
+      {/* Khu vực bản đồ và cảnh báo (2 cột) */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Cột trái: Bản đồ */}
         <Grid size={{ xs: 12, md: 8 }}>
@@ -171,7 +171,7 @@ export default function MapAndStudentPage() {
         </Grid>
       </Grid>
 
-      {/* ✅ Snackbar thông báo */}
+      {/* Snackbar thông báo */}
       <Snackbar
         open={open}
         autoHideDuration={3000}
@@ -183,7 +183,7 @@ export default function MapAndStudentPage() {
         </Alert>
       </Snackbar>
 
-      {/* ✅ Ô tìm kiếm */}
+      {/* Ô tìm kiếm */}
       <Box sx={{ mb: 2 }}>
         <TextField
           label="Tìm kiếm học sinh"
@@ -194,7 +194,7 @@ export default function MapAndStudentPage() {
         />
       </Box>
 
-      {/* ✅ Bảng danh sách học sinh */}
+      {/* Bảng danh sách học sinh */}
       <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
         <Table>
           <TableHead>
@@ -256,7 +256,7 @@ export default function MapAndStudentPage() {
         </Table>
       </TableContainer>
 
-      {/* ✅ Hộp thoại chi tiết học sinh */}
+      {/* Hộp thoại chi tiết học sinh */}
       <Dialog
         open={Boolean(selectedStudent)}
         onClose={() => setSelectedStudent(null)}

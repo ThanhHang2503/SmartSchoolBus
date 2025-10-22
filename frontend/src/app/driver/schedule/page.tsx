@@ -38,11 +38,11 @@ export default function SchedulePage() {
     }
   };
 
-  // ✅ Hàm kiểm tra xem ngày có trong danh sách làm việc không
+  // Hàm kiểm tra xem ngày có trong danh sách làm việc không
   const isWorkingDay = (date: Dayjs) =>
     workingDays.some((d) => d.isSame(date, "day"));
 
-  // ✅ Component tùy chỉnh hiển thị mỗi ngày
+  // Component tùy chỉnh hiển thị mỗi ngày
   const CustomDay = (props: any) => {
     const { day, outsideCurrentMonth, ...other } = props;
     const isWorkDay = isWorkingDay(day);
