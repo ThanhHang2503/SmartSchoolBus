@@ -29,7 +29,8 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
   return (
     <aside className="w-52 bg-[#87CEEB] h-screen p-4 flex flex-col shadow-2xl">
       <div className="flex-1 overflow-y-auto">
-        {user.role === 'admin' && (
+        {/* DUYEN */}
+        {/* {user.role === 'admin' && (
           <ul className="space-y-3">
             <li className={menuItemBaseClasses}>
               <Link href="/admin/overview" className={getLinkClasses('/admin/overview')}>
@@ -56,8 +57,53 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
               </Link>
             </li>
           </ul>
-        )}
+        )} */}
 
+              {user.role === 'admin' && (
+        <ul className="space-y-3">
+          {/* Tổng quan */}
+          <li className={menuItemBaseClasses}>
+            <Link href="/admin/overview" className={getLinkClasses('/admin/overview')}>
+              <FaHome className="text-lg" />
+              <span>Tổng quan</span>
+            </Link>
+          </li>
+
+          {/* Quản lý thông tin */}
+          <li className={menuItemBaseClasses}>
+            <Link href="/admin" className={getLinkClasses('/admin')}>
+              <FaUser className="text-lg" />
+              <span>Quản lý thông tin</span>
+            </Link>
+          </li>
+
+          {/* Lịch trình & Phân công */}
+          <li className={menuItemBaseClasses}>
+            <Link href="/admin/schedule" className={getLinkClasses('/admin/schedule')}>
+              <FaCalendar className="text-lg" />
+              <span>Lịch trình & Phân công</span>
+            </Link>
+          </li>
+
+          {/* Theo dõi & Thông báo */}
+          <li className={menuItemBaseClasses}>
+            <Link href="/admin/follow-and-notify" className={getLinkClasses('/admin/follow-and-notify')}>
+              <FaMap className="text-lg" />
+              <span>Theo dõi & Thông báo</span>
+            </Link>
+          </li>
+
+          {/* Cài đặt */}
+          <li className={menuItemBaseClasses}>
+            <Link href="/admin/settings" className={getLinkClasses('/admin/settings')}>
+              <FaTasks className="text-lg" />
+              <span>Cài đặt</span>
+            </Link>
+          </li>
+        </ul>
+      )}
+
+        {/* DUYEN */}
         {user.role === 'driver' && (
           <ul className="space-y-3">
             <li className={menuItemBaseClasses}>

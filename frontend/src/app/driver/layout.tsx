@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import Sidebar from '@/app/components/Sidebar';
+import Sidebar from '@/compoments/Sidebar';
 import { User } from '@/types/auth';
 
 interface DriverLayoutProps {
