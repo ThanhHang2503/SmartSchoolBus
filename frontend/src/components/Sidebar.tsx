@@ -172,7 +172,7 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
               </StyledLink>
             </MenuItem>
             <MenuItem>
-              <StyledLink href="/admin/notifications" className={getLinkClasses('/admin/notifications')}>
+              <StyledLink href="/admin/notification" className={getLinkClasses('/admin/notification')}>
                 <FaBell />
                 <span>Thông báo</span>
               </StyledLink>
