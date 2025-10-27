@@ -1,4 +1,5 @@
 'use client';
+import Map from "@/compoments/Map"
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -131,9 +132,7 @@ const AdminDashboard = () => {
       {/* Map placeholder */}
       <Grid size={{xs:5}} >
         <Paper sx={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Typography variant="h5" color="text.secondary">
-            Bản đồ sẽ hiển thị ở đây
-          </Typography>
+          <Map/>
         </Paper>
       </Grid>
 
