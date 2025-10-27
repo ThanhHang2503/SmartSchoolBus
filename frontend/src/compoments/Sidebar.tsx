@@ -29,36 +29,7 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
   return (
     <aside className="w-52 bg-[#87CEEB] h-screen p-4 flex flex-col shadow-2xl">
       <div className="flex-1 overflow-y-auto">
-        {/* DUYEN */}
-        {/* {user.role === 'admin' && (
-          <ul className="space-y-3">
-            <li className={menuItemBaseClasses}>
-              <Link href="/admin/overview" className={getLinkClasses('/admin/overview')}>
-                <FaHome className="text-lg" />
-                <span>Tổng quan</span>
-              </Link>
-            </li>
-            <li className={menuItemBaseClasses}>
-              <Link href="/admin/schedule" className={getLinkClasses('/admin/schedule')}>
-                <FaCalendar className="text-lg" />
-                <span>Lịch trình</span>
-              </Link>
-            </li>
-            <li className={menuItemBaseClasses}>
-              <Link href="/admin/assign" className={getLinkClasses('/admin/assign')}>
-                <FaTasks className="text-lg" />
-                <span>Phân công</span>
-              </Link>
-            </li>
-            <li className={menuItemBaseClasses}>
-              <Link href="/admin/notifications" className={getLinkClasses('/admin/notifications')}>
-                <FaBell className="text-lg" />
-                <span>Thông báo</span>
-              </Link>
-            </li>
-          </ul>
-        )} */}
-
+        {/* admin*/}
               {user.role === 'admin' && (
         <ul className="space-y-3">
           {/* Tổng quan */}
@@ -103,7 +74,6 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
         </ul>
       )}
 
-        {/* DUYEN */}
         {user.role === 'driver' && (
           <ul className="space-y-3">
             <li className={menuItemBaseClasses}>
