@@ -1,251 +1,162 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Grid,
-  Paper,
   Typography,
-  TextField,
-  Button,
-  MenuItem,
+  Paper,
   Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
+  TextField,
+  MenuItem,
+  Button,
   Divider,
 } from '@mui/material';
+import { getBuses } from '@/api/busApi';
 
-type ScheduleItem = {
-  day: string;
-  driver: string;
-  route: string;
-  vehicle: string;
-  time: string;
-};
+const daysOfWeek = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
 
-type Route = {
+// ===== Khai báo kiểu =====
+type Bus = {
   id: string;
-  name: string;
-  vehicleNumber: string;
-  defaultTime: string;
+  plateNumber: string;
+  capacity: number;
+  status: string;
 };
 
-const daysOfWeek = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu'];
+type Trip = { day: string; route: string; vehicle: string; time: string };
 
-const driverList = [
-  { id: 'd1', name: 'Tài xế A' },
-  { id: 'd2', name: 'Tài xế B' },
-  { id: 'd3', name: 'Tài xế C' },
-];
-
-const routeList: Route[] = [
-  { id: 'r1', name: 'Tuyến A', vehicleNumber: 'Xe 01', defaultTime: '06:30' },
-  { id: 'r2', name: 'Tuyến B', vehicleNumber: 'Xe 02', defaultTime: '06:45' },
-  { id: 'r3', name: 'Tuyến C', vehicleNumber: 'Xe 03', defaultTime: '07:00' },
-];
-
+// ===== Component =====
 const ScheduleAssignmentPage = () => {
-  const currentWeek = 42;
-  const [weekNumber, setWeekNumber] = useState<number>(currentWeek + 1);
-  const [applyWeek, setApplyWeek] = useState<number | null>(null);
-  const [viewWeek, setViewWeek] = useState<number>(currentWeek);
+  const [busList, setBusList] = useState<Bus[]>([]);
+  const [driverList, setDriverList] = useState<string[]>(['Tài xế A', 'Tài xế B', 'Tài xế C']);
   const [selectedDriver, setSelectedDriver] = useState<string>('');
-  const [previousSchedule, setPreviousSchedule] = useState<ScheduleItem[] | null>(null);
+  const [driverSchedules, setDriverSchedules] = useState<Record<string, Trip[]>>({});
 
-  const [schedule, setSchedule] = useState<ScheduleItem[]>(
-    daysOfWeek.map(day => ({
-      day,
-      driver: '',
-      route: '',
-      vehicle: '',
-      time: '',
-    }))
-  );
+  // Lấy dữ liệu từ API khi component mount
+  useEffect(() => {
+    // lấy dữ liệu
+    getBuses()
+      .then(setBusList) // bây giờ TypeScript hiểu là Bus[]
+      .catch(err => console.error(err));
+}, []);
 
-  const handleChange = (index: number, field: keyof ScheduleItem, value: string) => {
+
+  // Nếu tài xế chưa có lịch thì tạo mới 7 ngày trống
+  const schedule = driverSchedules[selectedDriver] || daysOfWeek.map(day => ({
+    day,
+    vehicle: '',
+    route: '',
+    time: '',
+  }));
+
+  const handleChange = (dayIndex: number, vehicleNumber: string) => {
     const updated = [...schedule];
-    updated[index][field] = value;
-    setSchedule(updated);
-  };
+    const bus = busList.find(b => b.plateNumber === vehicleNumber);
 
-  const handleRouteSelect = (index: number, routeName: string) => {
-    const route = routeList.find(r => r.name === routeName);
-    if (route) {
-      handleChange(index, 'route', route.name);
-      handleChange(index, 'vehicle', route.vehicleNumber);
-      handleChange(index, 'time', route.defaultTime);
-    }
-  };
-
-  const handleApplySchedule = () => {
-    if (!applyWeek) return;
-    console.log(`📌 Áp dụng lịch trình từ tuần thứ ${applyWeek}:`, schedule);
-    alert(`Lịch trình đã được áp dụng từ tuần thứ ${applyWeek}`);
-  };
-
-  const handleReusePrevious = () => {
-    if (previousSchedule) {
-      setSchedule(previousSchedule);
-      alert('Đã sử dụng lại lịch trình tuần trước');
+    if (bus) {
+      // Map bus -> tuyến và giờ chạy (nếu bạn có dữ liệu tuyến + giờ, thay thế vào đây)
+      updated[dayIndex] = {
+        day: updated[dayIndex].day,
+        vehicle: bus.plateNumber,
+        route: `Tuyến của ${bus.plateNumber}`, // placeholder, thay bằng dữ liệu thật nếu có
+        time: '08:00', // placeholder, thay bằng dữ liệu thật nếu có
+      };
     } else {
-      alert('Không có lịch trình tuần trước để sử dụng lại');
+      // Nếu xóa chọn, reset
+      updated[dayIndex] = { ...updated[dayIndex], vehicle: '', route: '', time: '' };
     }
+
+    setDriverSchedules(prev => ({
+      ...prev,
+      [selectedDriver]: updated,
+    }));
   };
 
-  const handleSaveCurrentAsPrevious = () => {
-    setPreviousSchedule(schedule);
+  const handleSave = () => {
+    if (!selectedDriver) return alert('Vui lòng chọn tài xế trước khi lưu.');
+    console.log(`📦 Lịch của ${selectedDriver}:`, schedule);
+    alert(`✅ Đã lưu lịch trình cho ${selectedDriver}`);
   };
-
-  const filteredSchedule = selectedDriver
-    ? schedule.filter(item => item.driver === selectedDriver)
-    : schedule;
 
   return (
-    <Box sx={{ padding: 4 }}>
+    <Box sx={{ p: 4 }}>
       <Typography variant="h4" gutterBottom>
-        📅 Lịch trình & Phân công
+        🚌 Phân công lịch trình theo tài xế
       </Typography>
 
-      <Paper sx={{ padding: 3, marginBottom: 4 }}>
-        <Grid container spacing={2}>
-          <Grid size={{xs:12,sm:4}}>
-            <TextField
-              label="Tuần đang xem"
-              type="number"
-              fullWidth
-              value={viewWeek}
-              onChange={(e) => setViewWeek(parseInt(e.target.value))}
-            />
-          </Grid>
-          <Grid size={{xs:12,sm:4}}>
-            <TextField
-              select
-              label="Xem lịch trình của tài xế"
-              fullWidth
-              value={selectedDriver}
-              onChange={(e) => setSelectedDriver(e.target.value)}
-            >
-              <MenuItem value="">Tất cả</MenuItem>
-              {driverList.map(driver => (
-                <MenuItem key={driver.id} value={driver.name}>
-                  {driver.name}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-        </Grid>
-
-        <Divider sx={{ my: 3 }} />
-
-        <Typography variant="h6" gutterBottom>
-          Lịch trình tuần {viewWeek}
-        </Typography>
-
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Ngày</TableCell>
-              <TableCell>Tài xế</TableCell>
-              <TableCell>Tuyến đường</TableCell>
-              <TableCell>Số xe</TableCell>
-              <TableCell>Thời gian</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredSchedule.map((item, index) => (
-              <TableRow key={item.day + index}>
-                <TableCell>{item.day}</TableCell>
-                <TableCell>
-                  <TextField
-                    select
-                    label="Tài xế"
-                    value={item.driver}
-                    onChange={(e) => handleChange(index, 'driver', e.target.value)}
-                    fullWidth
-                  >
-                    {driverList.map(driver => (
-                      <MenuItem key={driver.id} value={driver.name}>
-                        {driver.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </TableCell>
-                <TableCell>
-                  <TextField
-                    select
-                    label="Tuyến đường"
-                    value={item.route}
-                    onChange={(e) => handleRouteSelect(index, e.target.value)}
-                    fullWidth
-                  >
-                    {routeList.map(route => (
-                      <MenuItem key={route.id} value={route.name}>
-                        {route.name} ({route.vehicleNumber})
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </TableCell>
-                <TableCell>
-                  <TextField
-                    value={item.vehicle}
-                    disabled
-                    fullWidth
-                  />
-                </TableCell>
-                <TableCell>
-                  <TextField
-                    value={item.time}
-                    onChange={(e) => handleChange(index, 'time', e.target.value)}
-                    fullWidth
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        <Divider sx={{ my: 3 }} />
-
-        <Grid container spacing={2}>
-          <Grid size={{xs:12,sm:4}}>
-            <TextField
-              label="Áp dụng từ tuần thứ"
-              type="number"
-              fullWidth
-              value={applyWeek ?? ''}
-              onChange={(e) => setApplyWeek(parseInt(e.target.value))}
-            />
-          </Grid>
-          <Grid size={{xs:12,sm:4}}>
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              onClick={handleApplySchedule}
-              disabled={!applyWeek}
-            >
-              Áp dụng lịch trình
-            </Button>
-          </Grid>
-          <Grid size={{xs:12,sm:4}}>
-            <Button
-              variant="outlined"
-              color="secondary"
-              fullWidth
-              onClick={handleReusePrevious}
-            >
-              Sử dụng lại lịch trình tuần trước
-            </Button>
-          </Grid>
-        </Grid>
-
-        <Box sx={{ mt: 2 }}>
-          <Button variant="text" onClick={handleSaveCurrentAsPrevious}>
-            Lưu lịch trình hiện tại làm tuần trước
-          </Button>
-        </Box>
+      {/* Chọn tài xế */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <TextField
+          select
+          fullWidth
+          label="Chọn tài xế để xếp lịch"
+          value={selectedDriver}
+          onChange={(e) => setSelectedDriver(e.target.value)}
+        >
+          <MenuItem value="">-- Chọn tài xế --</MenuItem>
+          {driverList.map(driver => (
+            <MenuItem key={driver} value={driver}>
+              {driver}
+            </MenuItem>
+          ))}
+        </TextField>
       </Paper>
+
+      {/* Bảng xếp lịch */}
+      {selectedDriver && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Lịch trình của {selectedDriver}
+          </Typography>
+
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Ngày</TableCell>
+                <TableCell>Số xe</TableCell>
+                <TableCell>Tuyến đường</TableCell>
+                <TableCell>Giờ chạy</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {schedule.map((trip, dayIndex) => (
+                <TableRow key={trip.day}>
+                  <TableCell>{trip.day}</TableCell>
+                  <TableCell>
+                    <TextField
+                      select
+                      fullWidth
+                      value={trip.vehicle}
+                      onChange={(e) => handleChange(dayIndex, e.target.value)}
+                    >
+                      <MenuItem value="">-- Chọn số xe --</MenuItem>
+                      {busList.map(bus => (
+                        <MenuItem key={bus.id} value={bus.plateNumber}>
+                          {bus.plateNumber}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </TableCell>
+                  <TableCell>
+                    <TextField fullWidth value={trip.route} disabled />
+                  </TableCell>
+                  <TableCell>
+                    <TextField fullWidth value={trip.time} disabled />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <Divider sx={{ my: 2 }} />
+          <Button variant="contained" color="primary" onClick={handleSave}>
+            💾 Lưu lịch cho {selectedDriver}
+          </Button>
+        </Paper>
+      )}
     </Box>
   );
 };
