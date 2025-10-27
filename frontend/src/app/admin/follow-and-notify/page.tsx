@@ -15,6 +15,8 @@ import {
   Divider,
 } from '@mui/material';
 
+import { getAllStudents, IStudent } from '@/api/studentApi'; // import API
+
 type UserType = 'driver' | 'parent';
 
 type ChatUser = {
@@ -33,22 +35,29 @@ type Message = {
 };
 
 const AdminDashboard = () => {
-  const [chatUsers, setChatUsers] = useState<ChatUser[]>([
-    { id: 'd1', name: 'Tài xế A', type: 'driver' },
-    { id: 'd2', name: 'Tài xế B', type: 'driver' },
-    { id: 'p1', name: 'Phụ huynh bé An', type: 'parent' },
-    { id: 'p2', name: 'Phụ huynh bé Bình', type: 'parent' },
-  ]);
-
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, sender: 'driver', receiverId: 'admin', content: 'Xe A đang đến trạm A', timestamp: '10:00', read: false },
-    { id: 2, sender: 'admin', receiverId: 'd1', content: 'Đã nhận, chuẩn bị đón học sinh', timestamp: '10:01', read: true },
-    { id: 3, sender: 'parent', receiverId: 'admin', content: 'Bé An đã lên xe chưa?', timestamp: '10:02', read: false },
-  ]);
-
+  const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [activeUser, setActiveUser] = useState<ChatUser | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Fetch students từ backend
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const students: IStudent[] = await getAllStudents();
+        const parents: ChatUser[] = students.map(s => ({
+          id: s.id,
+          name: `Phụ huynh học sinh ${s.name}`,
+          type: 'parent',
+        }));
+        setChatUsers(parents);
+      } catch (err) {
+        console.error('Lỗi khi lấy danh sách học sinh:', err);
+      }
+    };
+    fetchStudents();
+  }, []);
 
   const sendMessage = () => {
     if (!newMessage.trim() || !activeUser) return;
@@ -130,7 +139,7 @@ const AdminDashboard = () => {
       </Grid>
 
       {/* Map placeholder */}
-      <Grid size={{xs:5}} >
+      <Grid size={{xs:5}}>
         <Paper sx={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <Map/>
         </Paper>
@@ -140,7 +149,7 @@ const AdminDashboard = () => {
       <Grid size={{xs:4}}>
         <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', padding: 2 }}>
           <Typography variant="h6">
-            {activeUser ? `Đang chat với ${activeUser.name}` : 'Chọn người để bắt đầu chat'}
+            {activeUser ? ` ${activeUser.name}` : 'Chọn người để bắt đầu chat'}
           </Typography>
           <Box sx={{ flex: 1, overflowY: 'auto', marginY: 2 }}>
             <List>
