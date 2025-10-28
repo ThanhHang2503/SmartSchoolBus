@@ -1,23 +1,23 @@
-'use client';
-import Map from "@/compoments/Map"
-import React, { useState, useEffect } from 'react';
+"use client";
+import Map from "@/components/Map";
 import {
+  Badge,
   Box,
-  Grid,
-  Paper,
-  Typography,
-  TextField,
   Button,
+  Divider,
+  Grid,
   List,
   ListItemButton,
   ListItemText,
-  Badge,
-  Divider,
-} from '@mui/material';
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useEffect, useState } from "react";
 
-import { getAllStudents, IStudent } from '@/api/studentApi'; // import API
+import { getAllStudents, IStudent } from "@/api/studentApi"; // import API
 
-type UserType = 'driver' | 'parent';
+type UserType = "driver" | "parent";
 
 type ChatUser = {
   id: string;
@@ -27,7 +27,7 @@ type ChatUser = {
 
 type Message = {
   id: number;
-  sender: 'admin' | 'driver' | 'parent';
+  sender: "admin" | "driver" | "parent";
   receiverId: string;
   content: string;
   timestamp: string;
@@ -38,22 +38,22 @@ const AdminDashboard = () => {
   const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeUser, setActiveUser] = useState<ChatUser | null>(null);
-  const [newMessage, setNewMessage] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [newMessage, setNewMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch students từ backend
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const students: IStudent[] = await getAllStudents();
-        const parents: ChatUser[] = students.map(s => ({
+        const parents: ChatUser[] = students.map((s) => ({
           id: s.id,
           name: `Phụ huynh học sinh ${s.name}`,
-          type: 'parent',
+          type: "parent",
         }));
         setChatUsers(parents);
       } catch (err) {
-        console.error('Lỗi khi lấy danh sách học sinh:', err);
+        console.error("Lỗi khi lấy danh sách học sinh:", err);
       }
     };
     fetchStudents();
@@ -63,54 +63,60 @@ const AdminDashboard = () => {
     if (!newMessage.trim() || !activeUser) return;
     const msg: Message = {
       id: messages.length + 1,
-      sender: 'admin',
+      sender: "admin",
       receiverId: activeUser.id,
       content: newMessage,
       timestamp: new Date().toLocaleTimeString(),
       read: true,
     };
     setMessages([...messages, msg]);
-    setNewMessage('');
+    setNewMessage("");
   };
 
   const getConversation = () => {
     if (!activeUser) return [];
     return messages.filter(
-      msg =>
-        (msg.sender === 'admin' && msg.receiverId === activeUser.id) ||
-        (msg.sender === activeUser.type && msg.receiverId === 'admin')
+      (msg) =>
+        (msg.sender === "admin" && msg.receiverId === activeUser.id) ||
+        (msg.sender === activeUser.type && msg.receiverId === "admin")
     );
   };
 
   const hasUnreadMessages = (userId: string) => {
     return messages.some(
-      msg => msg.sender !== 'admin' && msg.receiverId === 'admin' && msg.read === false && msg.sender === getUserType(userId)
+      (msg) =>
+        msg.sender !== "admin" &&
+        msg.receiverId === "admin" &&
+        msg.read === false &&
+        msg.sender === getUserType(userId)
     );
   };
 
   const getUserType = (id: string): UserType => {
-    return chatUsers.find(u => u.id === id)?.type || 'driver';
+    return chatUsers.find((u) => u.id === id)?.type || "driver";
   };
 
   useEffect(() => {
     if (activeUser) {
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.receiverId === 'admin' && msg.sender === activeUser.type ? { ...msg, read: true } : msg
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.receiverId === "admin" && msg.sender === activeUser.type
+            ? { ...msg, read: true }
+            : msg
         )
       );
     }
   }, [activeUser]);
 
-  const filteredUsers = chatUsers.filter(user =>
+  const filteredUsers = chatUsers.filter((user) =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <Grid container spacing={2} sx={{ height: '100vh', padding: 2 }}>
+    <Grid container spacing={2} sx={{ height: "100vh", padding: 2 }}>
       {/* Sidebar người dùng */}
-      <Grid size={{xs:3}}>
-        <Paper sx={{ height: '100%', padding: 2 }}>
+      <Grid size={{ xs: 3 }}>
+        <Paper sx={{ height: "100%", padding: 2 }}>
           <Typography variant="h6">Danh sách liên hệ</Typography>
           <Divider sx={{ my: 1 }} />
           <TextField
@@ -122,7 +128,7 @@ const AdminDashboard = () => {
             sx={{ mb: 2 }}
           />
           <List>
-            {filteredUsers.map(user => (
+            {filteredUsers.map((user) => (
               <ListItemButton
                 key={user.id}
                 selected={activeUser?.id === user.id}
@@ -139,47 +145,75 @@ const AdminDashboard = () => {
       </Grid>
 
       {/* Map placeholder */}
-      <Grid size={{xs:5}}>
-        <Paper sx={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Map/>
+      <Grid size={{ xs: 5 }}>
+        <Paper
+          sx={{
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Map />
         </Paper>
       </Grid>
 
       {/* Chat panel */}
-      <Grid size={{xs:4}}>
-        <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', padding: 2 }}>
+      <Grid size={{ xs: 4 }}>
+        <Paper
+          sx={{
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            padding: 2,
+          }}
+        >
           <Typography variant="h6">
-            {activeUser ? ` ${activeUser.name}` : 'Chọn người để bắt đầu chat'}
+            {activeUser ? ` ${activeUser.name}` : "Chọn người để bắt đầu chat"}
           </Typography>
-          <Box sx={{ flex: 1, overflowY: 'auto', marginY: 2 }}>
+          <Box sx={{ flex: 1, overflowY: "auto", marginY: 2 }}>
             <List>
-              {getConversation().map(msg => (
-                <ListItemButton key={msg.id} sx={{ justifyContent: msg.sender === 'admin' ? 'flex-end' : 'flex-start' }}>
+              {getConversation().map((msg) => (
+                <ListItemButton
+                  key={msg.id}
+                  sx={{
+                    justifyContent:
+                      msg.sender === "admin" ? "flex-end" : "flex-start",
+                  }}
+                >
                   <Paper
                     sx={{
                       padding: 1,
-                      backgroundColor: msg.sender === 'admin' ? 'primary.main' : 'grey.300',
-                      color: msg.sender === 'admin' ? 'white' : 'black',
-                      maxWidth: '80%',
+                      backgroundColor:
+                        msg.sender === "admin" ? "primary.main" : "grey.300",
+                      color: msg.sender === "admin" ? "white" : "black",
+                      maxWidth: "80%",
                     }}
                   >
-                    <ListItemText primary={msg.content} secondary={msg.timestamp} />
+                    <ListItemText
+                      primary={msg.content}
+                      secondary={msg.timestamp}
+                    />
                   </Paper>
                 </ListItemButton>
               ))}
             </List>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: "flex", gap: 1 }}>
             <TextField
               fullWidth
               variant="outlined"
               placeholder="Nhập tin nhắn..."
               value={newMessage}
-              onChange={e => setNewMessage(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendMessage()}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               disabled={!activeUser}
             />
-            <Button variant="contained" onClick={sendMessage} disabled={!activeUser}>
+            <Button
+              variant="contained"
+              onClick={sendMessage}
+              disabled={!activeUser}
+            >
               Gửi
             </Button>
           </Box>
