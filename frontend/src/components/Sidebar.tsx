@@ -208,7 +208,7 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
               </StyledLink>
             </MenuItem>
             <MenuItem>
-              <StyledLink href="/parent/notifications" className={getLinkClasses('/parent/notifications')}>
+              <StyledLink href="/parent/notification" className={getLinkClasses('/parent/notifications')}>
                 <FaBell />
                 <span>Thông báo</span>
               </StyledLink>
