@@ -3,17 +3,15 @@ import Layout from '@/components/Layout';
 import { AuthProvider } from '@/context/AuthContext';
 import './globals.css';
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <Layout>{children}</Layout>
-        </AuthProvider>
+        <ThemeProvider theme={theme}>
+          <AuthProvider>
+            <Layout>{children}</Layout>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
