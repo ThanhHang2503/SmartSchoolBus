@@ -59,9 +59,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           component="main"
           sx={{
             flex: 1,
-            overflow: 'hidden',
+            overflow: 'auto',           // Cho phép cuộn ở mọi trang
             position: 'relative',
             backgroundColor: '#fff',
+            p: { xs: 1, sm: 2 },
           }}
         >
           {children}

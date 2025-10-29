@@ -1,21 +1,26 @@
-import { Request, Response } from "express"
-import { findUserByCredentials } from "../models/accountModel"
+import { Request, Response } from "express";
+import { findUserByCredentials } from "../models/accountModel";
 
-export const login = async (req: Request, res: Response) => {
+const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body
+    const { email, password } = req.body;
+
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: "Vui lòng nhập đủ thông tin" })
+      res.status(400).json({ success: false, message: "Vui lòng nhập đủ thông tin" });
+      return;
     }
 
-    const user = await findUserByCredentials(email, password)
+    const user = await findUserByCredentials(email, password);
     if (!user) {
-      return res.status(401).json({ success: false, message: "Sai tài khoản hoặc mật khẩu" })
+      res.status(401).json({ success: false, message: "Sai tài khoản hoặc mật khẩu" });
+      return;
     }
 
-    res.json({ success: true, user })
+    res.json({ success: true, user });
   } catch (err) {
-    console.error("Lỗi đăng nhập:", err)
-    res.status(500).json({ success: false, message: "Lỗi server" })
+    console.error("Lỗi đăng nhập:", err);
+    res.status(500).json({ success: false, message: "Lỗi server" });
   }
-}
+};
+
+module.exports = { login };

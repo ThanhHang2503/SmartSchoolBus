@@ -2,11 +2,12 @@ import mysql from "mysql2/promise"
 
 // Kết nối MySQL (chỉ cần 1 lần)
 export const pool = mysql.createPool({
-  host: "localhost",
+  host: "127.0.0.1",
   user: "root",
-  password: "", 
+  password: "root",   // ĐÃ SỬA: ĐÚNG MẬT KHẨU
   database: "SSB",
-})
+  port: 3306
+});
 
 // Hàm kiểm tra tài khoản
 export const findUserByCredentials = async (email: string, password: string) => {
