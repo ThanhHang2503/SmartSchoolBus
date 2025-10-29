@@ -7,7 +7,6 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -15,6 +14,8 @@ import {
   Grid,
   MenuItem,
   Paper,
+  Select,
+  FormControl,
   Snackbar,
   Table,
   TableBody,
@@ -28,8 +29,8 @@ import {
 import React, { useState } from "react";
 
 export default function MapAndStudentPage() {
-  // ✅ Dữ liệu mẫu học sinh
-  const studentsData = [
+  // DỮ LIỆU GIẢ LẬP
+  const [studentsData, setStudentsData] = useState([
     {
       id: 1,
       name: "Nguyễn Văn A",
@@ -57,35 +58,45 @@ export default function MapAndStudentPage() {
       address: "789 Hai Bà Trưng",
       status: "Đã trả",
     },
-  ];
+  ]);
 
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [alertType, setAlertType] = useState("");
+  const [message, setMessage] = useState("");
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
-  // ✅ Lọc danh sách học sinh
+  // Lọc học sinh
   const filteredStudents = studentsData.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ✅ State cảnh báo
-  const [alertType, setAlertType] = useState("");
-  const [message, setMessage] = useState("");
-  const [open, setOpen] = useState(false);
-
+  // Gửi cảnh báo
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!alertType || !message.trim()) return;
-    setOpen(true);
 
-    // Sau này có thể gửi API ở đây
-    console.log({
-      alertType,
-      message,
-      timestamp: new Date().toISOString(),
-    });
+    setSnackbarMessage("Cảnh báo đã được gửi thành công!");
+    setSnackbarSeverity("success");
+    setOpenSnackbar(true);
+
+    console.log("Gửi cảnh báo:", { alertType, message, timestamp: new Date() });
 
     setAlertType("");
     setMessage("");
+  };
+
+  // CẬP NHẬT TRẠNG THÁI TRỰC TIẾP TRONG BẢNG
+  const handleStatusChange = (id: number, newStatus: string) => {
+    setStudentsData((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s))
+    );
+
+    setSnackbarMessage(`Cập nhật trạng thái: ${newStatus}`);
+    setSnackbarSeverity("success");
+    setOpenSnackbar(true);
   };
 
   return (
@@ -94,9 +105,8 @@ export default function MapAndStudentPage() {
         Xe buýt: R001 - Tuyến: A-B
       </Typography>
 
-      {/* ✅ Khu vực bản đồ và cảnh báo (2 cột) */}
+      {/* BẢN ĐỒ + GỬI CẢNH BÁO */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Cột trái: Bản đồ */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Box
             sx={{
@@ -110,7 +120,6 @@ export default function MapAndStudentPage() {
           </Box>
         </Grid>
 
-        {/* Cột phải: Gửi cảnh báo */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ p: 2, height: "90%" }}>
             <CardContent>
@@ -127,17 +136,11 @@ export default function MapAndStudentPage() {
                   onChange={(e) => setAlertType(e.target.value)}
                   sx={{ mb: 2 }}
                 >
-                  <MenuItem value="vehicle">
-                    🚐 Sự cố phương tiện (hư xe, kẹt xe...)
-                  </MenuItem>
-                  <MenuItem value="weather">🌧️ Ảnh hưởng thời tiết</MenuItem>
-                  <MenuItem value="student">
-                    👦 Sự cố học sinh (đi muộn, chưa ra điểm...)
-                  </MenuItem>
-                  <MenuItem value="delay">
-                    ⏰ Trễ giờ đón / trả học sinh
-                  </MenuItem>
-                  <MenuItem value="other">⚠️ Khác</MenuItem>
+                  <MenuItem value="vehicle">Sự cố phương tiện</MenuItem>
+                  <MenuItem value="weather">Ảnh hưởng thời tiết</MenuItem>
+                  <MenuItem value="student">Sự cố học sinh</MenuItem>
+                  <MenuItem value="delay">Trễ giờ</MenuItem>
+                  <MenuItem value="other">Khác</MenuItem>
                 </TextField>
 
                 <TextField
@@ -148,7 +151,7 @@ export default function MapAndStudentPage() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   sx={{ mb: 2 }}
-                  placeholder="Nhập chi tiết tình huống..."
+                  placeholder="Nhập chi tiết..."
                 />
 
                 <Button
@@ -158,7 +161,7 @@ export default function MapAndStudentPage() {
                   fullWidth
                   disabled={!alertType || !message.trim()}
                 >
-                  🚨 Gửi cảnh báo ngay
+                  Gửi cảnh báo ngay
                 </Button>
               </form>
             </CardContent>
@@ -166,19 +169,7 @@ export default function MapAndStudentPage() {
         </Grid>
       </Grid>
 
-      {/* ✅ Snackbar thông báo */}
-      <Snackbar
-        open={open}
-        autoHideDuration={3000}
-        onClose={() => setOpen(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert severity="success" onClose={() => setOpen(false)}>
-          ✅ Cảnh báo đã được gửi thành công!
-        </Alert>
-      </Snackbar>
-
-      {/* ✅ Ô tìm kiếm */}
+      {/* TÌM KIẾM */}
       <Box sx={{ mb: 2 }}>
         <TextField
           label="Tìm kiếm học sinh"
@@ -189,29 +180,17 @@ export default function MapAndStudentPage() {
         />
       </Box>
 
-      {/* ✅ Bảng danh sách học sinh */}
+      {/* BẢNG HỌC SINH - CHỈ CÒN CỘT "TRẠNG THÁI" */}
       <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
         <Table>
           <TableHead>
             <TableRow sx={{ bgcolor: "primary.main" }}>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                STT
-              </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                Tên học sinh
-              </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                Phụ huynh
-              </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                Số điện thoại
-              </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                Điểm đón/trả
-              </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                Trạng thái
-              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: 600 }}>STT</TableCell>
+              <TableCell sx={{ color: "white", fontWeight: 600 }}>Tên học sinh</TableCell>
+              <TableCell sx={{ color: "white", fontWeight: 600 }}>Phụ huynh</TableCell>
+              <TableCell sx={{ color: "white", fontWeight: 600 }}>SĐT</TableCell>
+              <TableCell sx={{ color: "white", fontWeight: 600 }}>Điểm đón/trả</TableCell>
+              <TableCell sx={{ color: "white", fontWeight: 600 }}>Trạng thái</TableCell>
             </TableRow>
           </TableHead>
 
@@ -220,8 +199,8 @@ export default function MapAndStudentPage() {
               <TableRow
                 key={student.id}
                 hover
-                sx={{ cursor: "pointer" }}
                 onClick={() => setSelectedStudent(student)}
+                sx={{ cursor: "pointer" }}
               >
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>{student.name}</TableCell>
@@ -229,17 +208,26 @@ export default function MapAndStudentPage() {
                 <TableCell>{student.phone}</TableCell>
                 <TableCell>{student.address}</TableCell>
                 <TableCell>
-                  <Chip
-                    label={student.status}
-                    color={
-                      student.status === "Đã trả"
-                        ? "success"
-                        : student.status === "Đã đón"
-                        ? "info"
-                        : "warning"
-                    }
-                    size="small"
-                  />
+                  <FormControl size="small" sx={{ minWidth: 130 }}>
+                    <Select
+                      value={student.status}
+                      onChange={(e) => {
+                        e.stopPropagation(); // Ngăn mở dialog khi chọn
+                        handleStatusChange(student.id, e.target.value);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      sx={{
+                        fontSize: "0.875rem",
+                        "& .MuiSelect-select": {
+                          padding: "6px 8px",
+                        },
+                      }}
+                    >
+                      <MenuItem value="Chưa đón">Chưa đón</MenuItem>
+                      <MenuItem value="Đã đón">Đã đón</MenuItem>
+                      <MenuItem value="Đã trả">Đã trả</MenuItem>
+                    </Select>
+                  </FormControl>
                 </TableCell>
               </TableRow>
             ))}
@@ -255,7 +243,7 @@ export default function MapAndStudentPage() {
         </Table>
       </TableContainer>
 
-      {/* ✅ Hộp thoại chi tiết học sinh */}
+      {/* DIALOG CHI TIẾT (CHỈ XEM) */}
       <Dialog
         open={Boolean(selectedStudent)}
         onClose={() => setSelectedStudent(null)}
@@ -267,34 +255,22 @@ export default function MapAndStudentPage() {
           {selectedStudent && (
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
-                <Typography>
-                  <strong>Họ tên:</strong> {selectedStudent.name}
-                </Typography>
+                <Typography><strong>Họ tên:</strong> {selectedStudent.name}</Typography>
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <Typography>
-                  <strong>Lớp:</strong> {selectedStudent.grade}
-                </Typography>
+                <Typography><strong>Lớp:</strong> {selectedStudent.grade}</Typography>
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <Typography>
-                  <strong>Phụ huynh:</strong> {selectedStudent.parent}
-                </Typography>
+                <Typography><strong>Phụ huynh:</strong> {selectedStudent.parent}</Typography>
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <Typography>
-                  <strong>SĐT:</strong> {selectedStudent.phone}
-                </Typography>
+                <Typography><strong>SĐT:</strong> {selectedStudent.phone}</Typography>
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <Typography>
-                  <strong>Địa chỉ:</strong> {selectedStudent.address}
-                </Typography>
+                <Typography><strong>Địa chỉ:</strong> {selectedStudent.address}</Typography>
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <Typography>
-                  <strong>Trạng thái:</strong> {selectedStudent.status}
-                </Typography>
+                <Typography><strong>Trạng thái:</strong> {selectedStudent.status}</Typography>
               </Grid>
             </Grid>
           )}
@@ -303,6 +279,18 @@ export default function MapAndStudentPage() {
           <Button onClick={() => setSelectedStudent(null)}>Đóng</Button>
         </DialogActions>
       </Dialog>
+
+      {/* THÔNG BÁO */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert severity={snackbarSeverity} onClose={() => setOpenSnackbar(false)}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
