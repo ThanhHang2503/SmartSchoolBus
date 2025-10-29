@@ -1,31 +1,33 @@
 "use client";
+import MyMap from "@/components/Map";
 
 import React, { useState } from "react";
 import Map from "@/compoments/Map";
 import {
+  Alert,
   Box,
-  Typography,
-  Paper,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
+  MenuItem,
+  Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Card,
-  CardContent,
   TextField,
-  Button,
-  MenuItem,
-  Snackbar,
-  Alert,
-  Chip,
+  Typography,
 } from "@mui/material";
+import React, { useState } from "react";
 
 export default function MapAndStudentPage() {
   // ✅ Dữ liệu mẫu học sinh
@@ -98,18 +100,12 @@ export default function MapAndStudentPage() {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Cột trái: Bản đồ */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Paper
+          <Box
             sx={{
               height: 400,
               borderRadius: 3,
-              backgroundColor: "#e0e0e0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 20,
-              color: "#555",
-              fontWeight: 500,
-              border: "2px dashed #9e9e9e",
+              overflow: "hidden",
+              border: "2px solid #9e9e9e",
             }}
           >
             <Map />
@@ -200,11 +196,15 @@ export default function MapAndStudentPage() {
         <Table>
           <TableHead>
             <TableRow sx={{ bgcolor: "primary.main" }}>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>STT</TableCell>
+              <TableCell sx={{ color: "white", fontWeight: 600 }}>
+                STT
+              </TableCell>
               <TableCell sx={{ color: "white", fontWeight: 600 }}>
                 Tên học sinh
               </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>Phụ huynh</TableCell>
+              <TableCell sx={{ color: "white", fontWeight: 600 }}>
+                Phụ huynh
+              </TableCell>
               <TableCell sx={{ color: "white", fontWeight: 600 }}>
                 Số điện thoại
               </TableCell>

@@ -3,6 +3,7 @@ import express from "express";
 import busRoutes from "./bus/routes/busRoutes";
 import studentRoutes from "./student/routes/studentRoutes";
 import routerRoutes from "./route/routes/routeRoutes";
+import accountRoutes from "./account/routes/accountRoutes";
 import cors from 'cors';
 import * as fs from 'fs/promises';  
 import * as path from 'path';       
@@ -19,6 +20,9 @@ app.use(bodyParser.json());
 app.use("/buses", busRoutes);
 app.use("/students", studentRoutes);
 app.use("/routers", routerRoutes);
+
+//lấy dữ liệu thật
+app.use("/account", accountRoutes)
 
 
 
