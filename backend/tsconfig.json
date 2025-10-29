@@ -6,13 +6,14 @@
     "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": false
   },
   "include": [
     "models/**/*.ts",
     "hardcode_data/**/*.ts",
     "student/**/*.ts",
-    "*.ts"                    
+    "*.ts"
   ],
   "exclude": ["node_modules"]
 }
