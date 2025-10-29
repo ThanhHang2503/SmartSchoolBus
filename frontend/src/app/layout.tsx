@@ -1,6 +1,7 @@
-import './globals.css';
+// app/layout.tsx
+import Layout from '@/components/Layout';
 import { AuthProvider } from '@/context/AuthContext';
-import Layout from '@/compoments/Layout';
+import './globals.css';
 
 export default function RootLayout({
   children,
