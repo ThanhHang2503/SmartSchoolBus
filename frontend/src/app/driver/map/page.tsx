@@ -1,5 +1,5 @@
 "use client";
-
+import Map from "@/compoments/Map";
 import React, { useState } from "react";
 import {
   Box,
@@ -76,7 +76,7 @@ export default function MapAndStudentPage() {
     if (!alertType || !message.trim()) return;
     setOpen(true);
 
-    // Sau này có thể gửi API ở đây
+    // Sau này có thể gửi API ở đâyv
     console.log({
       alertType,
       message,
@@ -111,7 +111,8 @@ export default function MapAndStudentPage() {
               border: "2px dashed #9e9e9e",
             }}
           >
-            🗺️ Google Map hiển thị ở đây
+            {/* 🗺️ Google Map hiển thị ở đây */}
+            <Map />
           </Paper>
         </Grid>
 
@@ -179,7 +180,7 @@ export default function MapAndStudentPage() {
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert severity="success" onClose={() => setOpen(false)}>
-          ✅ Cảnh báo đã được gửi thành công!
+          Cảnh báo đã được gửi thành công!
         </Alert>
       </Snackbar>
 
