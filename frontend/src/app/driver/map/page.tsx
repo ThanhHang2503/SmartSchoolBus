@@ -1,8 +1,6 @@
 "use client";
 import MyMap from "@/components/Map";
 
-import React, { useState } from "react";
-import Map from "@/compoments/Map";
 import {
   Alert,
   Box,
@@ -108,8 +106,10 @@ export default function MapAndStudentPage() {
               border: "2px solid #9e9e9e",
             }}
           >
-            <Map />
-          </Paper>
+            <Paper elevation={0} sx={{ height: "100%" }}>
+              <MyMap />
+            </Paper>
+          </Box>
         </Grid>
 
         {/* Cột phải: Gửi cảnh báo */}
