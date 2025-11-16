@@ -15,7 +15,7 @@
     "config/**/*.ts",
     "account/**/*.ts",
     "parent/**/*.ts",
-    "manager/**/*.ts",
+    "admin/**/*.ts",
     "driver/**/*.ts",
     "*.ts"
   ],
