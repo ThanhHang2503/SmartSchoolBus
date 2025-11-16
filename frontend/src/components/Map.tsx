@@ -3,7 +3,7 @@
 import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet'; // Cần import L cho kiểu dữ liệu
-import { useGeolocation } from '../mock/mockUserLocation'; // Import hook
+import { useGeolocation } from '../mock/mockUserLocation'; // Đường dẫn của bạn
 
 // Đảm bảo bạn đã import CSS và sửa lỗi icon ở trên
 import 'leaflet/dist/leaflet.css';
@@ -27,19 +27,21 @@ L.Icon.Default.mergeOptions({
 
 const MyMap: React.FC = () => {
   // Khai báo kiểu LatLngExpression cho TypeScript
-  const {loading,error,latitude,longitude} = useGeolocation();
-  if(loading){
+  const { loading, error, latitude, longitude } = useGeolocation();
+
+  // 1. Hiển thị khi đang tải
+  if (loading) {
     return <p>Đang lấy vị trí của bạn...</p>;
   }
-  if(error){
+
+  // 2. Hiển thị khi có lỗi
+  if (error) {
     return <p>Lỗi: {error.message}</p>;
   }
-  if (latitude === null || longitude === null) {
-    // Trường hợp này gần như không xảy ra nếu logic hook đúng
-    // nhưng cần thiết cho TypeScript
-    return <p>Không thể xác định tọa độ...</p>;
+  if(!latitude || !longitude){
+    return <p>Không thể lấy vị trí của bạn.</p>;
   }
-  const position: L.LatLngExpression = [latitude, longitude]; // Tọa độ TP. Hồ Chí Minh
+  const position: L.LatLngExpression = [latitude, longitude];
 
   return (
     <MapContainer 
