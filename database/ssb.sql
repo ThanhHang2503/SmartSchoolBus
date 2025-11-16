@@ -134,14 +134,17 @@ VALUES
 INSERT INTO QuanLy (HoTen, SoDienThoai, TrangThai)
 VALUES
 ('Nguyễn Văn A', '0909123456', 1),
-('Trần Thị B', '0909567890', 1);
+('Trần Thị B', '0909567890', 1),
+('Phan Đình C', '0909987654', 1);
 
 -- TÀI XẾ (Driver)
 INSERT INTO TaiXe (HoTen, SoDienThoai, TrangThai)
 VALUES
 ('Phạm Văn C', '0909345678', 1),
 ('Võ Văn D', '0909456789', 1),
-('Nguyễn Hữu E', '0909567891', 1);
+('Nguyễn Hữu E', '0909567891', 1),
+('Lê Văn K', '0909210987', 1), 				
+('Trần Thị L', '0909765432', 1);
 
 -- PHỤ HUYNH (Parent)
 INSERT INTO PhuHuynh (HoTen, SoDienThoai, DiaChi)
@@ -149,6 +152,8 @@ VALUES
 ('Lê Thị F', '0909678912', '123 Nguyễn Trãi, Quận 5'),
 ('Phan Văn G', '0909789123', '45 Trần Hưng Đạo, Quận 1'),
 ('Đặng Thị H', '0909891234', '67 Lý Thường Kiệt, Quận 10'),
+('Nguyễn Văn M', '0909112233', '88 Lê Lợi, Quận 1'),
+('Trần Thị N', '0909445566', '10 Phan Xích Long, Phú Nhuận'),
 ('Hoàng Văn I', '0909902345', '12 Nguyễn Du, Quận 3');
 
 -- HỌC SINH
@@ -161,27 +166,38 @@ VALUES
 ('Hoàng Lan Anh', '2014-11-30', '5B', 4),
 ('Lê Văn Tín', '2013-03-05', '6B', 3),
 ('Nguyễn Mỹ Duyên', '2015-09-09', '4A', 2),
-('Phan Anh Khoa', '2014-02-22', '5C', 1);
+('Phan Anh Khoa', '2014-02-22', '5C', 1),
+('Đinh Bá Phát', '2016-12-01', '3A', 5), 		-- MaHS = 9
+('Trần Hữu Phúc', '2013-05-18', '6C', 6), 		-- MaHS = 10
+('Lê Thị Kim Ngân', '2015-10-10', '4D', 5), 	-- MaHS = 11
+('Vũ Đình Long', '2014-07-07', '5D', 6), 		-- MaHS = 12
+('Hoàng Yến Nhi', '2016-01-20', '3B', 4);
 
 -- XE BUS
 INSERT INTO XeBus (BienSo, SoCho, TinhTrang, MaQL)
 VALUES
 ('51B-12345', 30, 1, 1),
 ('51B-67890', 40, 1, 2),
-('51C-23456', 25, 1, 1);
+('51C-23456', 25, 1, 1),
+('51D-88888', 35, 1, 3), 					-- MaXe = 4
+('51E-99999', 30, 0, 1);
 
 -- TUYẾN ĐƯỜNG
 INSERT INTO TuyenDuong (NoiBatDau, NoiKetThuc, VanTocTB, DoDai)
 VALUES
 ('Trường Tiểu học A', 'Khu dân cư Bình Tân', 35.5, 10.2),
 ('Trường Tiểu học A', 'Chung cư Phú Mỹ Hưng', 30.0, 12.5),
-('Trường Tiểu học A', 'Đường Nguyễn Văn Cừ', 28.5, 8.7);
+('Trường Tiểu học A', 'Đường Nguyễn Văn Cừ', 28.5, 8.7),
+('Trường Tiểu học A', 'Quận Gò Vấp', 32.0, 15.0), 	-- MaTD = 4
+('Trường Tiểu học A', 'Khu Công Nghiệp Tân Bình', 38.0, 18.5);
 
 -- LỊCH TRÌNH
 INSERT INTO LichTrinh (Ngay, GioBatDau, GioKetThuc, MaTX, MaXe, MaTD)
 VALUES
 ('2025-10-28', '06:30:00', '07:30:00', 1, 1, 1),
 ('2025-10-28', '06:45:00', '07:45:00', 2, 2, 2),
+('2025-10-29', '06:30:00', '07:30:00', 4, 4, 4),
+('2025-10-29', '16:30:00', '17:30:00', 5, 1, 1),
 ('2025-10-28', '07:00:00', '08:00:00', 3, 3, 3);
 
 -- CHI TIẾT LỊCH TRÌNH (Học sinh đi xe)
@@ -193,7 +209,12 @@ VALUES
 (2, 4, 2),
 (3, 5, 1),
 (3, 6, 1),
-(3, 7, 0);
+(3, 7, 0),
+(4, 9, 0),
+(4, 10, 1),
+(4, 11, 0),
+(5, 1, 2), 
+(5, 2, 2);
 
 -- TRẠM DỪNG
 INSERT INTO TramDung (DiaChi, TenTram)
@@ -201,7 +222,9 @@ VALUES
 ('123 Nguyễn Văn Linh, Quận 7', 'Trạm A'),
 ('56 Nguyễn Trãi, Quận 5', 'Trạm B'),
 ('98 Cách Mạng Tháng 8, Quận 3', 'Trạm C'),
-('32 Lý Thường Kiệt, Quận 10', 'Trạm D');
+('32 Lý Thường Kiệt, Quận 10', 'Trạm D'),
+('77 Hoàng Diệu, Quận 4', 'Trạm E'), 			
+('101 Phạm Văn Đồng, Gò Vấp', 'Trạm F');
 
 -- CHI TIẾT TUYẾN ĐƯỜNG
 INSERT INTO CTTD (MaTram, MaTD, ThuTuDung)
@@ -211,4 +234,8 @@ VALUES
 (3, 2, 1),
 (4, 2, 2),
 (1, 3, 1),
-(4, 3, 2);
+(4, 3, 2),
+(5, 4, 1), 	
+(6, 4, 2), 	
+(3, 5, 1), 	
+(5, 5, 2);

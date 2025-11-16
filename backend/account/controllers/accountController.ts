@@ -1,18 +1,22 @@
-import { Request, Response } from "express";
 import { findUserByCredentials } from "../models/accountModel";
+import type { Request, Response } from "express";
 
-const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({ success: false, message: "Vui lòng nhập đủ thông tin" });
+      res
+        .status(400)
+        .json({ success: false, message: "Vui lòng nhập đủ thông tin" });
       return;
     }
 
     const user = await findUserByCredentials(email, password);
     if (!user) {
-      res.status(401).json({ success: false, message: "Sai tài khoản hoặc mật khẩu" });
+      res
+        .status(401)
+        .json({ success: false, message: "Sai tài khoản hoặc mật khẩu" });
       return;
     }
 
@@ -22,5 +26,3 @@ const login = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };
-
-module.exports = { login };
