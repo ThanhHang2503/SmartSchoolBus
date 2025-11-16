@@ -1,10 +1,10 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
-import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 import { motion } from "framer-motion";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick-theme.css";
+import "slick-carousel/slick/slick.css";
 
 export default function HomePage() {
   const settings = {
@@ -18,10 +18,10 @@ export default function HomePage() {
     arrows: false,
     fade: true,
     pauseOnHover: false,
-    adaptiveHeight: false, // QUAN TRỌNG: tránh lỗi chiều cao
+    adaptiveHeight: false,
   };
 
-  const images = ["/image/pic1.jpg", "/image/pic2.jpg"];
+  const images = ["/image/pic1.jpg", "/image/pic2.jpg", "/image/bg.jpg"];
 
   return (
     <Box
@@ -32,9 +32,10 @@ export default function HomePage() {
         overflow: "hidden",
         position: "relative",
         // Đảm bảo không bị thanh cuộn
-        "& .slick-slider, & .slick-list, & .slick-track, & .slick-slide > div": {
-          height: "100%",
-        },
+        "& .slick-slider, & .slick-list, & .slick-track, & .slick-slide > div":
+          {
+            height: "100%",
+          },
         "& .slick-slide img": {
           width: "100%",
           height: "100%",
@@ -95,7 +96,12 @@ export default function HomePage() {
               letterSpacing: "1.5px",
               textShadow: "0 4px 15px rgba(0,0,0,0.6)",
               fontFamily: "'Playfair Display', serif",
-              fontSize: { xs: "1.8rem", sm: "2.5rem", md: "3rem", lg: "3.5rem" },
+              fontSize: {
+                xs: "1.8rem",
+                sm: "2.5rem",
+                md: "3rem",
+                lg: "3.5rem",
+              },
               lineHeight: 1.2,
             }}
           >
