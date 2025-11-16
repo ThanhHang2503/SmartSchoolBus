@@ -1,23 +1,23 @@
+// backend/bus/busController.ts
 import { Request, Response } from "express";
-import { getAllBuses, getBusById } from "../models/busModel";
+import { getAllBuses, getTodaySchedules } from "../models/busModel";
 
 export const getBuses = async (req: Request, res: Response) => {
   try {
     const buses = await getAllBuses();
     res.json(buses);
   } catch (err) {
-    console.error("Lỗi khi lấy danh sách xe bus:", err);
-    res.status(500).json({ message: "Lỗi server" });
+    console.error("Lỗi khi lấy danh sách Xe Bus:", err);
+    res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
 
-export const getBus = async (req: Request, res: Response) => {
+export const getSchedules = async (req: Request, res: Response) => {
   try {
-    const bus = await getBusById(Number(req.params.id));
-    if (!bus) return res.status(404).json({ message: "Không tìm thấy xe bus" });
-    res.json(bus);
+    const schedules = await getTodaySchedules();
+    res.json(schedules);
   } catch (err) {
-    console.error("Lỗi khi lấy thông tin xe bus:", err);
-    res.status(500).json({ message: "Lỗi server" });
+    console.error("Lỗi khi lấy Lịch trình:", err);
+    res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };

@@ -2,9 +2,9 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import express from "express";
 import accountRoutes from "./account/routes/accountRoutes";
+import adminRoutes from "./admin/routes/adminRoutes";
 import busRoutes from "./bus/routes/busRoutes";
 import driverRoutes from "./driver/routes/driverRoutes";
-import managerRoutes from "./manager/routes/managerRoutes";
 import parenttRoutes from "./parent/routes/parentRoutes";
 // import routerRoutes from "./route/routes/routeRoutes";
 import studentRoutes from "./student/routes/studentRoutes";
@@ -28,7 +28,7 @@ app.use("/students", studentRoutes);
 app.use("/account", accountRoutes);
 
 //QUAN LY
-app.use("/manager", managerRoutes);
+app.use("/admin", adminRoutes);
 
 //TAI XE
 app.use("/driver", driverRoutes);
