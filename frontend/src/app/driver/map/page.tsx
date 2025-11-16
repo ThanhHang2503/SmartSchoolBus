@@ -118,8 +118,10 @@ export default function MapAndStudentPage() {
               border: "2px solid #9e9e9e",
             }}
           >
-            <Map />
-          </Paper>
+            <Paper elevation={0} sx={{ height: "100%" }}>
+              <MyMap />
+            </Paper>
+          </Box>
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>

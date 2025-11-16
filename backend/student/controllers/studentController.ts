@@ -1,66 +1,67 @@
 import { Request, Response } from "express";
-import Student from "../models/studentModel";
-import { students } from "../hardcode_data/Student";
+import {
+  getAllStudents,
+  getStudentById,
+  addStudent,
+  updateStudent,
+  deleteStudent,
+} from "../models/studentModel";
 
-// Lấy tất cả student
-export const getAllStudents = (req: Request, res: Response) => {
-  res.json(students.map((s) => s.toJSON()));
+export const getStudents = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const students = await getAllStudents();
+    res.json(students);
+  } catch (err) {
+    console.error("Lỗi khi lấy danh sách học sinh:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
 };
 
-// Lấy student theo id
-export const getStudentById = (req: Request, res: Response) => {
-  const student = students.find((s) => s.id === req.params.id);
-  if (!student) return res.status(404).json({ message: "Student not found" });
-  res.json(student.toJSON());
+export const getStudent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const student = await getStudentById(id);
+    if (!student) {
+      res.status(404).json({ message: "Không tìm thấy học sinh" });
+      return;
+    }
+    res.json(student);
+  } catch (err) {
+    console.error("Lỗi khi lấy học sinh:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
 };
 
-// Thêm student mới
-export const createStudent = (req: Request, res: Response) => {
-  const { name, grade, pickupStop, dropStop, parentContact, notes } = req.body;
-
-  if (!name)
-    return res.status(400).json({ message: "Missing required field: name" });
-
-  const id = `stu-0${students.length + 1}`;
-
-  const newStudent = new Student({
-    id,
-    name,
-    grade,
-    pickupStop,
-    dropStop,
-    parentContact,
-    notes,
-  });
-
-  students.push(newStudent);
-
-  res.status(201).json(newStudent.toJSON());
+export const createStudent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { hoTen, ngaySinh, lop, maPH } = req.body;
+    const result = await addStudent(hoTen, ngaySinh, lop, maPH);
+    res.status(201).json({ success: true, id: result.id });
+  } catch (err) {
+    console.error("Lỗi khi thêm học sinh:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
 };
 
-// Cập nhật student
-export const updateStudent = (req: Request, res: Response) => {
-  const student = students.find((s) => s.id === req.params.id);
-  if (!student) return res.status(404).json({ message: "Student not found" });
-
-  const { name, grade, pickupStop, dropStop, parentContact, notes } = req.body;
-
-  if (name) student.name = name;
-  if (grade) student.grade = grade;
-  if (pickupStop) student.setPickupStop(pickupStop);
-  if (dropStop) student.setDropStop(dropStop);
-  if (parentContact) student.parentContact = parentContact;
-  if (notes) student.notes = notes;
-
-  res.json(student.toJSON());
+export const editStudent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const { hoTen, ngaySinh, lop, maPH } = req.body;
+    await updateStudent(id, hoTen, ngaySinh, lop, maPH);
+    res.json({ success: true, message: "Cập nhật thành công" });
+  } catch (err) {
+    console.error("Lỗi khi cập nhật học sinh:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
 };
 
-// Xóa student
-export const deleteStudent = (req: Request, res: Response) => {
-  const index = students.findIndex((s) => s.id === req.params.id);
-  if (index === -1)
-    return res.status(404).json({ message: "Student not found" });
-
-  students.splice(index, 1);
-  res.status(204).send();
+export const removeStudent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    await deleteStudent(id);
+    res.json({ success: true, message: "Xóa thành công" });
+  } catch (err) {
+    console.error("Lỗi khi xóa học sinh:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
 };
