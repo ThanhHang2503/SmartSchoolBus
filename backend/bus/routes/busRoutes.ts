@@ -1,9 +1,10 @@
+// backend/bus/busRoutes.ts
 import express from "express";
-import { getBuses, getBus } from "../controllers/busController";
+import { getBuses, getSchedules } from "../controllers/busController";
 
 const router = express.Router();
 
-router.get("/", getBuses);
-router.get("/:id", getBus);
+router.get("/info", getBuses); // GET /bus/info (Thông tin xe)
+router.get("/schedule/today", getSchedules); // GET /bus/schedule/today (Lịch trình hôm nay)
 
 export default router;

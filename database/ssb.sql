@@ -1,4 +1,4 @@
-CREATE DATABASE SSB;
+CREATE DATABASE IF NOT EXISTS SSB;
 USE SSB;
 
 -- Bảng tài khoản
@@ -9,6 +9,7 @@ CREATE TABLE TaiKhoan (
     VaiTro INT NOT NULL,       -- 1 = PhuHuynh, 2 = QuanLy, 3 = TaiXe
     TrangThai TINYINT DEFAULT 1 -- 1 = HoatDong, 0 = Khoa
 );
+
 -- Bảng thông báo
 CREATE TABLE ThongBao (
     MaTB INT AUTO_INCREMENT PRIMARY KEY,
@@ -31,7 +32,17 @@ CREATE TABLE PhuHuynh (
     MaPH INT AUTO_INCREMENT PRIMARY KEY,
     HoTen VARCHAR(100) NOT NULL,
     SoDienThoai VARCHAR(20),
-    DiaChi VARCHAR(200)
+    MaTK INT,
+    FOREIGN KEY (MaTK) REFERENCES TaiKhoan(MaTK)
+);
+
+-- Bảng trạm dừng
+CREATE TABLE TramDung (
+    MaTram INT AUTO_INCREMENT PRIMARY KEY,
+    TenTram VARCHAR(100),
+    DiaChi VARCHAR(200),
+    KinhDo DECIMAL(10,7),
+    ViDo DECIMAL(10,7)
 );
 
 -- Bảng học sinh
@@ -41,7 +52,11 @@ CREATE TABLE HocSinh (
     NgaySinh DATE,
     Lop VARCHAR(50),
     MaPH INT,
-    FOREIGN KEY (MaPH) REFERENCES PhuHuynh(MaPH)
+    DiemDon INT,
+    DiemTra INT,
+    FOREIGN KEY (MaPH) REFERENCES PhuHuynh(MaPH),
+    FOREIGN KEY (DiemDon) REFERENCES TramDung(MaTram),
+    FOREIGN KEY (DiemTra) REFERENCES TramDung(MaTram)
 );
 
 -- Bảng quản lý
@@ -50,7 +65,6 @@ CREATE TABLE QuanLy (
     HoTen VARCHAR(100) NOT NULL,
     SoDienThoai VARCHAR(20),
     TrangThai TINYINT DEFAULT 1 -- 1 = HoatDong, 0 = Nghi
-    
 );
 
 -- Bảng xe bus
@@ -68,8 +82,8 @@ CREATE TABLE TaiXe (
     MaTX INT AUTO_INCREMENT PRIMARY KEY,
     HoTen VARCHAR(100) NOT NULL,
     SoDienThoai VARCHAR(20),
+    BangLai VARCHAR(20),
     TrangThai TINYINT DEFAULT 1 -- 1 = HoatDong, 0 = Nghi
-   
 );
 
 -- Bảng tuyến đường
@@ -105,137 +119,146 @@ CREATE TABLE CTLT (
     FOREIGN KEY (MaHS) REFERENCES HocSinh(MaHS)
 );
 
--- Bảng trạm dừng
-CREATE TABLE TramDung (
-    MaTram INT AUTO_INCREMENT PRIMARY KEY,
-    DiaChi VARCHAR(200),
-    TenTram VARCHAR(100)
-);
-
 -- Chi tiết tuyến đường (các trạm đi qua + thứ tự)
 CREATE TABLE CTTD (
     MaTram INT,
     MaTD INT,
+    MaTramDon INT,
     ThuTuDung INT NOT NULL,
     PRIMARY KEY (MaTram, MaTD),
     FOREIGN KEY (MaTram) REFERENCES TramDung(MaTram),
-    FOREIGN KEY (MaTD) REFERENCES TuyenDuong(MaTD)
+    FOREIGN KEY (MaTD) REFERENCES TuyenDuong(MaTD),
+    FOREIGN KEY (MaTramDon) REFERENCES TramDung(MaTram)
 );
 
+-- ======================
+-- Tài khoản
+-- ======================
+INSERT INTO TaiKhoan (MaTK, TenDangNhap, MatKhau, VaiTro, TrangThai) VALUES
+(1, 'parent01@gmail.com', '123456', 1, 1),
+(2, 'parent02@gmail.com', '123456', 1, 1),
+(3, 'parent03@gmail.com', '123456', 1, 1),
+(4, 'parent04@gmail.com', '123456', 1, 1),
+(5, 'parent05@gmail.com', '123456', 1, 1),
+(6, 'parent06@gmail.com', '123456', 1, 1),
+(7, 'parent07@gmail.com', '123456', 1, 1),
+(8, 'parent08@gmail.com', '123456', 1, 1),
+(9, 'parent09@gmail.com', '123456', 1, 1),
+(10,'parent10@gmail.com','123456',1,1),
+(11, 'admin01@gmail.com', '123456', 2, 1),
+(12, 'admin02@gmail.com', '123456', 2, 1),
+(13, 'admin03@gmail.com', '123456', 2, 1),
+(14, 'driver01@gmail.com', '123456', 3, 1),
+(15, 'driver02@gmail.com', '123456', 3, 1),
+(16, 'driver03@gmail.com', '123456', 3, 1);
 
--- BẢNG TÀI KHOẢN (Admin, Driver, Parent)
-INSERT INTO TaiKhoan (TenDangNhap, MatKhau, VaiTro, TrangThai)
-VALUES 
-('admin123@gmail.com', '12345', 2, 1),
-('driver123@gmail.com', '12345', 3, 1),
-('parent123@gmail.com', '12345', 1, 1);
+-- ======================
+-- Phụ huynh
+-- ======================
+INSERT INTO PhuHuynh (MaPH, HoTen, SoDienThoai, MaTK) VALUES
+(1, 'Bùi Thị Thanh Hằng', '0909123456', 1),
+(2, 'Nguyễn Thị Hà', '0909876543', 2),
+(3, 'Lê Văn C', '0912345670', 3),
+(4, 'Phạm Thị D', '0909988776', 4),
+(5, 'Hoàng Văn E', '0911223344', 5),
+(6, 'Đặng Thị F', '0912333444', 6),
+(7, 'Vũ Văn G', '0909888777', 7),
+(8, 'Bùi Thị H', '0909777665', 8),
+(9, 'Phan Văn I', '0911556677', 9),
+(10,'Trương Thị J','0911445566',10);
 
--- QUẢN LÝ (Admin)
-INSERT INTO QuanLy (HoTen, SoDienThoai, TrangThai)
-VALUES
-('Nguyễn Văn A', '0909123456', 1),
-('Trần Thị B', '0909567890', 1),
-('Phan Đình C', '0909987654', 1);
 
--- TÀI XẾ (Driver)
-INSERT INTO TaiXe (HoTen, SoDienThoai, TrangThai)
-VALUES
-('Phạm Văn C', '0909345678', 1),
-('Võ Văn D', '0909456789', 1),
-('Nguyễn Hữu E', '0909567891', 1),
-('Lê Văn K', '0909210987', 1), 				
-('Trần Thị L', '0909765432', 1);
+-- ======================
+-- Trạm dừng
+-- ======================
+INSERT INTO TramDung (MaTram, TenTram, DiaChi, KinhDo, ViDo) VALUES
+(1,'Trạm Lê Lợi','123 Lê Lợi, Q1, TP.HCM',106.6999,10.7769),
+(2,'Trạm Nguyễn Trãi','456 Nguyễn Trãi, Q5, TP.HCM',106.6667,10.7553),
+(3,'Trạm Trần Hưng Đạo','789 Trần Hưng Đạo, Q1, TP.HCM',106.6880,10.7720),
+(4,'Trạm Điện Biên Phủ','1010 Điện Biên Phủ, Q3, TP.HCM',106.6930,10.7795),
+(5,'Trạm Phan Xích Long','1111 Phan Xích Long, QPN, TP.HCM',106.6895,10.8033),
+(6,'Trạm Cách Mạng Tháng 8','1212 CMT8, Q3, TP.HCM',106.6950,10.7790),
+(7,'Trạm Hai Bà Trưng','1313 Hai Bà Trưng, Q1, TP.HCM',106.7000,10.7725),
+(8,'Trạm Lý Thường Kiệt','1414 Lý Thường Kiệt, Q10, TP.HCM',106.6610,10.7670),
+(9,'Trạm Võ Thị Sáu','1515 Võ Thị Sáu, Q3, TP.HCM',106.6935,10.7775),
+(10,'Trạm Nguyễn Huệ','1616 Nguyễn Huệ, Q1, TP.HCM',106.7030,10.7750);
 
--- PHỤ HUYNH (Parent)
-INSERT INTO PhuHuynh (HoTen, SoDienThoai, DiaChi)
-VALUES
-('Lê Thị F', '0909678912', '123 Nguyễn Trãi, Quận 5'),
-('Phan Văn G', '0909789123', '45 Trần Hưng Đạo, Quận 1'),
-('Đặng Thị H', '0909891234', '67 Lý Thường Kiệt, Quận 10'),
-('Nguyễn Văn M', '0909112233', '88 Lê Lợi, Quận 1'),
-('Trần Thị N', '0909445566', '10 Phan Xích Long, Phú Nhuận'),
-('Hoàng Văn I', '0909902345', '12 Nguyễn Du, Quận 3');
+-- ======================
+-- Học sinh
+-- ======================
+INSERT INTO HocSinh (MaHS, HoTen, NgaySinh, Lop, MaPH, DiemDon, DiemTra) VALUES
+(1,'Mai Thị Mỹ Duyên','2015-06-15','1A',1,1,4),
+(2,'Lê Thị Ngọc Tuyền','2014-03-22','2B',2,2,3),
+(3,'Nguyễn Thị E','2015-11-10','1A',3,5,1),
+(4,'Phạm Văn F','2014-09-30','2C',4,6,2),
+(5,'Hoàng Thị G','2015-01-12','1B',5,7,3),
+(6,'Đặng Văn H','2014-05-20','2A',6,8,4),
+(7,'Vũ Thị I','2015-03-11','1C',7,9,5),
+(8,'Bùi Văn J','2014-08-18','2B',8,10,6),
+(9,'Phan Thị K','2015-07-22','1A',9,1,7),
+(10,'Trương Văn L','2014-12-02','2C',10,2,8);
 
--- HỌC SINH
-INSERT INTO HocSinh (HoTen, NgaySinh, Lop, MaPH)
-VALUES
-('Phan Minh Khang', '2014-04-10', '5A', 1),
-('Nguyễn Thị Mai', '2015-06-25', '4B', 1),
-('Đặng Minh Quân', '2013-08-12', '6A', 2),
-('Phan Gia Bảo', '2015-01-15', '4C', 3),
-('Hoàng Lan Anh', '2014-11-30', '5B', 4),
-('Lê Văn Tín', '2013-03-05', '6B', 3),
-('Nguyễn Mỹ Duyên', '2015-09-09', '4A', 2),
-('Phan Anh Khoa', '2014-02-22', '5C', 1),
-('Đinh Bá Phát', '2016-12-01', '3A', 5), 		-- MaHS = 9
-('Trần Hữu Phúc', '2013-05-18', '6C', 6), 		-- MaHS = 10
-('Lê Thị Kim Ngân', '2015-10-10', '4D', 5), 	-- MaHS = 11
-('Vũ Đình Long', '2014-07-07', '5D', 6), 		-- MaHS = 12
-('Hoàng Yến Nhi', '2016-01-20', '3B', 4);
+-- ======================
+-- Quản lý
+-- ======================
+INSERT INTO QuanLy (MaQL, HoTen, SoDienThoai, TrangThai) VALUES
+(1,'Phạm Thị Hương','0912345678',1),
+(2,'Nguyễn Văn Xuân','0912345679',1),
+(3,'Trần Thị Yến','0912345680',1);
 
--- XE BUS
-INSERT INTO XeBus (BienSo, SoCho, TinhTrang, MaQL)
-VALUES
-('51B-12345', 30, 1, 1),
-('51B-67890', 40, 1, 2),
-('51C-23456', 25, 1, 1),
-('51D-88888', 35, 1, 3), 					-- MaXe = 4
-('51E-99999', 30, 0, 1);
+-- ======================
+-- Xe bus
+-- ======================
+INSERT INTO XeBus (MaXe, BienSo, SoCho, TinhTrang, MaQL) VALUES
+(1,'51B-12345',40,1,1),
+(2,'51B-54321',35,1,2),
+(3,'51B-67890',45,1,3);
 
--- TUYẾN ĐƯỜNG
-INSERT INTO TuyenDuong (NoiBatDau, NoiKetThuc, VanTocTB, DoDai)
-VALUES
-('Trường Tiểu học A', 'Khu dân cư Bình Tân', 35.5, 10.2),
-('Trường Tiểu học A', 'Chung cư Phú Mỹ Hưng', 30.0, 12.5),
-('Trường Tiểu học A', 'Đường Nguyễn Văn Cừ', 28.5, 8.7),
-('Trường Tiểu học A', 'Quận Gò Vấp', 32.0, 15.0), 	-- MaTD = 4
-('Trường Tiểu học A', 'Khu Công Nghiệp Tân Bình', 38.0, 18.5);
+-- ======================
+-- Tài xế
+-- ======================
+INSERT INTO TaiXe (MaTX, HoTen, SoDienThoai, BangLai, TrangThai) VALUES
+(1,'Nguyễn Văn Bảo','0987654321','B2',1),
+(2,'Trần Văn Lâm','0976543210','B2',1),
+(3,'Lê Văn Kỳ','0965432109','B2',1);
 
--- LỊCH TRÌNH
-INSERT INTO LichTrinh (Ngay, GioBatDau, GioKetThuc, MaTX, MaXe, MaTD)
-VALUES
-('2025-10-28', '06:30:00', '07:30:00', 1, 1, 1),
-('2025-10-28', '06:45:00', '07:45:00', 2, 2, 2),
-('2025-10-29', '06:30:00', '07:30:00', 4, 4, 4),
-('2025-10-29', '16:30:00', '17:30:00', 5, 1, 1),
-('2025-10-28', '07:00:00', '08:00:00', 3, 3, 3);
+-- ======================
+-- Thông báo
+-- ======================
 
--- CHI TIẾT LỊCH TRÌNH (Học sinh đi xe)
-INSERT INTO CTLT (MaLT, MaHS, TrangThai)
-VALUES
-(1, 1, 1),
-(1, 2, 0),
-(2, 3, 1),
-(2, 4, 2),
-(3, 5, 1),
-(3, 6, 1),
-(3, 7, 0),
-(4, 9, 0),
-(4, 10, 1),
-(4, 11, 0),
-(5, 1, 2), 
-(5, 2, 2);
+INSERT INTO ThongBao (MaTB, NoiDung, LoaiTB) VALUES
+(1, 'Xe bus tuyến 1 trễ 10 phút do tắc đường', 'Xe trễ'),
+(2, 'Xe bus tuyến 2 gặp sự cố kỹ thuật, tạm dừng hoạt động', 'Sự cố'),
+(3, 'Thông báo khác: Học sinh nghỉ học hôm nay theo yêu cầu phụ huynh', 'Khác');
 
--- TRẠM DỪNG
-INSERT INTO TramDung (DiaChi, TenTram)
-VALUES
-('123 Nguyễn Văn Linh, Quận 7', 'Trạm A'),
-('56 Nguyễn Trãi, Quận 5', 'Trạm B'),
-('98 Cách Mạng Tháng 8, Quận 3', 'Trạm C'),
-('32 Lý Thường Kiệt, Quận 10', 'Trạm D'),
-('77 Hoàng Diệu, Quận 4', 'Trạm E'), 			
-('101 Phạm Văn Đồng, Gò Vấp', 'Trạm F');
+-- ======================
+-- Tuyến đường
+-- ======================
+INSERT INTO TuyenDuong (MaTD, NoiBatDau, NoiKetThuc, VanTocTB, DoDai) VALUES
+(1,'Trạm Lê Lợi','Trạm Phan Xích Long',30.5,12.0),
+(2,'Trạm Nguyễn Trãi','Trạm Điện Biên Phủ',28.0,10.5),
+(3,'Trạm Hai Bà Trưng','Trạm Nguyễn Huệ',32.0,11.2);
 
--- CHI TIẾT TUYẾN ĐƯỜNG
-INSERT INTO CTTD (MaTram, MaTD, ThuTuDung)
-VALUES
-(1, 1, 1),
-(2, 1, 2),
-(3, 2, 1),
-(4, 2, 2),
-(1, 3, 1),
-(4, 3, 2),
-(5, 4, 1), 	
-(6, 4, 2), 	
-(3, 5, 1), 	
-(5, 5, 2);
+-- ======================
+-- Lịch trình
+-- ======================
+INSERT INTO LichTrinh (MaLT, Ngay, GioBatDau, GioKetThuc, MaTX, MaXe, MaTD) VALUES
+(1,'2025-11-17','06:30:00','07:30:00',1,1,1),
+(2,'2025-11-17','06:45:00','07:45:00',2,2,2),
+(3,'2025-11-17','06:50:00','07:50:00',3,3,3);
+
+-- ======================
+-- Chi tiết lịch trình
+-- ======================
+INSERT INTO CTLT (MaLT, MaHS, TrangThai) VALUES
+(1,1,0),(1,2,0),(1,3,0),
+(2,4,0),(2,5,0),(2,6,0),
+(3,7,0),(3,8,0),(3,9,0),(3,10,0);
+
+-- ======================
+-- Chi tiết tuyến đường
+-- ======================
+INSERT INTO CTTD (MaTram, MaTD, MaTramDon, ThuTuDung) VALUES
+(1,1,1,1),(2,1,2,2),(3,1,3,3),(4,1,4,4),(5,1,5,5),
+(2,2,2,1),(3,2,3,2),(4,2,4,3),(5,2,5,4),(6,2,6,5),
+(7,3,7,1),(8,3,8,2),(9,3,9,3),(10,3,10,4);

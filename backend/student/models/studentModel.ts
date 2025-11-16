@@ -1,55 +1,42 @@
+// backend/student/studentModel.ts
 import { pool } from "../../config/db";
 
-// 📌 Lấy toàn bộ danh sách học sinh
+// Lấy tất cả Học sinh, JOIN với Phụ huynh và Trạm dừng
 export const getAllStudents = async () => {
   const [rows]: any = await pool.query(
-    `SELECT MaHS AS id, HoTen, NgaySinh, Lop, MaPH FROM HocSinh`
+    `SELECT 
+      HS.MaHS AS id, 
+      HS.HoTen AS name, 
+      HS.NgaySinh, 
+      HS.Lop,
+      PH.HoTen AS TenPhuHuynh,
+      TD_DON.TenTram AS TenTramDon,
+      TD_TRA.TenTram AS TenTramTra
+    FROM HocSinh HS
+    JOIN PhuHuynh PH ON HS.MaPH = PH.MaPH
+    JOIN TramDung TD_DON ON HS.DiemDon = TD_DON.MaTram
+    JOIN TramDung TD_TRA ON HS.DiemTra = TD_TRA.MaTram`
   );
   return rows;
 };
 
-// 📌 Lấy thông tin học sinh theo ID
+// Lấy Học sinh theo ID (MaHS)
 export const getStudentById = async (id: number) => {
   const [rows]: any = await pool.query(
-    `SELECT MaHS AS id, HoTen, NgaySinh, Lop, MaPH FROM HocSinh WHERE MaHS = ?`,
+    `SELECT 
+      HS.MaHS AS id, 
+      HS.HoTen AS name, 
+      HS.NgaySinh, 
+      HS.Lop,
+      PH.HoTen AS TenPhuHuynh,
+      TD_DON.TenTram AS TenTramDon,
+      TD_TRA.TenTram AS TenTramTra
+    FROM HocSinh HS
+    JOIN PhuHuynh PH ON HS.MaPH = PH.MaPH
+    JOIN TramDung TD_DON ON HS.DiemDon = TD_DON.MaTram
+    JOIN TramDung TD_TRA ON HS.DiemTra = TD_TRA.MaTram
+    WHERE HS.MaHS = ?`,
     [id]
   );
   return rows[0];
 };
-
-// 📌 Thêm học sinh mới
-export const addStudent = async (
-  hoTen: string,
-  ngaySinh: string,
-  lop: string,
-  maPH: number
-) => {
-  const [result]: any = await pool.query(
-    `INSERT INTO HocSinh (HoTen, NgaySinh, Lop, MaPH) VALUES (?, ?, ?, ?)`,
-    [hoTen, ngaySinh, lop, maPH]
-  );
-  return { id: result.insertId };
-};
-
-// 📌 Cập nhật thông tin học sinh
-export const updateStudent = async (
-  id: number,
-  hoTen: string,
-  ngaySinh: string,
-  lop: string,
-  maPH: number
-) => {
-  await pool.query(
-    `UPDATE HocSinh SET HoTen = ?, NgaySinh = ?, Lop = ?, MaPH = ? WHERE MaHS = ?`,
-    [hoTen, ngaySinh, lop, maPH, id]
-  );
-  return { success: true };
-};
-
-// 📌 Xóa học sinh
-export const deleteStudent = async (id: number) => {
-  await pool.query(`DELETE FROM HocSinh WHERE MaHS = ?`, [id]);
-  return { success: true };
-};
-
-export { pool };
