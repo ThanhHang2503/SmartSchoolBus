@@ -1,57 +1,18 @@
-export interface ILocation {
-  lat: number;
-  lng: number;
-  address?: string;
-  timestamp?: string;
-}
+import { pool } from "../../config/db";
 
-export interface IBus {
-  id: string;
-  plateNumber: string;
-  capacity: number;
-  status: string;
-  location?: ILocation | null;
-}
+export const getAllBuses = async () => {
+  const [rows]: any = await pool.query(
+    "SELECT MaXe AS id, BienSo, SoCho, TinhTrang, MaQL FROM XeBus"
+  );
+  return rows;
+};
 
-export default class Bus implements IBus {
-  id: string;
-  plateNumber: string;
-  capacity: number;
-  status: string;
-  location?: ILocation | null;
+export const getBusById = async (id: number) => {
+  const [rows]: any = await pool.query(
+    "SELECT MaXe AS id, BienSo, SoCho, TinhTrang, MaQL FROM XeBus WHERE MaXe = ?",
+    [id]
+  );
+  return rows[0];
+};
 
-  constructor({
-    id,
-    plateNumber,
-    capacity,
-    status = "idle",
-    location = null,
-  }: Partial<IBus> & { id: string; plateNumber: string; capacity: number }) {
-    this.id = id;
-    this.plateNumber = plateNumber;
-    this.capacity = capacity;
-    this.status = status;
-    this.location = location;
-  }
-
-  updateLocation(location: ILocation) {
-    this.location = {
-      ...location,
-      timestamp: location.timestamp || new Date().toISOString(),
-    };
-  }
-
-  setStatus(status: string) {
-    this.status = status;
-  }
-
-  toJSON() {
-    return {
-      id: this.id,
-      plateNumber: this.plateNumber,
-      capacity: this.capacity,
-      status: this.status,
-      location: this.location,
-    };
-  }
-}
+export { pool };

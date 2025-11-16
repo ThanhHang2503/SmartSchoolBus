@@ -1,33 +1,27 @@
 import express from "express";
-import { verifyToken } from "../../middleware";
-
 import {
-  getAllStudents,
-  getStudentById,
+  getStudents,
+  getStudent,
   createStudent,
-  updateStudent,
-  deleteStudent,
+  editStudent,
+  removeStudent,
 } from "../controllers/studentController";
 
 const router = express.Router();
 
-//ThanhHang // Lấy tất cả học sinh khi không có middleware - ai cũng gọi được
-router.get("/", getAllStudents);
+// 📌 GET /student → Lấy toàn bộ học sinh
+router.get("/", getStudents);
 
-// myduyen test middleware : chỉ được gọi khi có token
-router.get("/secure", verifyToken, getAllStudents);
-// Lấy học sinh theo id
-router.get("/:id", getStudentById);
+// 📌 GET /student/:id → Lấy học sinh theo ID
+router.get("/:id", getStudent);
 
-// Thêm học sinh mới
+// 📌 POST /student → Thêm học sinh mới
 router.post("/", createStudent);
 
-// Cập nhật học sinh
-router.put("/:id", updateStudent);
+// 📌 PUT /student/:id → Cập nhật thông tin học sinh
+router.put("/:id", editStudent);
 
-// Xóa học sinh
-router.delete("/:id", deleteStudent);
+// 📌 DELETE /student/:id → Xóa học sinh
+router.delete("/:id", removeStudent);
 
 export default router;
-
-
