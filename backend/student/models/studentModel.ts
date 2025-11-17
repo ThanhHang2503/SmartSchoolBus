@@ -1,81 +1,42 @@
+// backend/student/studentModel.ts
+import { pool } from "../../config/db";
 
-export interface IContact {
-  name?: string
-  phone?: string
-  email?: string
-}
+// Lấy tất cả Học sinh, JOIN với Phụ huynh và Trạm dừng
+export const getAllStudents = async () => {
+  const [rows]: any = await pool.query(
+    `SELECT 
+      HS.MaHS AS id, 
+      HS.HoTen AS name, 
+      HS.NgaySinh, 
+      HS.Lop,
+      PH.HoTen AS TenPhuHuynh,
+      TD_DON.TenTram AS TenTramDon,
+      TD_TRA.TenTram AS TenTramTra
+    FROM HocSinh HS
+    JOIN PhuHuynh PH ON HS.MaPH = PH.MaPH
+    JOIN TramDung TD_DON ON HS.DiemDon = TD_DON.MaTram
+    JOIN TramDung TD_TRA ON HS.DiemTra = TD_TRA.MaTram`
+  );
+  return rows;
+};
 
-export interface IStop {
-  id: string
-  name?: string
-  lat: number
-  lng: number
-  address?: string
-  sequence?: number
-}
-
-
-export interface IStudent {
-  id: string
-  name: string
-  grade?: string
-  pickupStop?: IStop
-  dropStop?: IStop
-  parentContact?: IContact
-  notes?: string
-}
-
-/**
- * Student class - model cho học sinh
- */
-export class Student implements IStudent {
-  id: string
-  name: string
-  grade?: string
-  pickupStop?: IStop
-  dropStop?: IStop
-  parentContact?: IContact
-  notes?: string
-
-  constructor(params: {
-    id: string
-    name: string
-    grade?: string
-    pickupStop?: IStop
-    dropStop?: IStop
-    parentContact?: IContact
-    notes?: string
-  }) {
-    this.id = params.id
-    this.name = params.name
-    this.grade = params.grade
-    this.pickupStop = params.pickupStop
-    this.dropStop = params.dropStop
-    this.parentContact = params.parentContact
-    this.notes = params.notes
-  }
-
-  /** Gán / cập nhật điểm đón */
-  setPickupStop(stop: IStop) {
-    this.pickupStop = stop
-  }
-
-  /** Gán / cập nhật điểm trả */
-  setDropStop(stop: IStop) {
-    this.dropStop = stop
-  }
-
-  toJSON() {
-    return {
-      id: this.id,
-      name: this.name,
-      grade: this.grade,
-      pickupStop: this.pickupStop,
-      dropStop: this.dropStop,
-      parentContact: this.parentContact,
-      notes: this.notes,
-    }
-  }
-}
-
-export default Student
+// Lấy Học sinh theo ID (MaHS)
+export const getStudentById = async (id: number) => {
+  const [rows]: any = await pool.query(
+    `SELECT 
+      HS.MaHS AS id, 
+      HS.HoTen AS name, 
+      HS.NgaySinh, 
+      HS.Lop,
+      PH.HoTen AS TenPhuHuynh,
+      TD_DON.TenTram AS TenTramDon,
+      TD_TRA.TenTram AS TenTramTra
+    FROM HocSinh HS
+    JOIN PhuHuynh PH ON HS.MaPH = PH.MaPH
+    JOIN TramDung TD_DON ON HS.DiemDon = TD_DON.MaTram
+    JOIN TramDung TD_TRA ON HS.DiemTra = TD_TRA.MaTram
+    WHERE HS.MaHS = ?`,
+    [id]
+  );
+  return rows[0];
+};

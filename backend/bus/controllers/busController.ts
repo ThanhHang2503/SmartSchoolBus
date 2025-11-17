@@ -1,55 +1,23 @@
-
+// backend/bus/busController.ts
 import { Request, Response } from "express";
-import Bus from "../models/busModel";
-import { buses } from "../hardcode_data/bus"; 
+import { getAllBuses, getTodaySchedules } from "../models/busModel";
 
-// Lấy tất cả bus
-export const getAllBuses = (req: Request, res: Response) => {
-  res.json(buses.map((b) => b.toJSON()));
+export const getBuses = async (req: Request, res: Response) => {
+  try {
+    const buses = await getAllBuses();
+    res.json(buses);
+  } catch (err) {
+    console.error("Lỗi khi lấy danh sách Xe Bus:", err);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
 };
 
-// Lấy bus theo id
-export const getBusById = (req: Request, res: Response) => {
-  const bus = buses.find((b) => b.id === req.params.id);
-  if (!bus) return res.status(404).json({ message: "Bus not found" });
-  res.json(bus.toJSON());
-};
-
-// Thêm bus mới
-export const createBus = (req: Request, res: Response) => {
-  const { plateNumber, capacity } = req.body;
-
-  if (!plateNumber || !capacity)
-    return res.status(400).json({ message: "Missing required fields" });
-
-  const id = `bus-0${buses.length + 1}`;
-
-  const newBus = new Bus({ id, plateNumber, capacity });
-  buses.push(newBus);
-
-  res.status(201).json(newBus.toJSON());
-};
-
-// Cập nhật bus
-export const updateBus = (req: Request, res: Response) => {
-  const bus = buses.find((b) => b.id === req.params.id);
-  if (!bus) return res.status(404).json({ message: "Bus not found" });
-
-  const { plateNumber, capacity, status, location } = req.body;
-
-  if (plateNumber) bus.plateNumber = plateNumber;
-  if (capacity) bus.capacity = capacity;
-  if (status) bus.setStatus(status);
-  if (location) bus.updateLocation(location);
-
-  res.json(bus.toJSON());
-};
-
-// Xóa bus
-export const deleteBus = (req: Request, res: Response) => {
-  const index = buses.findIndex((b) => b.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: "Bus not found" });
-
-  buses.splice(index, 1);
-  res.status(204).send();
+export const getSchedules = async (req: Request, res: Response) => {
+  try {
+    const schedules = await getTodaySchedules();
+    res.json(schedules);
+  } catch (err) {
+    console.error("Lỗi khi lấy Lịch trình:", err);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
 };
