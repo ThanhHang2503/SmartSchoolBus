@@ -1,10 +1,7 @@
 "use client";
-<<<<<<< HEAD
-import Map from "@/compoments/Map";
-=======
+
 import MyMap from "@/components/Map";
 
->>>>>>> main
 import React, { useState } from "react";
 import Map from "@/compoments/Map";
 import {
@@ -73,42 +70,22 @@ export default function MapAndStudentPage() {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
-<<<<<<< HEAD
-  // Lọc danh sách học sinh
-=======
   // Lọc học sinh
->>>>>>> main
   const filteredStudents = studentsData.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
 
-<<<<<<< HEAD
-  // State cảnh báo
-  const [alertType, setAlertType] = useState("");
-  const [message, setMessage] = useState("");
-  const [open, setOpen] = useState(false);
 
-=======
   // Gửi cảnh báo
->>>>>>> main
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!alertType || !message.trim()) return;
 
-<<<<<<< HEAD
-    // Sau này có thể gửi API ở đâyv
-    console.log({
-      alertType,
-      message,
-      timestamp: new Date().toISOString(),
-    });
-=======
     setSnackbarMessage("Cảnh báo đã được gửi thành công!");
     setSnackbarSeverity("success");
     setOpenSnackbar(true);
 
     console.log("Gửi cảnh báo:", { alertType, message, timestamp: new Date() });
->>>>>>> main
 
     setAlertType("");
     setMessage("");
@@ -131,11 +108,7 @@ export default function MapAndStudentPage() {
         Xe buýt: R001 - Tuyến: A-B
       </Typography>
 
-<<<<<<< HEAD
-      {/* Khu vực bản đồ và cảnh báo (2 cột) */}
-=======
       {/* BẢN ĐỒ + GỬI CẢNH BÁO */}
->>>>>>> main
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Box
@@ -146,16 +119,10 @@ export default function MapAndStudentPage() {
               border: "2px solid #9e9e9e",
             }}
           >
-<<<<<<< HEAD
-            {/* 🗺️ Google Map hiển thị ở đây */}
-            <Map />
-          </Paper>
-=======
             <Paper elevation={0} sx={{ height: "100%" }}>
               <MyMap />
             </Paper>
           </Box>
->>>>>>> main
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>
@@ -207,23 +174,7 @@ export default function MapAndStudentPage() {
         </Grid>
       </Grid>
 
-<<<<<<< HEAD
-      {/* Snackbar thông báo */}
-      <Snackbar
-        open={open}
-        autoHideDuration={3000}
-        onClose={() => setOpen(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert severity="success" onClose={() => setOpen(false)}>
-          Cảnh báo đã được gửi thành công!
-        </Alert>
-      </Snackbar>
-
-      {/* Ô tìm kiếm */}
-=======
       {/* TÌM KIẾM */}
->>>>>>> main
       <Box sx={{ mb: 2 }}>
         <TextField
           label="Tìm kiếm học sinh"
@@ -234,11 +185,7 @@ export default function MapAndStudentPage() {
         />
       </Box>
 
-<<<<<<< HEAD
-      {/* Bảng danh sách học sinh */}
-=======
       {/* BẢNG HỌC SINH - CHỈ CÒN CỘT "TRẠNG THÁI" */}
->>>>>>> main
       <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
         <Table>
           <TableHead>
@@ -301,11 +248,7 @@ export default function MapAndStudentPage() {
         </Table>
       </TableContainer>
 
-<<<<<<< HEAD
-      {/* Hộp thoại chi tiết học sinh */}
-=======
       {/* DIALOG CHI TIẾT (CHỈ XEM) */}
->>>>>>> main
       <Dialog
         open={Boolean(selectedStudent)}
         onClose={() => setSelectedStudent(null)}
