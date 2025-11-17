@@ -1,51 +1,98 @@
-import { Request, Response } from 'express'
-import { routes } from '../hardcode_data/routeData'
-import { IRoute } from '../models/routeModel'
+import type { Request, Response } from 'express';
+import { asyncHandler } from '../../middlewares/asyncHandler.js';
+import { ResponseHandler } from '../../utils/responseHandler.js';
+import * as routeModel from '../models/routeDBModel.js';
 
-let routeData: IRoute[] = [...routes] // copy dữ liệu hardcode
+// Lấy tất cả tuyến đường
+export const getAllRoutes = asyncHandler(async (req: Request, res: Response) => {
+  const routes = await routeModel.getAllRoutes();
+  ResponseHandler.success(res, routes, 'Lấy danh sách tuyến đường thành công');
+});
 
-// Lấy tất cả route
-export const getAllRoutes = (req: Request, res: Response) => {
-  res.json(routeData)
-};
-
-// Lấy route theo id
-export const getRouteById = (req: Request, res: Response) => {
-  const { id } = req.params
-  const route = routeData.find(r => r.id === id)
+// Lấy tuyến đường theo ID
+export const getRouteById = asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const route = await routeModel.getRouteById(id);
+  
   if (!route) {
-    return res.status(404).json({ message: 'Route not found' })
+    return ResponseHandler.notFound(res, 'Không tìm thấy tuyến đường');
   }
-  res.json(route)
-}
+  
+  ResponseHandler.success(res, route, 'Lấy tuyến đường thành công');
+});
 
-// Thêm mới một route
-export const addRoute = (req: Request, res: Response) => {
-  const newRoute: IRoute = req.body
-  if (!newRoute.id || !newRoute.name) {
-    return res.status(400).json({ message: 'Missing id or name' })
+// Lấy tuyến đường với danh sách trạm
+export const getRouteWithStops = asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const route = await routeModel.getRouteWithStops(id);
+  
+  if (!route) {
+    return ResponseHandler.notFound(res, 'Không tìm thấy tuyến đường');
   }
+  
+  ResponseHandler.success(res, route, 'Lấy tuyến đường với danh sách trạm thành công');
+});
 
-  routeData.push(newRoute)
-  res.status(201).json({ message: 'Route added successfully', data: newRoute })
-}
+// Tạo tuyến đường mới
+export const addRoute = asyncHandler(async (req: Request, res: Response) => {
+  const { NoiBatDau, NoiKetThuc, VanTocTB, DoDai } = req.body;
+  
+  if (!NoiBatDau || !NoiKetThuc || !VanTocTB || !DoDai) {
+    return ResponseHandler.badRequest(res, 'Thiếu thông tin bắt buộc');
+  }
+  
+  const maTD = await routeModel.createRoute({ NoiBatDau, NoiKetThuc, VanTocTB, DoDai });
+  ResponseHandler.success(res, { MaTD: maTD }, 'Tạo tuyến đường thành công', 201);
+});
 
-// Cập nhật route
-export const updateRoute = (req: Request, res: Response) => {
-  const { id } = req.params
-  const index = routeData.findIndex(r => r.id === id)
-  if (index === -1) return res.status(404).json({ message: 'Route not found' })
+// Thêm trạm vào tuyến đường
+export const addStopToRoute = asyncHandler(async (req: Request, res: Response) => {
+  const { MaTram, MaTD, ThuTuDung } = req.body;
+  
+  if (!MaTram || !MaTD || !ThuTuDung) {
+    return ResponseHandler.badRequest(res, 'Thiếu thông tin bắt buộc');
+  }
+  
+  await routeModel.addStopToRoute({ MaTram, MaTD, ThuTuDung });
+  ResponseHandler.success(res, null, 'Thêm trạm vào tuyến đường thành công', 201);
+});
 
-  routeData[index] = { ...routeData[index], ...req.body }
-  res.json({ message: 'Route updated', data: routeData[index] })
-}
+// Cập nhật tuyến đường
+export const updateRoute = asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const { NoiBatDau, NoiKetThuc, VanTocTB, DoDai } = req.body;
+  
+  const updated = await routeModel.updateRoute(id, { NoiBatDau, NoiKetThuc, VanTocTB, DoDai });
+  
+  if (!updated) {
+    return ResponseHandler.notFound(res, 'Không tìm thấy tuyến đường');
+  }
+  
+  ResponseHandler.success(res, null, 'Cập nhật tuyến đường thành công');
+});
 
-// Xóa route
-export const deleteRoute = (req: Request, res: Response) => {
-  const { id } = req.params
-  const index = routeData.findIndex(r => r.id === id)
-  if (index === -1) return res.status(404).json({ message: 'Route not found' })
+// Xóa trạm khỏi tuyến đường
+export const removeStopFromRoute = asyncHandler(async (req: Request, res: Response) => {
+  const { maTD, maTram } = req.params;
+  
+  const deleted = await routeModel.removeStopFromRoute(parseInt(maTD), parseInt(maTram));
+  
+  if (!deleted) {
+    return ResponseHandler.notFound(res, 'Không tìm thấy trạm trong tuyến đường');
+  }
+  
+  ResponseHandler.success(res, null, 'Xóa trạm khỏi tuyến đường thành công');
+});
 
-  const deleted = routeData.splice(index, 1)
-  res.json({ message: 'Route deleted', data: deleted[0] })
-}
+// Xóa tuyến đường
+export const deleteRoute = asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  
+  const deleted = await routeModel.deleteRoute(id);
+  
+  if (!deleted) {
+    return ResponseHandler.notFound(res, 'Không tìm thấy tuyến đường');
+  }
+  
+  ResponseHandler.success(res, null, 'Xóa tuyến đường thành công');
+});
