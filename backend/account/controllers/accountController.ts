@@ -1,5 +1,5 @@
-import type { Request, Response } from "express"
-import { findUserByCredentials } from "../models/accountModel.js"
+import { Request, Response } from "express"
+import { findUserByCredentials } from "../models/accountModel"
 
 export const login = async (req: Request, res: Response) => {
   try {
