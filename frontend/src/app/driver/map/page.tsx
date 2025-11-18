@@ -2,7 +2,7 @@
 import MyMap from "@/components/Map";
 
 import React, { useState } from "react";
-import Map from "@/compoments/Map";
+import Map from "@/components/Map";
 import {
   Alert,
   Box,
@@ -28,7 +28,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
+
 
 export default function MapAndStudentPage() {
   // DỮ LIỆU GIẢ LẬP
