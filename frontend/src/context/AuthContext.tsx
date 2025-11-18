@@ -1,83 +1,91 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import { useRouter } from "next/navigation"
-import type { User } from "@/types/auth";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
-
-interface AuthContextType {
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
-  user: User | null
-  isLoading: boolean
-  isInitialized: boolean
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: "admin" | "driver" | "parent";
+  studentIds?: string[];
+  routeIds?: string[];
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+interface AuthContextType {
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  user: User | null;
+  token: string | null;          // THÊM
+  isLoading: boolean;
+  isInitialized: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isInitialized, setIsInitialized] = useState(false)
-  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);   // THÊM
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const router = useRouter();
 
-  // Load user từ localStorage khi reload
+  // Load khi reload trang
   useEffect(() => {
-    const storedUser = localStorage.getItem("user")
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch {
-        localStorage.removeItem("user")
-      }
-    }
-    setIsInitialized(true)
-  }, [])
+    const storedUser = localStorage.getItem("user");
+    const storedToken = localStorage.getItem("token");
 
-  const login = async (email: string, password: string): Promise<void> => {
-    setIsLoading(true)
+    if (storedUser) setUser(JSON.parse(storedUser));
+    if (storedToken) setToken(storedToken);
+
+    setIsInitialized(true);
+  }, []);
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
       const res = await fetch("http://localhost:5000/account/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-      })
+      });
 
-      if (!res.ok) throw new Error(`Server trả về lỗi: ${res.status}`)
+      const data = await res.json();
 
-      const data = await res.json()
-      if (data.success && data.user) {
-        setUser(data.user)
-        localStorage.setItem("user", JSON.stringify(data.user))
-        router.push("/home")
-      } else {
-        alert(data.message || "Sai tài khoản hoặc mật khẩu!")
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Đăng nhập thất bại");
       }
-    } catch (err: any) {
-      console.error("Lỗi đăng nhập:", err)
-      alert(err.message || "Không thể kết nối tới server!")
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
+      // 2 DÒNG QUAN TRỌNG NHẤT – BẮT BUỘC PHẢI CÓ
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      setUser(data.user);
+      router.push("/home");
+    } catch (err: any) {
+      alert(err.message || "Lỗi kết nối server");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const logout = () => {
-    setUser(null)
-    localStorage.removeItem("user")
-    router.push("/")
-  }
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    router.push("/");
+  };
 
   return (
     <AuthContext.Provider
-      value={{ login, logout, user, isLoading, isInitialized }}
+      value={{ login, logout, user, token, isLoading, isInitialized }}
     >
       {children}
     </AuthContext.Provider>
-  )
-}
+  );
+};
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (!context) throw new Error("useAuth must be used within AuthProvider")
-  return context
-}
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth phải dùng trong AuthProvider");
+  return context;
+};
