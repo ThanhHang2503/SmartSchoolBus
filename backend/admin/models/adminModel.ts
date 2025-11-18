@@ -11,8 +11,8 @@ export const getAllAdmins = async () => {
       TK.MaTK
     FROM QuanLy QL
     JOIN TaiKhoan TK 
-      ON QL.MaQL + 10 = TK.MaTK 
-    WHERE TK.VaiTro = 2` 
+      ON QL.MaTK = TK.MaTK
+    WHERE TK.VaiTro = 2`
   );
   return rows;
 };
@@ -27,7 +27,7 @@ export const getAdminById = async (id: number) => {
       TK.TenDangNhap,
       TK.MaTK
     FROM QuanLy QL
-    JOIN TaiKhoan TK ON QL.MaQL + 10 = TK.MaTK
+    JOIN TaiKhoan TK ON QL.MaQL = TK.MaTK
     WHERE QL.MaQL = ? AND TK.VaiTro = 2`,
     [id]
   );

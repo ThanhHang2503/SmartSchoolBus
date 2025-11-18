@@ -15,13 +15,16 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
-import { getAllStudents, IStudent } from "@/api/studentApi"; // import API
+// Đã sửa: Import từ các file API cụ thể đã tạo
+import { getAllParents } from "@/api/parentApi"; 
+import { getAllDrivers } from "@/api/driverApi"; 
 
+// Khai báo lại cấu trúc dữ liệu chung cho Frontend
 type UserType = "driver" | "parent";
 
 type ChatUser = {
-  id: string;
-  name: string;
+  id: string; // ID của người dùng (MaPH/MaTX) dưới dạng string
+  name: string; // Tên hiển thị (ví dụ: "PH: Nguyễn Văn A")
   type: UserType;
 };
 
@@ -41,23 +44,41 @@ const AdminDashboard = () => {
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch students từ backend
+  // =======================================================
+  // Fetch cả Phụ huynh và Tài xế từ backend
+  // =======================================================
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchUsers = async () => {
       try {
-        const students: IStudent[] = await getAllStudents();
-        const parents: ChatUser[] = students.map((s) => ({
-          id: s.id,
-          name: `Phụ huynh học sinh ${s.name}`,
+        // Gọi song song các API backend
+        // Chú ý: Dữ liệu trả về từ API đã được đảm bảo có trường 'id' và 'name' (HoTen)
+        const [parentsData, driversData] = await Promise.all([
+          getAllParents(), 
+          getAllDrivers(), 
+        ]);
+
+        // 1. Chuyển đổi dữ liệu Phụ huynh
+        const parents: ChatUser[] = parentsData.map((p: any) => ({
+          id: p.id.toString(), // Chuyển MaPH (id) sang string
+          name: `PH: ${p.name}`, // p.name là HoTen
           type: "parent",
         }));
-        setChatUsers(parents);
+
+        // 2. Chuyển đổi dữ liệu Tài xế
+        const drivers: ChatUser[] = driversData.map((d: any) => ({
+          id: d.id.toString(), // Chuyển MaTX (id) sang string
+          name: `TX: ${d.name}`, // d.name là HoTen
+          type: "driver",
+        }));
+
+        // 3. Kết hợp và cập nhật state
+        setChatUsers([...parents, ...drivers]);
       } catch (err) {
-        console.error("Lỗi khi lấy danh sách học sinh:", err);
+        console.error("Lỗi khi lấy danh sách người dùng chat:", err);
       }
     };
-    fetchStudents();
-  }, []);
+    fetchUsers();
+  }, []); // Dependency array rỗng đảm bảo chỉ chạy một lần
 
   const sendMessage = () => {
     if (!newMessage.trim() || !activeUser) return;
@@ -113,9 +134,9 @@ const AdminDashboard = () => {
   );
 
   return (
-    <Grid container spacing={2} sx={{ height: "100vh", padding: 2 }}>
+    <Grid spacing={2} sx={{ height: "100vh", padding: 2 }}>
       {/* Sidebar người dùng */}
-      <Grid size={{ xs: 3 }}>
+      <Grid item xs={3}> 
         <Paper sx={{ height: "100%", padding: 2 }}>
           <Typography variant="h6">Danh sách liên hệ</Typography>
           <Divider sx={{ my: 1 }} />
@@ -145,7 +166,7 @@ const AdminDashboard = () => {
       </Grid>
 
       {/* Map placeholder */}
-      <Grid size={{ xs: 5 }}>
+      <Grid item xs={5}>
         <Paper
           sx={{
             height: "100%",
@@ -159,7 +180,7 @@ const AdminDashboard = () => {
       </Grid>
 
       {/* Chat panel */}
-      <Grid size={{ xs: 4 }}>
+      <Grid item xs={4}>
         <Paper
           sx={{
             height: "100%",

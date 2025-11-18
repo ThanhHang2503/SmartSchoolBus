@@ -17,6 +17,8 @@
     "parent/**/*.ts",
     "admin/**/*.ts",
     "driver/**/*.ts",
+    "stats/**/*.ts",
+    "route/**/*.ts",
     "*.ts"
   ],
   "exclude": ["node_modules"]

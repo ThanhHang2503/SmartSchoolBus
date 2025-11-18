@@ -3,10 +3,11 @@ import cors from "cors";
 import express from "express";
 import accountRoutes from "./account/routes/accountRoutes";
 import adminRoutes from "./admin/routes/adminRoutes";
+import statsRoutes from "./stats/routes/statsRoutes";
 import busRoutes from "./bus/routes/busRoutes";
+import routeRoutes from "./route/routes/routeRoutes";
 import driverRoutes from "./driver/routes/driverRoutes";
-import parenttRoutes from "./parent/routes/parentRoutes";
-// import routerRoutes from "./route/routes/routeRoutes";
+import parentRoutes from "./parent/routes/parentRoutes";
 import studentRoutes from "./student/routes/studentRoutes";
 // import Layout from './../frontend/src/components/Layout';
 
@@ -34,7 +35,12 @@ app.use("/admin", adminRoutes);
 app.use("/driver", driverRoutes);
 
 //PHU HUYNH
-app.use("/parent", parenttRoutes);
+app.use("/parent", parentRoutes);
+
+app.use("/stats", statsRoutes);
+
+//TUYEN DUONG
+app.use("/route", routeRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

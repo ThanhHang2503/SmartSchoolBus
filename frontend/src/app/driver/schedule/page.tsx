@@ -85,7 +85,7 @@ export default function SchedulePage() {
         <ToggleButton value="month">Tháng</ToggleButton>
       </ToggleButtonGroup>
 
-      <Grid container spacing={2}>
+      <Grid spacing={2}>
         {/* Cột trái: Lịch */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ p: 1 }}>

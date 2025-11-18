@@ -95,7 +95,7 @@ export default function MapAndStudentPage() {
       </Typography>
 
       {/* ✅ Khu vực bản đồ và cảnh báo (2 cột) */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid spacing={3} sx={{ mb: 4 }}>
         {/* Cột trái: Bản đồ */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Box
@@ -267,7 +267,7 @@ export default function MapAndStudentPage() {
         <DialogTitle>Thông tin học sinh</DialogTitle>
         <DialogContent dividers>
           {selectedStudent && (
-            <Grid container spacing={2}>
+            <Grid spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography>
                   <strong>Họ tên:</strong> {selectedStudent.name}
