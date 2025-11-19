@@ -3,7 +3,6 @@
 import MyMap from "@/components/Map";
 
 import React, { useState } from "react";
-import Map from "@/compoments/Map";
 import {
   Alert,
   Box,
