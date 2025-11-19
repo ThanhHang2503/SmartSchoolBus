@@ -7,3 +7,8 @@ export const pool = mysql.createPool({
   database: "SSB",
   port: 3306,
 });
+
+//Kiểm tra kết nối
+pool.query("SELECT DATABASE()").then(([rows]) => {
+  console.log("Connected to DB:", rows);
+});
