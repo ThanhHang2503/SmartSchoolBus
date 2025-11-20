@@ -1,8 +1,11 @@
+import type { Request, Response } from 'express';
+import { asyncHandler } from '../../middlewares/asyncHandler.js';
+import { ResponseHandler } from '../../utils/responseHandler.js';
+import * as notificationModel from '../Models/notificationModel.js';
+import { getIO } from '../../config/socket.js';
 import dotenv from 'dotenv';
-import sgMail from '@sendgrid/mail'; // <-- Import thư viện SendGrid
+import sgMail from '@sendgrid/mail';
 
-
-// Load biến môi trường từ file .env
 dotenv.config();
 // Định nghĩa kiểu dữ liệu cho một email
 interface EmailOptions {
@@ -74,3 +77,70 @@ class EmailService {
 
 // Xuất ra một instance duy nhất (Singleton Pattern)
 export const emailService = new EmailService();
+
+// ==================== NOTIFICATION CONTROLLERS ====================
+
+// Lấy tất cả thông báo
+export const getAllNotifications = asyncHandler(async (req: Request, res: Response) => {
+  const notifications = await notificationModel.getAllNotifications();
+  ResponseHandler.success(res, notifications, 'Lấy danh sách thông báo thành công');
+});
+
+// Lấy thông báo theo tài khoản
+export const getNotificationsByAccount = asyncHandler(async (req: Request, res: Response) => {
+  const maTK = parseInt(req.params.maTK!);
+  const notifications = await notificationModel.getNotificationsByAccount(maTK);
+  ResponseHandler.success(res, notifications, 'Lấy thông báo thành công');
+});
+
+// Tạo và gửi thông báo REALTIME 🚀
+export const createAndSendNotification = asyncHandler(async (req: Request, res: Response) => {
+  const { NoiDung, LoaiTB, recipients, role } = req.body;
+
+  if (!NoiDung || !LoaiTB) {
+    return ResponseHandler.badRequest(res, 'Thiếu thông tin bắt buộc');
+  }
+
+  // Tạo thông báo trong database
+  const maTB = await notificationModel.createNotification({ NoiDung, LoaiTB });
+
+  // Gửi đến người nhận trong database
+  if (recipients && Array.isArray(recipients)) {
+    await notificationModel.sendNotificationToAccounts(maTB, recipients);
+  } else if (role) {
+    await notificationModel.sendNotificationByRole(maTB, role);
+  }
+
+  // 🚀 GỬI THÔNG BÁO REALTIME QUA SOCKET.IO
+  const io = getIO();
+  const notification = {
+    MaTB: maTB,
+    NoiDung,
+    LoaiTB,
+    ThoiGian: new Date()
+  };
+
+  if (recipients && Array.isArray(recipients)) {
+    // Gửi đến từng người dùng cụ thể
+    recipients.forEach(maTK => {
+      io.to(`user_${maTK}`).emit('notification', notification);
+    });
+  } else if (role) {
+    // Broadcast theo role (1=PhuHuynh, 2=QuanLy, 3=TaiXe)
+    io.to(`role_${role}`).emit('notification', notification);
+  }
+
+  ResponseHandler.success(res, { MaTB: maTB }, '🚀 Đã gửi thông báo realtime!', 201);
+});
+
+// Xóa thông báo
+export const deleteNotification = asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id!);
+  const deleted = await notificationModel.deleteNotification(id);
+
+  if (!deleted) {
+    return ResponseHandler.notFound(res, 'Không tìm thấy thông báo');
+  }
+
+  ResponseHandler.success(res, null, 'Xóa thông báo thành công');
+});

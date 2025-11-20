@@ -14,12 +14,14 @@
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
     "@mui/x-date-pickers": "^8.14.1",
+    "@types/leaflet-routing-machine": "^3.2.9",
     "axios": "^1.13.2",
     "cors": "^2.8.5",
     "dayjs": "^1.11.18",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.23.24",
     "leaflet": "^1.9.4",
+    "leaflet-routing-machine": "^3.2.12",
     "lucide-react": "^0.546.0",
     "next": "^15.5.4",
     "react": "^19.2.0",
@@ -28,7 +30,8 @@
     "react-leaflet": "^5.0.0",
     "react-slick": "^0.31.0",
     "recharts": "^3.3.0",
-    "slick-carousel": "^1.8.1"
+    "slick-carousel": "^1.8.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

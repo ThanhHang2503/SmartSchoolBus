@@ -18,7 +18,7 @@ export default function HomePage() {
     arrows: false,
     fade: true,
     pauseOnHover: false,
-    adaptiveHeight: false, // QUAN TRỌNG: tránh lỗi chiều cao
+    adaptiveHeight: false, 
   };
 
   const images = ["/image/pic1.jpg", "/image/pic2.jpg"];
@@ -112,7 +112,7 @@ export default function HomePage() {
             variant="h5"
             sx={{
               mt: { xs: 1, sm: 2 },
-              fontWeight: 300,
+fontWeight: 300,
               letterSpacing: "1px",
               textShadow: "0 3px 10px rgba(0,0,0,0.5)",
               fontFamily: "'Poppins', sans-serif",

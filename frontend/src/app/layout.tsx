@@ -1,6 +1,7 @@
 // app/layout.tsx
 import Layout from '@/components/Layout';
 import { AuthProvider } from '@/context/AuthContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 import './globals.css';
 
 export default function RootLayout({
@@ -12,7 +13,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          <Layout>{children}</Layout>
+          <NotificationProvider>
+            <Layout>{children}</Layout>
+          </NotificationProvider>
         </AuthProvider>
       </body>
     </html>

@@ -1,57 +1,38 @@
-export interface ILocation {
-  lat: number;
-  lng: number;
-  address?: string;
-  timestamp?: string;
-}
+// backend/bus/busModel.ts
+import { pool } from "../../config/database.js";
 
-export interface IBus {
-  id: string;
-  plateNumber: string;
-  capacity: number;
-  status: string;
-  location?: ILocation | null;
-}
+// Lấy tất cả Xe Bus, JOIN với Quản lý
+export const getAllBuses = async () => {
+  const [rows]: any = await pool.query(
+    `SELECT 
+      XB.MaXe AS id, 
+      XB.BienSo, 
+      XB.SoCho, 
+      XB.TinhTrang,
+      QL.HoTen AS TenQuanLy
+    FROM XeBus XB
+    JOIN QuanLy QL ON XB.MaQL = QL.MaQL`
+  );
+  return rows;
+};
 
-export default class Bus implements IBus {
-  id: string;
-  plateNumber: string;
-  capacity: number;
-  status: string;
-  location?: ILocation | null;
-
-  constructor({
-    id,
-    plateNumber,
-    capacity,
-    status = "idle",
-    location = null,
-  }: Partial<IBus> & { id: string; plateNumber: string; capacity: number }) {
-    this.id = id;
-    this.plateNumber = plateNumber;
-    this.capacity = capacity;
-    this.status = status;
-    this.location = location;
-  }
-
-  updateLocation(location: ILocation) {
-    this.location = {
-      ...location,
-      timestamp: location.timestamp || new Date().toISOString(),
-    };
-  }
-
-  setStatus(status: string) {
-    this.status = status;
-  }
-
-  toJSON() {
-    return {
-      id: this.id,
-      plateNumber: this.plateNumber,
-      capacity: this.capacity,
-      status: this.status,
-      location: this.location,
-    };
-  }
-}
+// Lấy lịch trình hôm nay, JOIN với Tài xế, Xe Bus, Tuyến đường
+export const getTodaySchedules = async () => {
+    const [rows]: any = await pool.query(
+        `SELECT
+            LT.MaLT AS id,
+            LT.Ngay,
+            LT.GioBatDau,
+            LT.GioKetThuc,
+            TX.HoTen AS TenTaiXe,
+            XB.BienSo,
+            TD.NoiBatDau,
+            TD.NoiKetThuc
+        FROM LichTrinh LT
+        JOIN TaiXe TX ON LT.MaTX = TX.MaTX
+        JOIN XeBus XB ON LT.MaXe = XB.MaXe
+        JOIN TuyenDuong TD ON LT.MaTD = TD.MaTD
+        WHERE LT.Ngay = CURDATE()` // Lấy lịch trình cho ngày hiện tại
+    );
+    return rows;
+};

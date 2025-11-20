@@ -20,12 +20,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   }, [user, pathname, router, isInitialized]);
 
-  // Chưa load xong → loading
+  // Chưa load xong → loading (suppress hydration warning)
   if (!isInitialized) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div suppressHydrationWarning style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         Loading...
-      </Box>
+      </div>
     );
   }
 
@@ -59,9 +59,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           component="main"
           sx={{
             flex: 1,
-            overflow: 'hidden',
+            overflow: 'auto',           // Cho phép cuộn ở mọi trang
             position: 'relative',
             backgroundColor: '#fff',
+            p: { xs: 1, sm: 2 },
           }}
         >
           {children}
