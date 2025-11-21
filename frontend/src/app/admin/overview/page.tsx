@@ -60,8 +60,9 @@ const Dashboard: React.FC = () => {
         });
         setTripData(normalizedTrips);
 
-        const activeCount = buses.filter((b: IBus) => b.status === "active").length;
-        const maintenanceCount = buses.filter((b: IBus) => b.status === "maintenance").length;
+        const activeCount = buses.filter((b: IBus) => b.TinhTrang === 1).length;
+        const maintenanceCount = buses.filter((b: IBus) => b.TinhTrang === 0).length;
+
         setBusStatus([
           { name: "Đang hoạt động", value: activeCount },
           { name: "Bảo trì", value: maintenanceCount },

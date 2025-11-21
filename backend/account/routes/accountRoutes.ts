@@ -1,34 +1,43 @@
-// backend/account/routes/accountRoutes.ts
-import express from "express"
-import { pool, findUserByCredentials } from "../models/accountModel"
+import express from "express";
+import { login } from "../controllers/accountController";
+import { pool } from "../models/accountModel";
+import { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 
-const router = express.Router()
+const router = express.Router();
 
-// 📌 GET /account → Lấy toàn bộ user từ DB
+// POST /account/login → login với JWT
+router.post("/login", login);
+
+// GET /account → lấy tất cả tài khoản
 router.get("/", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT MaTK AS id, TenDangNhap AS email, VaiTro FROM TaiKhoan")
-    res.json(rows)
+    const [rows] = await pool.query<RowDataPacket[]>(
+      "SELECT MaTK AS id, TenDangNhap AS email, VaiTro FROM TaiKhoan"
+    );
+    res.json(rows);
   } catch (err) {
-    console.error("Lỗi khi lấy danh sách tài khoản:", err)
-    res.status(500).json({ message: "Lỗi server" })
+    console.error("Lỗi khi lấy danh sách tài khoản:", err);
+    res.status(500).json({ message: "Lỗi server" });
   }
-})
+});
 
-// 📌 POST /account/login → Kiểm tra đăng nhập
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body
+// GET /account/:id → lấy tài khoản theo id
+router.get("/:id", async (req, res) => {
+  const id = req.params.id;
   try {
-    const user = await findUserByCredentials(email, password)
-    if (user) {
-      res.json({ success: true, user })
-    } else {
-      res.json({ success: false, message: "Sai email hoặc mật khẩu" })
-    }
-  } catch (err) {
-    console.error("Lỗi đăng nhập:", err)
-    res.status(500).json({ message: "Lỗi server" })
-  }
-})
+    const [rows] = await pool.query<RowDataPacket[]>(
+      "SELECT MaTK AS id, TenDangNhap AS email, VaiTro FROM TaiKhoan WHERE MaTK = ?",
+      [id]
+    );
 
-export default router
+    if (rows.length === 0)
+      return res.status(404).json({ message: "Không tìm thấy tài khoản" });
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Lỗi khi lấy tài khoản:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+});
+
+export default router;

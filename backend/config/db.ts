@@ -6,3 +6,9 @@ export const pool = mysql.createPool({
   database: "SSB",
   port: 3306,
 });
+
+// Hàm thực hiện query
+export const executeQuery = async (query: string, params: any[] = []) => {
+  const [rows] = await pool.execute(query, params);
+  return rows;
+};

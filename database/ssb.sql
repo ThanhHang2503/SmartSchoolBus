@@ -240,7 +240,9 @@ INSERT INTO QuanLy (MaQL, HoTen, SoDienThoai, TrangThai) VALUES
 INSERT INTO XeBus (MaXe, BienSo, SoCho, TinhTrang, MaQL) VALUES
 (1,'51B-12345',40,1,1),
 (2,'51B-54321',35,1,2),
-(3,'51B-67890',45,1,3);
+(3,'51B-67890',45,1,3),
+(4,'51A-28690',40,0,1),
+(5,'60H-28651',24,0,3);
 
 -- ======================
 -- Tài xế

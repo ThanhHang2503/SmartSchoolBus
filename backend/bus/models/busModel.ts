@@ -36,3 +36,15 @@ export const getTodaySchedules = async () => {
     );
     return rows;
 };
+
+export const insertSchedule = async ({ Ngay, GioBatDau, GioKetThuc, MaTX, MaXe, MaTD }: any) => {
+  const [result] = await pool.query(
+    "INSERT INTO LichTrinh (Ngay, GioBatDau, GioKetThuc, MaTX, MaXe, MaTD) VALUES (?, ?, ?, ?, ?, ?)",
+    [Ngay, GioBatDau, GioKetThuc, MaTX, MaXe, MaTD]
+  );
+  return { id: (result as any).insertId, Ngay, GioBatDau, GioKetThuc, MaTX, MaXe, MaTD };
+};
+
+export const removeSchedule = async (id: number) => {
+  await pool.query("DELETE FROM LichTrinh WHERE id = ?", [id]);
+};

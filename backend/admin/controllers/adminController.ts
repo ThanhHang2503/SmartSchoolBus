@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getAllAdmins, getAdminById } from "../models/adminModel";
+import { getAllAdmins, getAdminById, getAdminByUsernameModel } from "../models/adminModel";
 
 export const getAdmins = async (req: Request, res: Response) => {
   try {
@@ -18,6 +18,20 @@ export const getAdmin = async (req: Request, res: Response) => {
     res.json(admin);
   } catch (err) {
     console.error("Lỗi khi lấy thông tin quản lý:", err);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+};
+
+
+export const getAdminByUsername = async (req: Request, res: Response) => {
+  const { username } = req.params;
+
+  try {
+    const admin = await getAdminByUsernameModel(username);
+    if (!admin) return res.status(404).json({ message: "Không tìm thấy admin" });
+    res.json(admin);
+  } catch (err) {
+    console.error("Lỗi khi lấy admin theo username:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
