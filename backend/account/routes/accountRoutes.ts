@@ -1,4 +1,5 @@
 import express from "express";
+
 import { login } from "../controllers/accountController";
 import { pool } from "../models/accountModel";
 import { RowDataPacket, ResultSetHeader } from "mysql2/promise";

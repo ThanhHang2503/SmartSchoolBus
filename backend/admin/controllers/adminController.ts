@@ -1,37 +1,21 @@
 import { Request, Response } from "express";
-import { getAllAdmins, getAdminById, getAdminByUsernameModel } from "../models/adminModel";
+import { getAdminByMaTK } from "../models/adminModel";
 
-export const getAdmins = async (req: Request, res: Response) => {
+// Lấy thông tin admin hiện tại từ token
+export const getCurrentAdmin = async (req: Request, res: Response) => {
   try {
-    const admins = await getAllAdmins(); // Đổi managers thành admins
-    res.json(admins);
-  } catch (err) {
-    console.error("Lỗi khi lấy danh sách quản lý:", err);
-    res.status(500).json({ message: "Lỗi máy chủ" }); // Đổi Lỗi server thành Lỗi máy chủ
-  }
-};
+    const user = (req as any).user; // middleware auth sẽ gắn user từ token
 
-export const getAdmin = async (req: Request, res: Response) => {
-  try {
-    const admin = await getAdminById(Number(req.params.id));
-    if (!admin) return res.status(404).json({ message: "Không tìm thấy quản lý này" }); // Thêm "này"
+    if (!user) {
+      return res.status(401).json({ message: "Chưa đăng nhập" });
+    }
+
+    const admin = await getAdminByMaTK(user.userId); // userId từ token
+    if (!admin) return res.status(404).json({ message: "Không tìm thấy admin này" });
+
     res.json(admin);
   } catch (err) {
-    console.error("Lỗi khi lấy thông tin quản lý:", err);
-    res.status(500).json({ message: "Lỗi máy chủ" });
-  }
-};
-
-
-export const getAdminByUsername = async (req: Request, res: Response) => {
-  const { username } = req.params;
-
-  try {
-    const admin = await getAdminByUsernameModel(username);
-    if (!admin) return res.status(404).json({ message: "Không tìm thấy admin" });
-    res.json(admin);
-  } catch (err) {
-    console.error("Lỗi khi lấy admin theo username:", err);
-    res.status(500).json({ message: "Lỗi máy chủ" });
+    console.error("Lỗi khi lấy thông tin admin:", err);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };

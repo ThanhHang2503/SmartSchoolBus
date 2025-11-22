@@ -19,6 +19,7 @@
     "driver/**/*.ts",
     "stats/**/*.ts",
     "route/**/*.ts",
+    "backend/**/*.ts",
     "*.ts"
   ],
   "exclude": ["node_modules"]
