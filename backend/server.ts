@@ -1,22 +1,21 @@
-import bodyParser from "body-parser";
 import cors from "cors";
 import express from "express";
 import accountRoutes from "./account/routes/accountRoutes";
 import adminRoutes from "./admin/routes/adminRoutes";
-import statsRoutes from "./stats/routes/statsRoutes";
 import busRoutes from "./bus/routes/busRoutes";
-import routeRoutes from "./route/routes/routeRoutes";
 import driverRoutes from "./driver/routes/driverRoutes";
+import noticeRoutes from "./notice/routes/noticeRoutes";
 import parentRoutes from "./parent/routes/parentRoutes";
+import routeRoutes from "./route/routes/routeRoutes";
+import statsRoutes from "./stats/routes/statsRoutes";
 import studentRoutes from "./student/routes/studentRoutes";
-// import Layout from './../frontend/src/components/Layout';
 
 const app = express();
 
 app.use(
   cors({
     origin: "http://localhost:3000",
-    methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
@@ -39,14 +38,17 @@ app.use("/driver", driverRoutes);
 //PHU HUYNH
 app.use("/parent", parentRoutes);
 
+//LAY SO CHUYEN
 app.use("/stats", statsRoutes);
 
 //TUYEN DUONG
 app.use("/route", routeRoutes);
 
+//thong bao
+app.use("/notice", noticeRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`SSB 1.0 Backend đang chạy tại http://localhost:${PORT}`);
-  
 });

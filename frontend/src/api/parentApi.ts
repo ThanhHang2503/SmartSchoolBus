@@ -23,4 +23,3 @@ export const getAllParents = async (): Promise<IParentDetail[]> => {
   return data;
 };
 
-// Bạn có thể thêm các hàm API khác ở đây nếu cần (ví dụ: getAllDrivers)

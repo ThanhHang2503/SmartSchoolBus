@@ -14,14 +14,15 @@ CREATE TABLE TaiKhoan (
 CREATE TABLE ThongBao (
     MaTB INT AUTO_INCREMENT PRIMARY KEY,
     NoiDung TEXT NOT NULL,
-    LoaiTB VARCHAR(50)
+    NgayTao DATE NOT NULL DEFAULT CURDATE(),
+    GioTao TIME NOT NULL DEFAULT CURTIME()
 );
 
 -- Chi tiết thông báo 
 CREATE TABLE CTTB (
     MaTK INT,
     MaTB INT,
-    ThoiGian DATETIME NOT NULL,   
+    ThoiGian DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,   
     PRIMARY KEY (MaTK, MaTB),
     FOREIGN KEY (MaTK) REFERENCES TaiKhoan(MaTK),
     FOREIGN KEY (MaTB) REFERENCES ThongBao(MaTB)
@@ -143,10 +144,9 @@ ALTER TABLE QuanLy
 ADD CONSTRAINT FK_QuanLy_TaiKhoan
 FOREIGN KEY (MaTK) REFERENCES TaiKhoan(MaTK);
 
-UPDATE TaiXe TX
-JOIN TaiKhoan TK ON TX.MaTX + 13 = TK.MaTK -- Đã sửa lại logic +13
-SET TX.MaTK = TK.MaTK
-WHERE TK.VaiTro = 3;
+UPDATE TaiXe 
+SET MaTK = MaTX + 13 
+WHERE MaTX IN (1,2,3);
 
 UPDATE PhuHuynh PH
 JOIN TaiKhoan TK ON PH.MaPH = TK.MaTK
@@ -156,6 +156,25 @@ WHERE TK.VaiTro = 1;
 ALTER TABLE PhuHuynh
 ADD CONSTRAINT FK_PhuHuynh_TaiKhoan
 FOREIGN KEY (MaTK) REFERENCES TaiKhoan(MaTK);
+
+-- lay thong bao cho phu huynh
+SELECT PH.HoTen, PH.SoDienThoai, TB.NoiDung, CTTB.ThoiGian
+FROM CTTB
+JOIN TaiKhoan TK ON CTTB.MaTK = TK.MaTK
+JOIN PhuHuynh PH ON TK.MaTK = PH.MaTK
+JOIN ThongBao TB ON CTTB.MaTB = TB.MaTB;
+
+-- lay tbao cho tai xe
+SELECT TX.HoTen, TX.SoDienThoai, TB.NoiDung, CTTB.ThoiGian
+FROM CTTB
+JOIN TaiKhoan TK ON CTTB.MaTK = TK.MaTK
+JOIN TaiXe TX ON TK.MaTK = TX.MaTK
+JOIN ThongBao TB ON CTTB.MaTB = TB.MaTB;
+
+
+-- lay de gui thong bao cho dung
+ALTER TABLE TaiXe ADD COLUMN Active TINYINT(1) DEFAULT 1;
+ALTER TABLE PhuHuynh ADD COLUMN Active TINYINT(1) DEFAULT 1;
 
 
 
@@ -256,11 +275,14 @@ INSERT INTO TaiXe (MaTX, HoTen, SoDienThoai, BangLai, TrangThai) VALUES
 -- Thông báo
 -- ======================
 
-INSERT INTO ThongBao (MaTB, NoiDung, LoaiTB) VALUES
-(1, 'Xe bus tuyến 1 trễ 10 phút do tắc đường', 'Xe trễ'),
-(2, 'Xe bus tuyến 2 gặp sự cố kỹ thuật, tạm dừng hoạt động', 'Sự cố'),
-(3, 'Thông báo khác: Học sinh nghỉ học hôm nay theo yêu cầu phụ huynh', 'Khác');
+INSERT INTO ThongBao (NoiDung) VALUES
+('Xe bus tuyến 1 trễ 10 phút do tắc đường'),
+('Xe bus tuyến 2 gặp sự cố kỹ thuật, tạm dừng hoạt động'),
+('Học sinh nghỉ học hôm nay theo yêu cầu phụ huynh');
 
+-- thông báo cho phụ huynh / tài xế
+INSERT INTO CTTB (MaTK, MaTB) VALUES
+(1,1),(2,1),(3,2),(14,2),(1,3),(15,3);
 -- ======================
 -- Tuyến đường
 -- ======================

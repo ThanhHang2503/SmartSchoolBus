@@ -4,14 +4,16 @@ import { pool } from "../../config/db";
 // Lấy tất cả Phụ huynh, JOIN với TaiKhoan để lấy TenDangNhap
 export const getAllParents = async () => {
   const [rows]: any = await pool.query(
-    `SELECT 
-      PH.MaPH AS id, 
-      PH.HoTen AS name,
-      PH.SoDienThoai,
-      TK.TenDangNhap
-    FROM PhuHuynh PH
-    JOIN TaiKhoan TK ON PH.MaTK = TK.MaTK 
-    WHERE TK.VaiTro = 1` // VaiTro = 1 là Phụ huynh
+    `SELECT
+       PH.MaPH,
+       PH.HoTen,
+       PH.SoDienThoai,
+       PH.Active,
+       TK.MaTK,
+       TK.TenDangNhap
+     FROM PhuHuynh PH
+     JOIN TaiKhoan TK ON PH.MaTK = TK.MaTK
+     WHERE PH.Active = 1 AND TK.VaiTro = 1`
   );
   return rows;
 };
