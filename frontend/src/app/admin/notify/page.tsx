@@ -182,8 +182,8 @@ const AdminNotifyPage = () => {
       }
 
       setContent("")
-      setSelectedUser(null)
-      setSuccess(true)
+    //   setSelectedUser(null)
+    //   setSuccess(true)
     } catch (err: any) {
       console.error("Lỗi gửi:", err)
       setError(err.message || "Gửi thất bại. Vui lòng thử lại.")
@@ -271,9 +271,18 @@ const AdminNotifyPage = () => {
         </Fade>
 
         {/* Main Grid */}
-        <Grid container spacing={3} sx={{ maxWidth: 1200, mx: "auto" }}>
+        <Grid
+            container
+            spacing={4}
+            sx={{
+                maxWidth: 2000,
+                mx: "auto",
+                px: 2,
+                justifyContent: "center",
+            }}
+        >
           {/* Form Panel */}
-          <Grid item xs={12} md={5}>
+          <Grid item xs={12} md={7}>
             <Paper
               sx={{
                 background: "#ffffff",
