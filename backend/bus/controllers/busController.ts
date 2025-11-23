@@ -34,33 +34,24 @@ export const createSchedule = async (req: Request, res: Response) => {
   }
 
   try {
-    // 1. Kiểm tra trùng
+    // 1. Kiểm tra trùng giờ (chỉ tài xế + xe)
     const existing = await executeQuery(
       `SELECT * FROM LichTrinh
-       WHERE Ngay = ? AND MaTX = ? AND MaXe = ? AND MaTD = ?
+       WHERE Ngay = ? AND (MaTX = ? OR MaXe = ?)
        AND (
            (GioBatDau <= ? AND GioKetThuc >= ?) OR
            (GioBatDau <= ? AND GioKetThuc >= ?)
        )`,
-      [
-        Ngay,
-        MaTX,
-        MaXe,
-        MaTD,
-        GioBatDau,
-        GioBatDau, // check đầu của lịch mới có trong khoảng lịch cũ
-        GioKetThuc,
-        GioKetThuc, // check cuối của lịch mới có trong khoảng lịch cũ
-      ]
+      [Ngay, MaTX, MaXe, GioBatDau, GioBatDau, GioKetThuc, GioKetThuc]
     );
 
     if (existing.length > 0) {
       return res
         .status(409)
-        .json({ message: "Lịch trình này trùng giờ với lịch hiện có" });
+        .json({ message: "Xe hoặc tài xế đã có lịch trùng giờ trong ngày" });
     }
 
-    // 2. Nếu chưa trùng -> insert
+    // 2. Insert nếu không trùng
     const result = await executeQuery(
       "INSERT INTO LichTrinh (Ngay, GioBatDau, GioKetThuc, MaTX, MaXe, MaTD) VALUES (?, ?, ?, ?, ?, ?)",
       [Ngay, GioBatDau, GioKetThuc, MaTX, MaXe, MaTD]
@@ -89,5 +80,3 @@ export const deleteSchedule = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Lỗi máy chủ", error: err });
   }
 };
-
-
