@@ -1,3 +1,5 @@
+// backend/account/models/accountModel.ts
+
 import { pool } from "../../config/db";
 
 export const findUserByCredentials = async (email: string, password: string) => {

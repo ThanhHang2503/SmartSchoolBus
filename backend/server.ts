@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+
 import accountRoutes from "./account/routes/accountRoutes";
 import adminRoutes from "./admin/routes/adminRoutes";
 import busRoutes from "./bus/routes/busRoutes";
@@ -23,17 +24,17 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/buses", busRoutes);
-app.use("/students", studentRoutes);
 
-//TAI KHOAN
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
+
+// ĐĂNG KÝ CÁC ROUTE
 app.use("/account", accountRoutes);
-
-//QUAN LY
 app.use("/admin", adminRoutes);
-
-//TAI XE
+app.use("/buses", busRoutes);
 app.use("/driver", driverRoutes);
+app.use("/parent", parentRoutes);
+app.use("/students", studentRoutes);
 
 //PHU HUYNH
 app.use("/parent", parentRoutes);
