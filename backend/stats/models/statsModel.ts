@@ -1,34 +1,57 @@
-// backend/admin/models/statsModel.ts
+import { pool } from "../../config/db"
 
-import { pool } from "../../config/db";
+export interface ITripMonthlyData {
+  month: number
+  trips: number
+}
 
-// Hàm lấy số chuyến xe (LichTrinh) theo ngày trong tuần (7 ngày gần nhất)
-export const getTripsPerDayOfWeek = async () => {
-  const [rows]: any = await pool.query(
-    `SELECT
-      -- Chuyển đổi DAYOFWEEK (1=CN, 2=T2, ..., 7=T7) thành thứ tự 1=T2, 2=T3, ..., 7=CN
-      CASE DAYOFWEEK(Ngay)
-        WHEN 1 THEN 7  -- Chủ Nhật = 7
-        ELSE DAYOFWEEK(Ngay) - 1 -- Thứ 2 = 1, Thứ 3 = 2, ...
-      END AS day_order,
-      
-      -- Tên ngày hiển thị
-      CASE DAYOFWEEK(Ngay)
-        WHEN 2 THEN 'T2'
-        WHEN 3 THEN 'T3'
-        WHEN 4 THEN 'T4'
-        WHEN 5 THEN 'T5'
-        WHEN 6 THEN 'T6'
-        WHEN 7 THEN 'T7'
-        WHEN 1 THEN 'CN'
-      END AS day,
-      
-      COUNT(*) AS trips
-    FROM LichTrinh
-    -- THÊM ĐIỀU KIỆN LỌC: Chỉ lấy lịch trình trong 7 ngày gần nhất (từ 7 ngày trước đến hôm nay)
-    WHERE Ngay >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND Ngay <= CURDATE()
-    GROUP BY day_order, day
-    ORDER BY day_order;`
-  );
-  return rows;
-};
+// Hàm lấy thống kê chuyến xe theo 12 tháng của năm
+export const getTripsMonthly = async (yearStr?: string): Promise<ITripMonthlyData[]> => {
+  try {
+    // yearStr format: "2025" hoặc null/undefined → lấy năm hiện tại
+    let targetYear = yearStr
+    if (!targetYear) {
+      const now = new Date()
+      targetYear = String(now.getFullYear())
+    }
+
+    console.log(`[Backend] Getting stats for year: ${targetYear}`)
+
+    // Dựa trên file mẫu bạn cung cấp, project đang dùng thư viện mysql2/promise
+    const [rows]: any = await pool.query(
+      `SELECT 
+        MONTH(Ngay) as month, 
+        COUNT(*) as trips
+      FROM LichTrinh
+      WHERE YEAR(Ngay) = ?
+      GROUP BY MONTH(Ngay)
+      ORDER BY month ASC`,
+      [targetYear],
+    )
+
+    console.log(`[Backend] Found ${Array.isArray(rows) ? rows.length : 0} rows`)
+
+    // Tạo mảng đủ 12 tháng (mặc định 0 chuyến)
+    const fullYearData: ITripMonthlyData[] = Array.from({ length: 12 }, (_, i) => ({
+      month: i + 1, // Tháng 1 đến 12
+      trips: 0,
+    }))
+
+    // Map dữ liệu từ DB vào mảng đủ 12 tháng
+    if (Array.isArray(rows)) {
+      rows.forEach((row: any) => {
+        // row.month trả về 1-12
+        const index = Number(row.month) - 1
+        if (fullYearData[index]) {
+          fullYearData[index].trips = Number(row.trips)
+        }
+      })
+    }
+
+    return fullYearData
+  } catch (error) {
+    console.error("[Backend] Error in getTripsMonthly:", error)
+    // Trả về mảng rỗng thay vì crash
+    return Array.from({ length: 12 }, (_, i) => ({ month: i + 1, trips: 0 }))
+  }
+}

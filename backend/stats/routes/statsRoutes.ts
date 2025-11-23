@@ -1,9 +1,9 @@
-// backend/stats/routes/statsRoutes.ts
-import express from "express";
-import { getTripsPerDay } from "../controllers/statsController";
+import express from "express"
+import { getTripsMonthlyController } from "../controllers/statsController"
 
-const router = express.Router();
+const router = express.Router()
 
-router.get("/trips-per-day", getTripsPerDay);
+// Định nghĩa route lấy thống kê theo tháng
+router.get("/trips-monthly", getTripsMonthlyController)
 
-export default router;
+export default router
