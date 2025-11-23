@@ -13,7 +13,6 @@ import {
   MenuItem,
   Select,
   CircularProgress,
-  Alert,
   Chip,
   Container,
   LinearProgress,
@@ -21,11 +20,8 @@ import {
 } from "@mui/material"
 import { useEffect, useState } from "react"
 import SendIcon from "@mui/icons-material/Send"
-import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive"
 import HistoryIcon from "@mui/icons-material/History"
 import PeopleIcon from "@mui/icons-material/People"
-import ErrorIcon from "@mui/icons-material/Error"
-import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 
 import { getAllParents } from "@/api/parentApi"
 import { getAllDrivers } from "@/api/driverApi"
@@ -182,8 +178,8 @@ const AdminNotifyPage = () => {
       }
 
       setContent("")
-    //   setSelectedUser(null)
-    //   setSuccess(true)
+      //   setSelectedUser(null)
+      //   setSuccess(true)
     } catch (err: any) {
       console.error("Lỗi gửi:", err)
       setError(err.message || "Gửi thất bại. Vui lòng thử lại.")
@@ -204,101 +200,31 @@ const AdminNotifyPage = () => {
         backgroundColor: "#f8fafc",
       }}
     >
-      {/* Header */}
-      <Box
-        sx={{
-          background: "linear-gradient(180deg, #3b82f6 0%, #1e3a8a 100%)",
-          backdropFilter: "blur(10px)",
-          borderBottom: "2px solid #dbeafe",
-          py: 3,
-          mb: 4,
-          sticky: 0,
-          zIndex: 50,
-        }}
-      >
-        <Container maxWidth="lg">
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Box
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: 3,
-                background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 20px 25px -5px rgba(59, 130, 246, 0.3)",
-              }}
-            >
-              <NotificationsActiveIcon sx={{ color: "white", fontSize: 28 }} />
-            </Box>
-            <Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: "#ffffff",
-                }}
-              >
-                Quản lý thông báo
-              </Typography>
-              <Typography variant="caption" sx={{ color: "#dbeafe", mt: 0.5 }}>
-                Gửi thông báo trực tiếp đến tài xế và phụ huynh
-              </Typography>
-            </Box>
-          </Box>
-        </Container>
-      </Box>
-
-      <Container maxWidth="lg">
-        {/* Success Alert */}
-        <Fade in={success}>
-          <Box sx={{ mb: 3 }}>
-            <Alert
-              icon={<CheckCircleIcon />}
-              severity="success"
-              sx={{
-                background: "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%)",
-                border: "1px solid rgba(34, 197, 94, 0.3)",
-                color: "#16a34a",
-                fontWeight: 500,
-                borderRadius: 2,
-              }}
-            >
-              Gửi thông báo thành công! ✨
-            </Alert>
-          </Box>
-        </Fade>
-
-        {/* Main Grid */}
+      <Container maxWidth="xl">
+        {/* Main Grid - Adjusted layout for larger panels */}
         <Grid
-            container
-            spacing={4}
-            sx={{
-                maxWidth: 2000,
-                mx: "auto",
-                px: 2,
-                justifyContent: "center",
-            }}
+          container
+          spacing={4}
         >
-          {/* Form Panel */}
-          <Grid item xs={12} md={7}>
+          {/* Form Panel - Increased to md={6} for more width */}
+          <Grid size={{ xs: 12, lg: 6 }}>
             <Paper
               sx={{
                 background: "#ffffff",
                 border: "1px solid #e2e8f0",
-                p: 3,
+                p: 4,
                 borderRadius: 3,
                 boxShadow: "0 4px 6px rgba(0, 0, 0, 0.07)",
-                position: "sticky",
-                top: 100,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4, flex: 1 }}>
                 <Box
                   sx={{
-                    width: 44,
-                    height: 44,
+                    width: 52,
+                    height: 52,
                     borderRadius: 2,
                     background: "#dbeafe",
                     border: "1px solid #93c5fd",
@@ -307,46 +233,31 @@ const AdminNotifyPage = () => {
                     justifyContent: "center",
                   }}
                 >
-                  <SendIcon sx={{ color: "#3b82f6", fontSize: 24 }} />
+                  <SendIcon sx={{ color: "#3b82f6", fontSize: 28 }} />
                 </Box>
                 <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e293b" }}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: "#1e293b" }}>
                     Tạo thông báo
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "#64748b" }}>
+                  <Typography variant="body2" sx={{ color: "#64748b" }}>
                     Soạn nội dung và gửi ngay
                   </Typography>
                 </Box>
               </Box>
 
-              <Divider sx={{ my: 2, borderColor: "#e2e8f0" }} />
+              <Divider sx={{ my: 3, borderColor: "#e2e8f0" }} />
 
-              {/* Error Alert */}
-              {error && (
-                <Fade in={!!error}>
-                  <Box sx={{ mb: 2 }}>
-                    <Alert
-                      icon={<ErrorIcon />}
-                      severity="error"
-                      sx={{
-                        background: "linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(244, 63, 94, 0.05) 100%)",
-                        border: "1px solid rgba(239, 68, 68, 0.3)",
-                        color: "#dc2626",
-                        fontWeight: 500,
-                        borderRadius: 2,
-                      }}
-                    >
-                      {error}
-                    </Alert>
-                  </Box>
-                </Fade>
-              )}
-
-              {/* Notice Type Select */}
-              <Box sx={{ mb: 3 }}>
+              {/* Notice Type Select - Increased font sizes */}
+              <Box sx={{ mb: 4, flex: 1 }}>
                 <Typography
-                  variant="caption"
-                  sx={{ textTransform: "uppercase", fontWeight: 700, color: "#475569", letterSpacing: "0.05em" }}
+                  variant="body2"
+                  sx={{
+                    textTransform: "uppercase",
+                    fontWeight: 700,
+                    color: "#475569",
+                    letterSpacing: "0.05em",
+                    mb: 1.5,
+                  }}
                 >
                   Loại thông báo
                 </Typography>
@@ -359,11 +270,12 @@ const AdminNotifyPage = () => {
                     setError("")
                   }}
                   sx={{
-                    mt: 1,
                     background: "#f1f5f9",
                     border: "1px solid #cbd5e1",
                     color: "#1e293b",
                     borderRadius: 2,
+                    height: 52,
+                    fontSize: 16,
                     "&:hover": {
                       background: "#e2e8f0",
                       border: "1px solid #94a3b8",
@@ -390,17 +302,18 @@ const AdminNotifyPage = () => {
                 </Select>
               </Box>
 
-              {/* User Select - Conditional */}
+              {/* User Select - Conditional - Increased font sizes */}
               {noticeType === "single" && (
                 <Fade in={noticeType === "single"}>
-                  <Box sx={{ mb: 3 }}>
+                  <Box sx={{ mb: 4, flex: 1 }}>
                     <Typography
-                      variant="caption"
+                      variant="body2"
                       sx={{
                         textTransform: "uppercase",
                         fontWeight: 700,
                         color: "#475569",
                         letterSpacing: "0.05em",
+                        mb: 1.5,
                       }}
                     >
                       Chọn người nhận
@@ -414,11 +327,12 @@ const AdminNotifyPage = () => {
                         setSelectedUser(user || null)
                       }}
                       sx={{
-                        mt: 1,
                         background: "#f1f5f9",
                         border: "1px solid #cbd5e1",
                         color: "#1e293b",
                         borderRadius: 2,
+                        height: 52,
+                        fontSize: 16,
                         "&:hover": {
                           background: "#e2e8f0",
                           border: "1px solid #94a3b8",
@@ -464,11 +378,11 @@ const AdminNotifyPage = () => {
                 </Fade>
               )}
 
-              {/* Content Textarea */}
-              <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+              {/* Content Textarea - Increased rows and padding */}
+              <Box sx={{ mb: 4, flex: 1 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                   <Typography
-                    variant="caption"
+                    variant="body2"
                     sx={{
                       textTransform: "uppercase",
                       fontWeight: 700,
@@ -478,14 +392,14 @@ const AdminNotifyPage = () => {
                   >
                     Nội dung
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 500 }}>
+                  <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 500 }}>
                     {content.length}/500
                   </Typography>
                 </Box>
                 <TextField
                   fullWidth
                   multiline
-                  rows={6}
+                  rows={9}
                   placeholder="Nhập nội dung thông báo..."
                   value={content}
                   onChange={(e) => setContent(e.target.value.slice(0, 500))}
@@ -496,6 +410,7 @@ const AdminNotifyPage = () => {
                     "& .MuiOutlinedInput-root": {
                       color: "#1e293b",
                       fontFamily: "inherit",
+                      fontSize: 15,
                       "&:hover": {
                         background: "#e2e8f0",
                         border: "1px solid #94a3b8",
@@ -516,13 +431,13 @@ const AdminNotifyPage = () => {
                   }}
                 />
                 {/* Character Counter Progress */}
-                <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
                   <LinearProgress
                     variant="determinate"
                     value={(content.length / 500) * 100}
                     sx={{
                       flex: 1,
-                      height: 6,
+                      height: 8,
                       borderRadius: 3,
                       background: "#e2e8f0",
                       "& .MuiLinearProgress-bar": {
@@ -531,13 +446,13 @@ const AdminNotifyPage = () => {
                       },
                     }}
                   />
-                  <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 500, minWidth: 35 }}>
+                  <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 500, minWidth: 35 }}>
                     {Math.round((content.length / 500) * 100)}%
                   </Typography>
                 </Box>
               </Box>
 
-              {/* Send Button */}
+              {/* Send Button - Increased height */}
               <Button
                 fullWidth
                 variant="contained"
@@ -545,11 +460,11 @@ const AdminNotifyPage = () => {
                 onClick={handleSendNotice}
                 disabled={loading || !content.trim() || (noticeType === "single" && !selectedUser)}
                 sx={{
-                  height: 48,
+                  height: 56,
                   background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)",
                   color: "#ffffff",
                   fontWeight: 600,
-                  fontSize: 15,
+                  fontSize: 16,
                   textTransform: "none",
                   borderRadius: 2,
                   transition: "all 0.3s ease",
@@ -578,8 +493,8 @@ const AdminNotifyPage = () => {
             </Paper>
           </Grid>
 
-          {/* History Panel */}
-          <Grid item xs={12} md={7}>
+          {/* History Panel - Increased to md={6} for consistent width */}
+          <Grid size={{ xs: 12, lg: 6 }}>
             <Paper
               sx={{
                 background: "#ffffff",
@@ -587,14 +502,17 @@ const AdminNotifyPage = () => {
                 borderRadius: 3,
                 boxShadow: "0 4px 6px rgba(0, 0, 0, 0.07)",
                 overflow: "hidden",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
-              {/* Header */}
+              {/* Header - Increased padding */}
               <Box
                 sx={{
                   background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
                   borderBottom: "1px solid #e2e8f0",
-                  p: 3,
+                  p: 4,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
@@ -603,8 +521,8 @@ const AdminNotifyPage = () => {
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Box
                     sx={{
-                      width: 44,
-                      height: 44,
+                      width: 52,
+                      height: 52,
                       borderRadius: 2,
                       background: "#dbeafe",
                       border: "1px solid #93c5fd",
@@ -613,10 +531,10 @@ const AdminNotifyPage = () => {
                       justifyContent: "center",
                     }}
                   >
-                    <HistoryIcon sx={{ color: "#3b82f6", fontSize: 24 }} />
+                    <HistoryIcon sx={{ color: "#3b82f6", fontSize: 28 }} />
                   </Box>
                   <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e293b" }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: "#1e293b" }}>
                       Lịch sử thông báo
                     </Typography>
                     {selectedUser && (
@@ -630,7 +548,7 @@ const AdminNotifyPage = () => {
                             fontWeight: 600,
                           }}
                         />
-                        <Typography variant="caption" sx={{ color: "#475569" }}>
+                        <Typography variant="body2" sx={{ color: "#475569", fontWeight: 500 }}>
                           {selectedUser.name}
                         </Typography>
                       </Box>
@@ -641,8 +559,8 @@ const AdminNotifyPage = () => {
 
               <Divider sx={{ borderColor: "#e2e8f0" }} />
 
-              {/* History List */}
-              <List sx={{ maxHeight: "600px", overflowY: "auto" }}>
+              {/* History List - Increased maxHeight and padding */}
+              <List sx={{ flex: 1, overflowY: "auto", p: 0}}>
                 {historyToShow.length === 0 ? (
                   <Box
                     sx={{
@@ -650,15 +568,15 @@ const AdminNotifyPage = () => {
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
-                      py: 6,
+                      py: 8,
                       color: "#94a3b8",
                     }}
                   >
-                    <HistoryIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                    <HistoryIcon sx={{ fontSize: 56, mb: 2, opacity: 0.5 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 500, mb: 1 }}>
                       Chưa có thông báo nào
                     </Typography>
-                    <Typography variant="caption">Thông báo sẽ xuất hiện ở đây</Typography>
+                    <Typography variant="body2">Thông báo sẽ xuất hiện ở đây</Typography>
                   </Box>
                 ) : (
                   historyToShow.map((notice, index) => (
@@ -666,23 +584,25 @@ const AdminNotifyPage = () => {
                       key={index}
                       sx={{
                         borderBottom: "1px solid #e2e8f0",
-                        py: 2,
-                        px: 3,
+                        py: 3,
+                        px: 4,
                         "&:last-child": {
                           borderBottom: "none",
                         },
                       }}
                     >
                       <Box sx={{ width: "100%" }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#1e293b" }}>
+                        <Box
+                          sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}
+                        >
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1e293b" }}>
                             {selectedUser ? selectedUser.name : "Thông báo hệ thống"}
                           </Typography>
-                          <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
                             {new Date(notice.ThoiGian || "").toLocaleString("vi-VN")}
                           </Typography>
                         </Box>
-                        <Typography variant="body2" sx={{ color: "#475569", lineHeight: 1.5 }}>
+                        <Typography variant="body1" sx={{ color: "#475569", lineHeight: 1.6, fontSize: 15 }}>
                           {notice.NoiDung}
                         </Typography>
                       </Box>
