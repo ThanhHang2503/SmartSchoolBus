@@ -1,20 +1,19 @@
 "use client";
+
 import MyMap from "@/components/Map";
 
+import React, { useState } from "react";
 import {
   Alert,
   Box,
   Button,
   Card,
   CardContent,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Grid,
   MenuItem,
   Paper,
+  Select,
+  FormControl,
   Snackbar,
   Table,
   TableBody,
@@ -25,78 +24,171 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
+import { useDriverSchedules } from '@/context/driverSchedulesContext';
+import { IStudentDetail, parseStudentList } from "@/api/driverApi";
+
+// Hàm cập nhật trạng thái (Giả định gọi API)
+const handleStatusChange = (maHS: number, newStatus: number) => {
+    // TRONG THỰC TẾ: 
+    // 1. Gửi API PATCH/PUT lên Backend (ví dụ: /api/ctlt/update-status)
+    // 2. Nếu thành công, kích hoạt cập nhật Global State (refreshSchedules)
+    console.log(`[ACTION] Cập nhật trạng thái học sinh ${maHS} thành ${newStatus}`);
+};
 
 export default function MapAndStudentPage() {
-  // ✅ Dữ liệu mẫu học sinh
-  const studentsData = [
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      grade: "Lớp 1A",
-      parent: "Nguyễn Văn B",
-      phone: "0901234567",
-      address: "123 Nguyễn Trãi",
-      status: "Chưa đón",
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      grade: "Lớp 2B",
-      parent: "Trần Văn C",
-      phone: "0909876543",
-      address: "456 Lê Lợi",
-      status: "Đã đón",
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      grade: "Lớp 3A",
-      parent: "Lê Thị D",
-      phone: "0912345678",
-      address: "789 Hai Bà Trưng",
-      status: "Đã trả",
-    },
-  ];
+  // 🔥 LẤY DỮ LIỆU THỰC TẾ
+  const { schedules, loading } = useDriverSchedules();
 
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
-
-  // ✅ Lọc danh sách học sinh
-  const filteredStudents = studentsData.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  // ✅ State cảnh báo
   const [alertType, setAlertType] = useState("");
   const [message, setMessage] = useState("");
-  const [open, setOpen] = useState(false);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
+
+ // LỌC CHUYẾN MỚI THEO THỜI GIAN THỰC
+    const today = new Date().toISOString().slice(0, 10);
+    const nowTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }); // Lấy HH:MM:SS hiện tại
+    const todaySchedules = schedules.filter(s => s.scheduleDate === today);// Lấy TẤT CẢ các chuyến trong ngày hôm nay
+    const activeOrUpcomingTrips = todaySchedules // 2. Lọc và sắp xếp các chuyến chưa hoàn thành hoặc chưa kết thúc
+        .filter(s => {
+            return s.endTime === null || s.endTime > nowTime; 
+        })
+        .sort((a, b) => a.startTime.localeCompare(b.startTime)); // Sắp xếp theo giờ bắt đầu sớm nhất
+
+    const currentTrip = activeOrUpcomingTrips[0];
+    
+    // PHÂN TÍCH HỌC SINH TỪ CHUYẾN ĐANG CHỌN
+    const allStudents: IStudentDetail[] = currentTrip 
+        ? parseStudentList(currentTrip.studentListRaw) 
+        : [];
+
+    // LỌC THEO TÊN HỌC SINH
+    const filteredStudents = allStudents.filter((s) =>
+        s.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+  // GỬI CẢNH BÁO
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!alertType || !message.trim()) return;
-    setOpen(true);
 
-    // Sau này có thể gửi API ở đây
-    console.log({
-      alertType,
-      message,
-      timestamp: new Date().toISOString(),
-    });
+    setSnackbarMessage("Cảnh báo đã được gửi thành công!");
+    setSnackbarSeverity("success");
+    setOpenSnackbar(true);
+
+    console.log("Gửi cảnh báo:", { alertType, message, timestamp: new Date() });
 
     setAlertType("");
     setMessage("");
   };
 
+  //HÀM RENDER BẢNG HỌC SINH (NỘI TUYẾN)
+    const renderStudentTable = (students: IStudentDetail[]) => {
+        const getStatusColor = (status: number) => {
+            switch (status) {
+                case 1: return 'success.main';
+                case 2: return 'error.main';
+                default: return 'warning.main';
+            }
+        };
+
+        if (loading) {
+            return <Typography sx={{ p: 2 }}>Đang tải dữ liệu học sinh...</Typography>;
+        }
+
+        return (
+            <TableContainer component={Paper} sx={{ borderRadius: 3, border: '1px solid #ddd' }}>
+                <Table size="medium" aria-label="student list table">
+                    <TableHead>
+                        <TableRow sx={{ bgcolor: "primary.main" }}>
+                            <TableCell sx={{ color: "white", fontWeight: 600 }}>STT</TableCell>
+                            <TableCell sx={{ color: "white", fontWeight: 600 }}>Tên HS</TableCell>
+                            <TableCell sx={{ color: "white", fontWeight: 600 }}>Lớp</TableCell>
+                            <TableCell sx={{ color: "white", fontWeight: 600 }}>Phụ huynh</TableCell>
+                            <TableCell sx={{ color: "white", fontWeight: 600 }}>Điểm đón</TableCell>
+                            <TableCell sx={{ color: "white", fontWeight: 600 }}>Điểm trả</TableCell>
+                            <TableCell sx={{ color: "white", fontWeight: 600 }}>Trạng thái</TableCell> 
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {students.map((student, index) => {
+                            const statusColor = getStatusColor(student.status);
+
+                            return (
+                                <TableRow
+                                    key={student.id}
+                                    hover
+                                    sx={{ cursor: "pointer" }}
+                                >
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{student.name}</TableCell>
+                                    <TableCell>{student.class}</TableCell>
+                                    <TableCell>
+                                      <Typography variant="body2">{student.parentName}</Typography>
+                                      <Typography variant="caption" color="text.secondary">SĐT: {student.parentPhone}</Typography>
+                                    </TableCell>
+                                    <TableCell>{student.pickUpStopName}</TableCell>
+                                    <TableCell>{student.dropOffStopName}</TableCell>
+                                    
+                                    {/* CỘT TRẠNG THÁI (SELECT/DROPDOWN) */}
+                                    <TableCell sx={{ width: 150 }}>
+                                        <FormControl size="small" fullWidth>
+                                            <Select
+                                                value={student.status}
+                                                // Gọi hàm cập nhật API
+                                                onChange={(e) => handleStatusChange(student.id, e.target.value as number)}
+                                                sx={{ 
+                                                    fontSize: "0.875rem",
+                    
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                <MenuItem value={0} sx={{  }}>Chưa đón</MenuItem>
+                                                <MenuItem value={1} sx={{ }}>Đã đón</MenuItem>
+                                                <MenuItem value={2} sx={{ }}>Đã trả</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                        {students.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={7} align="center">
+                                    {currentTrip ? "Không tìm thấy học sinh theo tiêu chí tìm kiếm." : "Chưa có học sinh đăng ký cho chuyến này."}
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        );
+    };
+
+
+    if (loading) {
+        return <Box sx={{ p: 3 }}><Typography>Đang tải dữ liệu lịch trình...</Typography></Box>;
+    }
+    if (!currentTrip) {
+        return <Box sx={{ p: 3 }}><Typography variant="h6">Hôm nay bạn không có lịch làm việc.</Typography></Box>;
+    }
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h5" fontWeight={600} gutterBottom>
-        Xe buýt: R001 - Tuyến: A-B
+      <Typography variant="body2" fontWeight={600} gutterBottom>
+        Xe buýt: {currentTrip.busLicensePlate}
       </Typography>
-
-      {/* ✅ Khu vực bản đồ và cảnh báo (2 cột) */}
-      <Grid spacing={3} sx={{ mb: 4 }}>
-        {/* Cột trái: Bản đồ */}
+      <Typography variant="body2" fontWeight={600} gutterBottom>
+       Chuyến: {currentTrip.startTime} - {currentTrip.endTime || "Chưa kết thúc"}
+      </Typography>
+      <Typography variant="body2" fontWeight={600} gutterBottom>
+       Tuyến: {currentTrip.routeStart} → {currentTrip.routeEnd}
+      </Typography>
+      {/* BẢN ĐỒ + GỬI CẢNH BÁO */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Box
             sx={{
@@ -112,7 +204,6 @@ export default function MapAndStudentPage() {
           </Box>
         </Grid>
 
-        {/* Cột phải: Gửi cảnh báo */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ p: 2, height: "90%" }}>
             <CardContent>
@@ -129,17 +220,11 @@ export default function MapAndStudentPage() {
                   onChange={(e) => setAlertType(e.target.value)}
                   sx={{ mb: 2 }}
                 >
-                  <MenuItem value="vehicle">
-                    🚐 Sự cố phương tiện (hư xe, kẹt xe...)
-                  </MenuItem>
-                  <MenuItem value="weather">🌧️ Ảnh hưởng thời tiết</MenuItem>
-                  <MenuItem value="student">
-                    👦 Sự cố học sinh (đi muộn, chưa ra điểm...)
-                  </MenuItem>
-                  <MenuItem value="delay">
-                    ⏰ Trễ giờ đón / trả học sinh
-                  </MenuItem>
-                  <MenuItem value="other">⚠️ Khác</MenuItem>
+                  <MenuItem value="vehicle">Sự cố phương tiện</MenuItem>
+                  <MenuItem value="weather">Ảnh hưởng thời tiết</MenuItem>
+                  <MenuItem value="student">Sự cố học sinh</MenuItem>
+                  <MenuItem value="delay">Trễ giờ</MenuItem>
+                  <MenuItem value="other">Khác</MenuItem>
                 </TextField>
 
                 <TextField
@@ -150,7 +235,7 @@ export default function MapAndStudentPage() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   sx={{ mb: 2 }}
-                  placeholder="Nhập chi tiết tình huống..."
+                  placeholder="Nhập chi tiết..."
                 />
 
                 <Button
@@ -160,7 +245,7 @@ export default function MapAndStudentPage() {
                   fullWidth
                   disabled={!alertType || !message.trim()}
                 >
-                  🚨 Gửi cảnh báo ngay
+                  Gửi cảnh báo ngay
                 </Button>
               </form>
             </CardContent>
@@ -168,22 +253,10 @@ export default function MapAndStudentPage() {
         </Grid>
       </Grid>
 
-      {/* ✅ Snackbar thông báo */}
-      <Snackbar
-        open={open}
-        autoHideDuration={3000}
-        onClose={() => setOpen(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert severity="success" onClose={() => setOpen(false)}>
-          ✅ Cảnh báo đã được gửi thành công!
-        </Alert>
-      </Snackbar>
-
-      {/* ✅ Ô tìm kiếm */}
+      {/* TÌM KIẾM */}
       <Box sx={{ mb: 2 }}>
         <TextField
-          label="Tìm kiếm học sinh"
+          label="Tìm kiếm theo tên học sinh"
           variant="outlined"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -191,120 +264,20 @@ export default function MapAndStudentPage() {
         />
       </Box>
 
-      {/* ✅ Bảng danh sách học sinh */}
-      <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: "primary.main" }}>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                STT
-              </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                Tên học sinh
-              </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                Phụ huynh
-              </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                Số điện thoại
-              </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                Điểm đón/trả
-              </TableCell>
-              <TableCell sx={{ color: "white", fontWeight: 600 }}>
-                Trạng thái
-              </TableCell>
-            </TableRow>
-          </TableHead>
+      {/*BẢNG HỌC SINH DÙNG DỮ LIỆU THỰC TẾ (Nội tuyến) */}
+            {renderStudentTable(filteredStudents)}
 
-          <TableBody>
-            {filteredStudents.map((student, index) => (
-              <TableRow
-                key={student.id}
-                hover
-                sx={{ cursor: "pointer" }}
-                onClick={() => setSelectedStudent(student)}
-              >
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{student.name}</TableCell>
-                <TableCell>{student.parent}</TableCell>
-                <TableCell>{student.phone}</TableCell>
-                <TableCell>{student.address}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={student.status}
-                    color={
-                      student.status === "Đã trả"
-                        ? "success"
-                        : student.status === "Đã đón"
-                        ? "info"
-                        : "warning"
-                    }
-                    size="small"
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-
-            {filteredStudents.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  Không tìm thấy học sinh
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* ✅ Hộp thoại chi tiết học sinh */}
-      <Dialog
-        open={Boolean(selectedStudent)}
-        onClose={() => setSelectedStudent(null)}
-        maxWidth="sm"
-        fullWidth
+      {/* THÔNG BÁO */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <DialogTitle>Thông tin học sinh</DialogTitle>
-        <DialogContent dividers>
-          {selectedStudent && (
-            <Grid spacing={2}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography>
-                  <strong>Họ tên:</strong> {selectedStudent.name}
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography>
-                  <strong>Lớp:</strong> {selectedStudent.grade}
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography>
-                  <strong>Phụ huynh:</strong> {selectedStudent.parent}
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography>
-                  <strong>SĐT:</strong> {selectedStudent.phone}
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <Typography>
-                  <strong>Địa chỉ:</strong> {selectedStudent.address}
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <Typography>
-                  <strong>Trạng thái:</strong> {selectedStudent.status}
-                </Typography>
-              </Grid>
-            </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedStudent(null)}>Đóng</Button>
-        </DialogActions>
-      </Dialog>
+        <Alert severity={snackbarSeverity} onClose={() => setOpenSnackbar(false)}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

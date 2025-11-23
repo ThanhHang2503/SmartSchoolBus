@@ -11,6 +11,7 @@ router.post("/login", login);
 
 // GET /account → lấy tất cả tài khoản
 router.get("/", async (req, res) => {
+  const { pool } = await import("../models/accountModel");
   try {
     const [rows] = await pool.query<RowDataPacket[]>(
       "SELECT MaTK AS id, TenDangNhap AS email, VaiTro FROM TaiKhoan"
