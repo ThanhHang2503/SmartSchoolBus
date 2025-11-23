@@ -3,50 +3,55 @@ import React, { useState } from "react";
 import {
   Box,
   Typography,
-  ToggleButtonGroup,
-  ToggleButton,
   Card,
   CardContent,
   Grid,
   Divider,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  useTheme,
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
+  Paper
 } from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
-  DateCalendar,
-  PickersDay,
-  LocalizationProvider,
+  DateCalendar, PickersDay, LocalizationProvider,
 } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import { useDriverSchedules } from '@/context/driverSchedulesContext';
+import { IScheduleDriver, IStudentDetail, parseStudentList } from "@/api/driverApi"; 
 
-// Giả lập danh sách ngày có lịch làm việc
-const workingDays = [
-  dayjs().startOf("month").add(1, "day"),
-  dayjs().startOf("month").add(3, "day"),
-  dayjs().startOf("month").add(5, "day"),
-  dayjs().startOf("month").add(10, "day"),
-  dayjs().startOf("month").add(15, "day"),
-  dayjs().startOf("month").add(22, "day"),
-];
+
+
+// Dayjs setup
+dayjs.extend(isSameOrBefore);
 
 export default function SchedulePage() {
-  const [viewMode, setViewMode] = useState("day");
+  const theme = useTheme();
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
+  const [expandedScheduleId, setExpandedScheduleId] = useState<number | null>(null);
 
-  const handleChangeView = (event: React.SyntheticEvent, newView: string | null) => {
-    if (newView !== null) {
-      setViewMode(newView);
-    }
-  };
+  const { schedules, loading } = useDriverSchedules();
+  const workingDaysSet = new Set(schedules.map(s => s.scheduleDate));
 
-  // Hàm kiểm tra xem ngày có trong danh sách làm việc không
-  const isWorkingDay = (date: Dayjs) =>
-    workingDays.some((d) => d.isSame(date, "day"));
+  const isWorkingDay = (date: Dayjs) => workingDaysSet.has(date.format("YYYY-MM-DD"));
 
-  // Component tùy chỉnh hiển thị mỗi ngày
+  const selectedDaySchedules: IScheduleDriver[] = schedules.filter( s =>
+    dayjs(s.scheduleDate).isSame(selectedDate, 'day')
+  );
+
+  //Component tùy chỉnh hiển thị mõi ngày
   const CustomDay = (props: any) => {
     const { day, outsideCurrentMonth, ...other } = props;
     const isWorkDay = isWorkingDay(day);
-
     return (
       <PickersDay
         {...other}
@@ -64,43 +69,127 @@ export default function SchedulePage() {
     );
   };
 
+  // HÀM RENDER BẢNG HỌC SINH (NỘI TUYẾN)
+  const renderStudentTableContent = (students: IStudentDetail[]) => {
+      if (students.length === 0) {
+          return (
+              <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                  Không có học sinh nào đăng ký cho chuyến này.
+              </Typography>
+          );
+      }
+
+      return (
+          <TableContainer component={Paper} elevation={0} sx={{ border: 'none', borderTop: '1px solid #ddd' }}>
+              <Table size="small" aria-label="student list table">
+                  <TableHead sx={{ bgcolor: '#1976d2' }}>
+                      <TableRow>
+                          <TableCell sx={{ color: 'white' }}>STT</TableCell>
+                          <TableCell sx={{ color: 'white' }}>Tên học sinh</TableCell>
+                          <TableCell sx={{ color: 'white' }}>Lớp</TableCell>
+                          <TableCell sx={{ color: 'white' }}>Phụ huynh</TableCell>
+                          <TableCell sx={{ color: 'white' }}>Điểm đón</TableCell>
+                          <TableCell sx={{ color: 'white' }}>Điểm trả</TableCell>
+                      </TableRow>
+                  </TableHead>
+                  <TableBody>
+                      {students.map((student, index) => (
+                          <TableRow key={student.id}>
+                              <TableCell component="th" scope="row">{index + 1}</TableCell>
+                              <TableCell>
+                                  <Typography variant="body2" fontWeight={500}>{student.name}</Typography>
+                              </TableCell>
+                              <TableCell>{student.class}</TableCell>
+                              <TableCell>
+                                  <Typography variant="body2">{student.parentName}</Typography>
+                                  <Typography variant="caption" color="text.secondary">SĐT: {student.parentPhone}</Typography>
+                              </TableCell>
+                              <TableCell>{student.pickUpStopName}</TableCell>
+                              <TableCell>{student.dropOffStopName}</TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
+          </TableContainer>
+      );
+  };
+
+  //HÀM HIỂN THỊ CHI TIẾT CHÍNH
+  const renderScheduleDetails = () => {
+    if (loading) {
+      return <Typography variant="body2" color="text.secondary">Đang tải lịch trình...</Typography>;
+    }
+    if (selectedDaySchedules.length === 0) {
+      return <Typography variant="body2" color="text.secondary">Ngày này bạn không có lịch làm việc</Typography>;
+    }
+
+    return selectedDaySchedules.map((schedule, index) => {
+      // Phân tích cú pháp chuỗi ngay tại đây
+      const students: IStudentDetail[] = parseStudentList(schedule.studentListRaw);
+      const isExpanded = expandedScheduleId === schedule.id;
+
+      return (
+        <Accordion 
+            key={schedule.id} 
+            expanded={isExpanded}
+            onChange={() => setExpandedScheduleId(isExpanded ? null : schedule.id)}
+            sx={{ border: `1px solid ${theme.palette.divider}`, boxShadow: 'none' }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-controls={`panel-${schedule.id}-content`}
+            id={`panel-${schedule.id}-header`}
+            sx={{ bgcolor: isExpanded ? '#f5f5f5' : 'white' }}
+          >
+            <Box>
+                <Typography variant="body1" fontWeight={600} color="primary">
+                    Chuyến {index + 1}: {schedule.startTime} - {schedule.endTime || 'Kết thúc'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em' }}>
+                    Tuyến: {schedule.routeStart} → {schedule.routeEnd}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em' }}>
+                    Xe buýt: {schedule.busLicensePlate}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em' }}>
+                    Tổng số học sinh: {students.length}
+                </Typography>
+            </Box>
+          </AccordionSummary>
+          
+          <AccordionDetails sx={{ p: 0 }}> 
+            {/*GỌI HÀM RENDER BẢNG HỌC SINH NỘI TUYẾN */}
+            {renderStudentTableContent(students)}
+          </AccordionDetails>
+        </Accordion>
+      );
+    });
+  };
+
+
   return (
-    // sx={{ p: 3 }}
     <Box > 
-      {/* Tiêu đề */}
-      {/* <Typography variant="h5" fontWeight={600} gutterBottom>
-        Lịch làm việc
-      </Typography> */}
-
-      {/* Bộ chọn chế độ xem */}
-      <ToggleButtonGroup
-        color="primary"
-        value={viewMode}
-        exclusive
-        onChange={handleChangeView}
-        sx={{ mb: 2 }}
-      >
-        <ToggleButton value="day">Ngày</ToggleButton>
-        <ToggleButton value="week">Tuần</ToggleButton>
-        <ToggleButton value="month">Tháng</ToggleButton>
-      </ToggleButtonGroup>
-
       <Grid container spacing={2}>
         {/* Cột trái: Lịch */}
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{xs: 12, md: 4}}> 
           <Card sx={{ p: 1 }}>
             <CardContent>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateCalendar
                   value={selectedDate}
-                  onChange={(newValue) => newValue && setSelectedDate(newValue)}
+                  onChange={(newValue) => {
+                    if (newValue) {
+                      setSelectedDate(newValue);
+                      setExpandedScheduleId(null); 
+                    }
+                  }}
                   slots={{ day: CustomDay }}
                 />
               </LocalizationProvider>
 
               <Divider sx={{ my: 2 }} />
               <Typography variant="subtitle1" fontWeight={600}>
-                Ngày được chọn:
+                Lịch trình ngày: {selectedDaySchedules.length} chuyến
               </Typography>
               <Typography variant="body2">
                 {selectedDate.format("DD/MM/YYYY")}
@@ -118,50 +207,15 @@ export default function SchedulePage() {
         </Grid>
 
         {/* Cột phải: Chi tiết lịch */}
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid size={{xs: 12, md: 8}}> 
           <Card>
             <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Lịch làm việc -{" "}
-                {viewMode === "day"
-                  ? "Trong ngày"
-                  : viewMode === "week"
-                  ? "Trong tuần"
-                  : "Trong tháng"}
-              </Typography>
-
-              {/* Nội dung theo chế độ */}
-              {viewMode === "day" && (
-                <>
-                  {isWorkingDay(selectedDate) ? (
-                    <>
-                      <Typography variant="body1">Ca sáng: 6:30 - 10:00</Typography>
-                      <Typography variant="body1">Ca chiều: 13:00 - 17:30</Typography>
-                    </>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      Hôm nay bạn không có lịch làm việc 🎉
-                    </Typography>
-                  )}
-                </>
-              )}
-
-              {viewMode === "week" && (
-                <Box>
-                  {["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6"].map((d, i) => (
-                    <Typography key={i} sx={{ mb: 1 }}>
-                      {d}: 7:00 - 17:00
-                    </Typography>
-                  ))}
-                </Box>
-              )}
-
-              {viewMode === "month" && (
-                <Typography variant="body2">
-                  Lịch tháng hiển thị theo dạng tổng hợp. Bạn có{" "}
-                  <strong>{workingDays.length}</strong> ngày làm việc trong tháng này.
-                </Typography>
-              )}
+              <Typography variant="h6" fontWeight={600} gutterBottom>Chi tiết lịch làm việc ngày {selectedDate.format("DD/MM/YYYY")}</Typography>
+              
+              <Box sx={{ mt: 2 }}>
+                {/* HIỂN THỊ DANH SÁCH CHUYẾN ĐI DẠNG ACCORDION */}
+                {renderScheduleDetails()}
+              </Box>
             </CardContent>
           </Card>
         </Grid>

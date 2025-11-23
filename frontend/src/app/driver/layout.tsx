@@ -2,6 +2,7 @@
 import Sidebar from "@/components/Sidebar";
 import { User } from "@/types/auth";
 import React from "react";
+import { SchedulesProvider } from '@/context/driverSchedulesContext';
 
 interface DriverLayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ const DriverLayout: React.FC<DriverLayoutProps> = ({ children, user }) => {
   const safeUser = user || null;
 
   return (
+    <SchedulesProvider>
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       {/* Xóa hoặc comment dòng dưới để loại bỏ Header */}
       {/* <Header user={safeUser} role={safeUser?.role} /> */}
@@ -24,6 +26,7 @@ const DriverLayout: React.FC<DriverLayoutProps> = ({ children, user }) => {
         </main>
       </div>
     </div>
+    </SchedulesProvider>
   );
 };
 
