@@ -22,6 +22,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         email: user.email,
         name: user.name,
         role: user.role,
+        VaiTro: user.VaiTro,
       },
       JWT_SECRET,
       { expiresIn: "8h" }

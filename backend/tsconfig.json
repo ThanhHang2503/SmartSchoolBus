@@ -17,7 +17,11 @@
     "parent/**/*.ts",
     "admin/**/*.ts",
     "driver/**/*.ts",
+    "stats/**/*.ts",
+    "route/**/*.ts",
+    "notice/**/*.ts",
+    "backend/**/*.ts",
     "*.ts"
-  ],
+, "notice/controllers/noticeController.ts"  ],
   "exclude": ["node_modules"]
 }

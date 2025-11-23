@@ -150,7 +150,7 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
               </StyledLink>
             </MenuItem>
             <MenuItem>
-              <StyledLink href="/admin/manage_student" className={getLinkClasses('/admin/manage_student')}>
+              <StyledLink href="/admin/info_admin" className={getLinkClasses('/admin/info_admin')}>
                 <FaCalendar />
                 <span>Quản lý học sinh</span>
               </StyledLink>
@@ -174,9 +174,15 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
               </StyledLink>
             </MenuItem>
             <MenuItem>
-              <StyledLink href="/admin/follow-and-notify" className={getLinkClasses('/admin/follow-and-notify')}>
+              <StyledLink href="/admin/notify" className={getLinkClasses('/admin/follow-and-notify')}>
                 <FaBell />
-                <span>Thông báo và theo dõi</span>
+                <span>Thông báo</span>
+              </StyledLink>
+            </MenuItem>
+            <MenuItem>
+              <StyledLink href="/admin/map" className={getLinkClasses('/driver/map')}>
+                <FaMap />
+                <span>Hành trình</span>
               </StyledLink>
             </MenuItem>
           </>

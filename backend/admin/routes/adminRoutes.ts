@@ -1,12 +1,10 @@
 import express from "express";
-import { getAdmins, getAdmin } from "../controllers/adminController";
+import { getCurrentAdmin } from "../controllers/adminController";
+import { adminMiddleware } from "../../middleware"; // middleware decode JWT
 
 const router = express.Router();
 
-// 📌 GET /admin → lấy tất cả
-router.get("/", getAdmins);
-
-// 📌 GET /admin/:id → lấy theo ID
-router.get("/:id", getAdmin);
+// GET /admin/profile → lấy thông tin admin hiện tại
+router.get("/profile", adminMiddleware, getCurrentAdmin);
 
 export default router;

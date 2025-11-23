@@ -1,45 +1,26 @@
-import axios from 'axios';
+// frontend/api/routesApi.ts
 
-const API_URL = 'http://localhost:5000/routers';
+// Cấu trúc dữ liệu chi tiết cho Tuyến Đường
+export interface IRouteDetail {
+  id: number; // MaTD
+  NoiBatDau: string;
+  NoiKetThuc: string;
+  VanTocTB: number;
+  DoDai: number;
+}
 
-// export const getRoutes = async () => {
-//   const res = await axios.get(API_URL);
-//   return res.data;
-// };
-// định nghĩa kiểu Route bên frontend
-export type Route = {
-  id: string;
-  name: string;
-  vehicleNumber: string;
-  defaultTime: string;
-};
+/**
+ * Lấy danh sách tất cả Tuyến Đường từ backend.
+ * Endpoint backend: GET http://localhost:5000/route
+ * (Giả định endpoint /routes được cấu hình để gọi đến controller/model TuyenDuong)
+ */
+export const getAllRoutes = async (): Promise<IRouteDetail[]> => {
+  const response = await fetch("http://localhost:5000/route");
 
-// Lấy tất cả routes
-export const getRoutes = async (): Promise<Route[]> => {
-  const res = await axios.get(API_URL);
-  return res.data as Route[];
-};
-
-// Lấy route theo ID
-export const getRouteById = async (id: string) => {
-  const res = await axios.get(`${API_URL}/${id}`);
-  return res.data;
-};
-
-// Thêm route mới
-export const addRoute = async (route: any) => {
-  const res = await axios.post(API_URL, route);
-  return res.data;
-};
-
-// Cập nhật route
-export const updateRoute = async (id: string, route: any) => {
-  const res = await axios.put(`${API_URL}/${id}`, route);
-  return res.data;
-};
-
-// Xóa route
-export const deleteRoute = async (id: string) => {
-  const res = await axios.delete(`${API_URL}/${id}`);
-  return res.data;
+  if (!response.ok) {
+    throw new Error(`Lỗi khi fetch danh sách Tuyến Đường: ${response.statusText}`);
+  }
+  
+  const data: IRouteDetail[] = await response.json();
+  return data;
 };

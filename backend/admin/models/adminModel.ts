@@ -1,35 +1,18 @@
 import { pool } from "../../config/db";
 
-export const getAllAdmins = async () => {
+export const getAdminByMaTK = async (MaTK: number) => {
   const [rows]: any = await pool.query(
     `SELECT 
-      QL.MaQL AS id, 
-      QL.HoTen, 
-      QL.SoDienThoai, 
-      QL.TrangThai,
-      TK.TenDangNhap,
-      TK.MaTK
-    FROM QuanLy QL
-    JOIN TaiKhoan TK 
-      ON QL.MaQL + 10 = TK.MaTK 
-    WHERE TK.VaiTro = 2` 
-  );
-  return rows;
-};
-
-export const getAdminById = async (id: number) => {
-  const [rows]: any = await pool.query(
-    `SELECT 
-      QL.MaQL AS id, 
-      QL.HoTen, 
-      QL.SoDienThoai, 
-      QL.TrangThai,
-      TK.TenDangNhap,
-      TK.MaTK
-    FROM QuanLy QL
-    JOIN TaiKhoan TK ON QL.MaQL + 10 = TK.MaTK
-    WHERE QL.MaQL = ? AND TK.VaiTro = 2`,
-    [id]
+        QL.MaQL AS id,
+        QL.HoTen,
+        QL.SoDienThoai,
+        QL.TrangThai,
+        TK.TenDangNhap,
+        TK.MaTK
+      FROM QuanLy QL
+      JOIN TaiKhoan TK ON QL.MaTK = TK.MaTK
+      WHERE TK.MaTK = ? AND TK.VaiTro = 2`,
+    [MaTK]
   );
   return rows[0];
 };

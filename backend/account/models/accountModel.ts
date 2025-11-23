@@ -2,10 +2,6 @@
 
 import { pool } from "../../config/db";
 
-/**
- * Tìm user theo email + password
- * Trả về object có: id (string), email, name, role
- */
 export const findUserByCredentials = async (email: string, password: string) => {
   const [rows]: any = await pool.execute(
     `
@@ -29,17 +25,17 @@ export const findUserByCredentials = async (email: string, password: string) => 
 
   const user = rows[0];
 
-  let role: "parent" | "admin" | "driver" = "parent";
-  if (user.VaiTro === 2) role = "admin";
-  else if (user.VaiTro === 3) role = "driver";
+  let roleText: "parent" | "admin" | "driver" = "parent";
+  if (user.VaiTro === 2) roleText = "admin";
+  if (user.VaiTro === 3) roleText = "driver";
 
   return {
     id: user.id.toString(),
     email: user.email,
     name: user.name || "Người dùng",
-    role,
+    role: roleText,    // TEXT
+    VaiTro: user.VaiTro, // SỐ THẬT — QUAN TRỌNG
   };
 };
-
-
 export { pool };
+

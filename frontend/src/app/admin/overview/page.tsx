@@ -1,127 +1,195 @@
-// src/pages/Dashboard.tsx
 "use client";
-import React from "react";
-import Grid from "@mui/material/Grid";
-import { Card, Typography, Box } from "@mui/material";
-// import { GlobalStyles } from '@mui/material';
+import React, { useEffect, useState } from "react";
+import { Grid, Card, Typography, Box } from "@mui/material";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
 
-import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import PersonIcon from "@mui/icons-material/Person";
 import SchoolIcon from "@mui/icons-material/School";
 import RouteIcon from "@mui/icons-material/Route";
 
+// API
+import { getAllBuses, IBus } from "@/api/busApi";
+import { getAllDrivers, IDriver } from "@/api/driverApi";
+import { getAllStudents, IStudentDetail } from "@/api/studentApi";
+import { IRouteDetail, getAllRoutes } from "@/api/routeApi";
+import { getTripsPerDay, ITripData } from "@/api/statsApi";
+
+const COLORS = ["#2196f3", "#f44336"];
+const DAYS_OF_WEEK = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+
 const Dashboard: React.FC = () => {
-  // Giả lập dữ liệu thống kê
-  const stats = [
-    { label: "Xe buýt", value: 28, icon: <DirectionsBusIcon fontSize="large" color="primary" /> },
-    { label: "Tài xế", value: 15, icon: <PersonIcon fontSize="large" color="primary" /> },
-    { label: "Học sinh", value: 120, icon: <SchoolIcon fontSize="large" color="primary" /> },
-    { label: "Tuyến đường", value: 8, icon: <RouteIcon fontSize="large" color="primary" /> },
-  ];
+  const [stats, setStats] = useState({ buses: 0, drivers: 0, students: 0, routes: 0 });
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [tripData, setTripData] = useState<ITripData[]>([]);
+  const [busStatus, setBusStatus] = useState<{ name: string; value: number }[]>([]);
+  const [loadingTrips, setLoadingTrips] = useState(true);
 
-  // Dữ liệu biểu đồ cột: số chuyến xe mỗi ngày
-  const tripData = [
-    { day: "T2", trips: 22 },
-    { day: "T3", trips: 30 },
-    { day: "T4", trips: 25 },
-    { day: "T5", trips: 28 },
-    { day: "T6", trips: 35 },
-    { day: "T7", trips: 20 },
-    { day: "CN", trips: 15 },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [buses, drivers, students, routes, trips] = await Promise.all([
+          getAllBuses(),
+          getAllDrivers(),
+          getAllStudents(),
+          getAllRoutes(),
+          getTripsPerDay(),
+        ]);
 
-  // Dữ liệu biểu đồ tròn: trạng thái xe
-  const busStatus = [
-    { name: "Đang hoạt động", value: 22 },
-    { name: "Bảo trì", value: 6 },
-  ];
+        setStats({
+          buses: buses.length,
+          drivers: drivers.length,
+          students: students.length,
+          routes: routes.length,
+        });
 
-  const COLORS = ["#2196f3", "#f44336"];
+        const normalizedTrips: ITripData[] = DAYS_OF_WEEK.map((day) => {
+          const found = trips.find((t) => t.day === day);
+          return { day, trips: found ? found.trips : 0 };
+        });
+        setTripData(normalizedTrips);
+
+        const activeCount = buses.filter((b: IBus) => b.TinhTrang === 1).length;
+        const maintenanceCount = buses.filter((b: IBus) => b.TinhTrang === 0).length;
+
+        setBusStatus([
+          { name: "Đang hoạt động", value: activeCount },
+          { name: "Bảo trì", value: maintenanceCount },
+        ]);
+      } catch (err) {
+        console.error("Lỗi khi fetch Dashboard data:", err);
+      } finally {
+        setLoadingStats(false);
+        setLoadingTrips(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   return (
-    <Box sx={{ padding: 3 ,
-      flexGrow: 1,
-    width: "100%",
-    height: "100%",
-    p: 3,
-    backgroundColor: "#f9fafc",
+    <Box sx={{ 
+      minHeight: "100vh", 
+      width: "100%", 
+      backgroundColor: "#f5f5f5", 
+      py: 6, // padding top/bottom
+      display: "flex", 
+      justifyContent: "center"
     }}>
-      {/* Thẻ thống kê */}
-      <Grid container spacing={3}>
-        {stats.map((item, index) => (
-          <Grid size={{xs:12, sm:6, md:3 }} >
-            <Card
-              sx={{
+      <Box sx={{ width: "100%", maxWidth: 1400, px: 3 }}>
+        {/* Header */}
+
+        {/* Stats Cards */}
+        <Grid container spacing={3} sx={{ mb: 5 }}>
+          {[
+            { label: "Xe buýt", value: stats.buses, icon: <DirectionsBusIcon fontSize="large" sx={{ color: "#2196f3" }} />, bgColor: "#e3f2fd" },
+            { label: "Tài xế", value: stats.drivers, icon: <PersonIcon fontSize="large" sx={{ color: "#2196f3" }} />, bgColor: "#e3f2fd" },
+            { label: "Học sinh", value: stats.students, icon: <SchoolIcon fontSize="large" sx={{ color: "#2196f3" }} />, bgColor: "#e3f2fd" },
+            { label: "Tuyến đường", value: stats.routes, icon: <RouteIcon fontSize="large" sx={{ color: "#2196f3" }} />, bgColor: "#e3f2fd" },
+          ].map((item, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Card sx={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: 2,
-                boxShadow: 3,
+                p: 3,
                 borderRadius: 3,
-              }}
-            >
-              <Box>
-                <Typography variant="h6" color="text.secondary">
-                  {item.label}
-                </Typography>
-                <Typography variant="h4" fontWeight="bold">
-                  {item.value}
-                </Typography>
-              </Box>
-              {item.icon}
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                backgroundColor: item.bgColor,
+                "&:hover": {
+                  transform: "translateY(-3px)",
+                  boxShadow: "0 6px 18px rgba(0,0,0,0.12)"
+                }
+              }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">{item.label}</Typography>
+                  <Typography variant="h5" fontWeight="bold">{loadingStats ? "..." : item.value}</Typography>
+                </Box>
+                {item.icon}
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Charts */}
+        <Grid container spacing={3}>
+          {/* Bar Chart */}
+          <Grid item xs={12} md={8}>
+            <Card sx={{ p: 3, borderRadius: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.08)", backgroundColor: "#ffffff" }}>
+              <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                Số chuyến xe trong tuần
+              </Typography>
+              {loadingTrips ? (
+                <Typography>Đang tải dữ liệu...</Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={tripData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                    <XAxis dataKey="day" stroke="#999" />
+                    <YAxis stroke="#999" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "#ffffff", 
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "8px"
+                      }} 
+                    />
+                    <Bar dataKey="trips" fill="#2196f3" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </Card>
           </Grid>
-        ))}
-      </Grid>
 
-      {/* Biểu đồ */}
-      <Grid container spacing={3} sx={{ marginTop: 3 }}>
-        {/* Biểu đồ cột */}
-        <Grid size={{xs:12, md:8}} >
-          <Card sx={{ padding: 2, borderRadius: 3, boxShadow: 3, height:300, width:400 }}>
-            <Typography variant="h6" gutterBottom>
-              Số chuyến xe trong tuần
-            </Typography>
-            <ResponsiveContainer width="100%" height="80%">
-              <BarChart data={tripData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="trips" fill="#2196f3" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
+          {/* Pie Chart */}
+          <Grid item xs={12} md={4}>
+            <Card sx={{ p: 3, borderRadius: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.08)", backgroundColor: "#ffffff" }}>
+              <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                Trạng thái xe buýt
+              </Typography>
+              {loadingTrips ? (
+                <Typography>Đang tải dữ liệu...</Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={busStatus}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label
+                    >
+                      {busStatus.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "#ffffff", 
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "8px"
+                      }} 
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </Card>
+          </Grid>
         </Grid>
-
-        {/* Biểu đồ tròn */}
-        <Grid size={{xs:12, md:4}} >
-          <Card sx={{ padding: 2, borderRadius: 3, boxShadow: 3, height:300 , width:400 }}>
-            <Typography variant="h6" gutterBottom>
-              Trạng thái xe buýt
-            </Typography>
-            <ResponsiveContainer width="100%" height="80%">
-              <PieChart>
-                <Pie
-                  data={busStatus}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label
-                >
-                  {busStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-        </Grid>
-      </Grid>
+      </Box>
     </Box>
   );
 };
