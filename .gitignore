@@ -1,0 +1,69 @@
+# ==========================
+# GLOBAL
+# ==========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.DS_Store
+
+# ==========================
+# ENV FILES
+# ==========================
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# ==========================
+# LOGS
+# ==========================
+logs/
+*.log
+
+# ==========================
+# BACKEND IGNORE
+# ==========================
+backend/node_modules/
+backend/dist/
+backend/build/
+backend/.env
+
+# Không push tất cả model lên backend
+backend/**/models/
+backend/**/model/
+backend/**/Model/
+backend/**/Models/
+
+# ==========================
+# FRONTEND IGNORE
+# ==========================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env
+
+# Không push model frontend nếu có
+frontend/**/models/
+frontend/**/model/
+frontend/**/Models/
+
+# ==========================
+# LOCK FILES (tùy bạn)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# ==========================
+# IMAGE CACHE
+# ==========================
+*.png.cache
+*.jpg.cache
+
+# ==========================
+# OS FILES
+# ==========================
+Thumbs.db
