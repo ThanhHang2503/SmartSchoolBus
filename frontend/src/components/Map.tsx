@@ -14,6 +14,17 @@ import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
+// Icon trạm dừng: chấm tròn màu đỏ
+const stopIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: shadowUrl,
+  iconSize: [15, 21],
+  iconAnchor: [0, 0],
+  popupAnchor: [0, 0],
+  shadowSize: [0, 0]
+});
+
 // Xóa và thiết lập lại icon mặc định
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -25,6 +36,7 @@ L.Icon.Default.mergeOptions({
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
+
 
 interface MyMapProps {
   routeId?: number; // ID tuyến đường cần hiển thị (optional)
@@ -45,19 +57,20 @@ const RoutingControl: React.FC<{ stops: Array<{ ViDo: number; KinhDo: number }> 
       waypoints,
       routeWhileDragging: false,
       addWaypoints: false,
-      draggableWaypoints: false,
       fitSelectedRoutes: true,
       showAlternatives: false,
       lineOptions: {
-        styles: [{ color: '#1976d2', weight: 4, opacity: 0.7 }],
+        styles: [{ color: '#d21919ff', weight: 4, opacity: 0.7 }],
         extendToWaypoints: true,
         missingRouteTolerance: 0
       },
-      createMarker: () => null, // Không tạo marker mặc định (dùng marker riêng)
+      createMarker: () => null // Ẩn marker mặc định
     }).addTo(map);
 
     return () => {
-      map.removeControl(routingControl);
+      if (map && routingControl) {
+        map.removeControl(routingControl);
+      }
     };
   }, [map, stops]);
 
@@ -123,20 +136,23 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1 }) => {
       {sortedStops.length > 0 && <RoutingControl stops={sortedStops} />}
 
       {/* Hiển thị các trạm dừng */}
-      {routeData?.stops.map((stop) => (
-        <Marker 
-          key={stop.MaTram} 
-          position={[stop.ViDo, stop.KinhDo]}
-        >
-          <Popup>
-            <strong>{stop.TenTram}</strong>
-            <br />
-            Địa chỉ: {stop.DiaChi}
-            <br />
-            Thứ tự: {stop.ThuTuDung}
-          </Popup>
-        </Marker>
-      ))}
+      {routeData?.stops
+        .filter(stop => !(Math.abs(stop.ViDo - latitude) < 1e-6 && Math.abs(stop.KinhDo - longitude) < 1e-6))
+        .map((stop) => (
+          <Marker 
+            key={stop.MaTram} 
+            position={[stop.ViDo, stop.KinhDo]}
+            icon={stopIcon}
+          >
+            <Popup>
+              <strong>{stop.TenTram}</strong>
+              <br />
+              Địa chỉ: {stop.DiaChi}
+              <br />
+              Thứ tự: {stop.ThuTuDung}
+            </Popup>
+          </Marker>
+        ))}
 
       {/* Marker vị trí hiện tại */}
       <Marker position={[latitude, longitude]}>
