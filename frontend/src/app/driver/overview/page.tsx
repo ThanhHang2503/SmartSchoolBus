@@ -7,6 +7,10 @@ import {
   Box,
   Avatar,
   Button,
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions,
 } from "@mui/material";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import SchoolIcon from "@mui/icons-material/School";
@@ -14,7 +18,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { IDriver, getCurrentDriver, parseStudentList, getCurrentDriverSchedules} from "@/api/driverApi";
+import { IDriver, getCurrentDriver, parseStudentList, getCurrentDriverSchedules, IDriverNotification, getDriverNotifications} from "@/api/driverApi";
 import { useDriverSchedules } from '@/context/driverSchedulesContext';
 
 export default function DriverDashboard() {
@@ -22,12 +26,14 @@ export default function DriverDashboard() {
   // 1. GỌI TẤT CẢ CÁC HOOKS LÊN TRÊN CÙNG
   const { token } = useAuth(); // Hook 1: Lấy token
   const [driver, setDriver] = useState<IDriver | null>(null); // Hook 2: State cục bộ cho driver
-  //Hook 3: GỌI useDriverSchedules MỘT LẦN DUY NHẤT để lấy cả setters và data
-  const { setSchedules, setLoading, schedules, loading } = useDriverSchedules(); 
-  // TRẠNG THÁI TÍNH TOÁN CỤC BỘ
-  const [studentStats, setStudentStats] = useState({ total: 0, pickedUp: 0 });
+  const { setSchedules, setLoading, schedules, loading } = useDriverSchedules(); //Hook 3: GỌI useDriverSchedules MỘT LẦN DUY NHẤT để lấy cả setters và data
+  const [studentStats, setStudentStats] = useState({ total: 0, pickedUp: 0 }); // TRẠNG THÁI TÍNH TOÁN CỤC BỘ
+  //Thông báo
+  const [notifications, setNotifications] = useState<IDriverNotification[]>([]);
+  const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
+  const [isNotificationLoading, setIsNotificationLoading] = useState(false);
 
-  // 2. EFFECT HOOKS (Thực hiện Side Effects)
+  // 2. EFFECT CHO DỮ LIỆU TỪ BACKEND
   // useEffect 1: Lấy thông tin tài xế
   useEffect(() => {
     if (!token) return;
@@ -65,6 +71,26 @@ export default function DriverDashboard() {
     fetchAndCacheSchedules();
   }, [token, setSchedules, setLoading]);
 
+  // useEffect 3: Lấy thông báo cho tài xế (DÙNG API MỚI)
+ useEffect(() => {
+   const fetchNotifications = async () => {
+   if (!token) return; 
+      
+      setIsNotificationLoading(true);
+   try {
+    const data = await getDriverNotifications(token); 
+    setNotifications(data); 
+    
+   } catch (err) {
+    console.error("Lỗi khi lấy thông báo:", err);
+    setNotifications([]);
+   } finally {
+    setIsNotificationLoading(false);
+   }
+   };
+   fetchNotifications();
+ }, [token]);
+
   // 3. LOGIC TÍNH TOÁN (Chạy khi schedules thay đổi)
   const today = new Date().toISOString().slice(0, 10); 
   const todaySchedules = schedules.filter(s => s.scheduleDate === today);
@@ -75,13 +101,10 @@ export default function DriverDashboard() {
     let totalStudents = 0;
     let pickedUpStudents = 0;
 
-    // Lặp qua tất cả các chuyến hôm nay
     todaySchedules.forEach(schedule => {
-        // Phân tích chuỗi học sinh cho mỗi chuyến
-        const students = parseStudentList(schedule.studentListRaw);
-        
+        const students = parseStudentList(schedule.studentListRaw);// Phân tích chuỗi học sinh cho mỗi chuyến
         totalStudents += students.length;
-        
+
         // Đếm học sinh Đã đón (Trạng thái = 1) và Đã trả (Trạng thái = 2)
         students.forEach(student => {
             if (student.status === 1 || student.status === 2) {
@@ -97,6 +120,7 @@ export default function DriverDashboard() {
   // 4. KIỂM TRA ĐIỀU KIỆN 
   if (!driver) return <Typography>Đang tải thông tin tài xế...</Typography>;
   
+
   // Hàm hiển thị chi tiết từng chuyến làm việc (giờ và tuyến đường)
   const renderScheduleDetails = () => {
     if (loading) {
@@ -120,9 +144,7 @@ export default function DriverDashboard() {
   const busLicensePlate = todaySchedules.length > 0 ? todaySchedules[0].busLicensePlate : "Chưa xác định";
 
   // hàm xem chi tiết thông báo
-  const handleViewDetails = () => {
-    alert("Bạn đã bấm Xem chi tiết!");
-  };
+  const handleViewDetails = () => { setIsNotificationDialogOpen(true); };
 
   // 5. RENDER JSX
   return (
@@ -187,7 +209,7 @@ export default function DriverDashboard() {
               <NotificationsActiveIcon fontSize="large" color="error" />
               <Box>
                 <Typography variant="subtitle1" fontWeight={600}>Thông báo</Typography>
-                <Typography variant="body2">Thông báo chưa đọc</Typography>
+                <Typography variant="body2">Thông báo mới: {notifications.length}</Typography>
                 <Button 
                   size="small" 
                   sx={{ mt: 1, textTransform: "none"}} 
@@ -210,9 +232,7 @@ export default function DriverDashboard() {
               alignItems: "center",
               
           }} >
-              {/* Avatar */}
               <Avatar alt={driver.name} src="/driver-avatar.png" sx={{ width: 100, height: 100, mx: "auto", mb: 2 }}/>
-              {/* Khối Thông tin */}
               <Box sx={{ width: '100%'}}> 
                   <Typography variant="h6" fontWeight={600} textAlign="center" mb={2}>{driver.name}</Typography>
                   {/* Hàng 1: Mã tài xế */}
@@ -242,22 +262,46 @@ export default function DriverDashboard() {
                   </Box>
               </Box>
           </Card>
-       
-        {/* Thống kê hôm nay */}
-        {/* <Card sx={{ bgcolor: "#90caf969", gridColumn: { sx: "span 1", md: "span 2"}, mt: 3}}>
-          <CardContent>
-            <Box display="flex" alignItems="center" gap={2}>
-              <QueryStatsIcon fontSize="large" color="action" />
-              <Box>
-                <Typography variant="h6" fontWeight={600}>Thống kê hôm nay</Typography>
-                <Typography variant="body2">Số chuyến đã hoàn thành: 3</Typography>
-                <Typography variant="body2">Số km đã đi: 42km</Typography>
-                <Typography variant="body2">Thời gian làm việc: 5 giờ</Typography>
-              </Box>
-            </Box>
-          </CardContent>
-        </Card> */}
 
+      {/* DIALOG HIỂN THỊ THÔNG BÁO */}
+      <Dialog
+          open={isNotificationDialogOpen}
+          onClose={() => setIsNotificationDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+      >
+          <DialogTitle>Tất cả Thông báo (Tổng: {notifications.length})</DialogTitle>
+          
+          <DialogContent dividers>
+              {isNotificationLoading ? (
+                  <Typography>Đang tải thông báo...</Typography>
+              ) : notifications.length === 0 ? (
+                  <Typography color="text.secondary">Hiện không có thông báo nào.</Typography>
+              ) : (
+                  <Box>
+                        {notifications.map((n) => (
+                          // Sử dụng key để React có thể theo dõi các phần tử
+                          <Box key={n.id} sx={{ mb: 2, p: 1 , borderBottom: '1px solid #eee'}}> 
+                              <Typography variant="subtitle1" fontWeight={600} color="primary">
+                                  {n.message || "Không có nội dung"} 
+                              </Typography>
+                              <Box sx={{ ml: 1, mt: 0.5 }}>
+                                  <Typography variant="body2">
+                                      Loại: <Typography component="span" fontWeight="bold">{n.type}</Typography>
+                                  </Typography>
+                                  <Typography variant="body2">
+                                      Thời gian: {n.date}
+                                  </Typography>
+                              </Box>
+                          </Box>
+                      ))}
+                  </Box>
+              )}
+          </DialogContent>
+          <DialogActions>
+              <Button onClick={() => setIsNotificationDialogOpen(false)}>Đóng</Button>
+          </DialogActions>
+      </Dialog>
     </Box>
   );
 }

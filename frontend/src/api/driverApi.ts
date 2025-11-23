@@ -17,13 +17,6 @@ export const getAllDrivers = async (): Promise<IDriver[]> => {
   return res.json();
 };
 
-// Lấy tài xế theo ID
-export const getDriverById = async (id: number): Promise<IDriver> => {
-  const res = await fetch(`${BASE_URL}/${id}`);
-  if (!res.ok) throw new Error('Failed to fetch driver');
-  return res.json();
-};
-
 // Lấy thông tin tài xế hiện tại dựa trên token
 export const getCurrentDriver = async (token: string): Promise<IDriver> => {
   const res = await fetch(`http://localhost:5000/driver/me`, {
@@ -35,15 +28,8 @@ export const getCurrentDriver = async (token: string): Promise<IDriver> => {
   return res.json();
 };
 
-// Định dạng chuỗi thô (16 trường):
-// MaHS|HoTen|NgaySinh|Lop|TrangThai|TenPH|SDTPH|MaPH|TenDon|DiaChiDon|KinhDoDon|ViDoDon|TenTra|DiaChiTra|KinhDoTra|ViDoTra
-
-// --- INTERFACES ---
-
-/**
- * Interface Chi tiết Học sinh (Đã phân tích cú pháp)
- * Dùng để hiển thị trong SchedulePage và MapPage
- */
+// --- LỊCH TRÌNH TÀI XẾ ---
+//  Interface Chi tiết Học sinh 
 export interface IStudentDetail {
   // Thông tin Học sinh
   id: number;           // MaHS
@@ -57,26 +43,12 @@ export interface IStudentDetail {
   parentName: string;
   parentPhone: string;
   
-  // Trạm Đón
-  pickUpStopName: string;
-  pickUpAddress: string;
-  pickUpLat: number;    // Vĩ độ
-  pickUpLng: number;    // Kinh độ
-  
-  // Trạm Trả
-  dropOffStopName: string;
-  dropOffAddress: string;
-  dropOffLat: number;   // Vĩ độ
-  dropOffLng: number;   // Kinh độ
+  pickUpStopName: string; // Trạm Đón
+  dropOffStopName: string; // Trạm Trả
 }
 
-
-/**
- * Interface cho từng đối tượng Lịch trình trong mảng (Kết quả từ API)
- * studentListRaw chứa chuỗi 16 trường chi tiết học sinh
- */
+// Interface cho từng đối tượng Lịch trình trong mảng (Kết quả từ API)
 export interface IScheduleDriver {
-  // Thông tin cơ bản
   id: number; // MaLT
   scheduleDate: string; // YYYY-MM-DD
   startTime: string;
@@ -86,17 +58,11 @@ export interface IScheduleDriver {
   routeEnd: string; 
   driverName: string;
   busLicensePlate: string; 
-  
   // Danh sách học sinh (dữ liệu thô)
-  studentListRaw: string; // Chuỗi 16 trường
+  studentListRaw: string; 
 }
 
-
-// --- HÀM TIỆN ÍCH PHÂN TÍCH CÚ PHÁP ---
-
-/**
- * Phân tích chuỗi studentListRaw thành mảng các đối tượng IStudentDetail.
- */
+ // Phân tích chuỗi studentListRaw thành mảng các đối tượng IStudentDetail.
 export const parseStudentList = (rawString: string): IStudentDetail[] => {
     if (!rawString) return [];
     
@@ -104,8 +70,8 @@ export const parseStudentList = (rawString: string): IStudentDetail[] => {
         const [
             name, maHS, dob, studentClass, status, 
             parentName, parentPhone, parentID, 
-            pickUpStopName, pickUpAddress, pickUpLng, pickUpLat, 
-            dropOffStopName, dropOffAddress, dropOffLng, dropOffLat 
+            pickUpStopName, 
+            dropOffStopName
         ] = item.split('|');
 
         return {
@@ -118,19 +84,10 @@ export const parseStudentList = (rawString: string): IStudentDetail[] => {
             parentName,
             parentPhone,
             pickUpStopName,
-            pickUpAddress,
-            pickUpLng: parseFloat(pickUpLng),
-            pickUpLat: parseFloat(pickUpLat),
             dropOffStopName,
-            dropOffAddress,
-            dropOffLng: parseFloat(dropOffLng),
-            dropOffLat: parseFloat(dropOffLat),
         } as IStudentDetail; 
     });
 };
-
-
-// --- API FUNCTIONS ---
 
 // Lấy lịch trình tài xế hiện tại dựa trên token
 export const getCurrentDriverSchedules = async (token: string): Promise<IScheduleDriver[]> => {
@@ -140,5 +97,22 @@ export const getCurrentDriverSchedules = async (token: string): Promise<ISchedul
   },
  }); 
  if (!res.ok) throw new Error("Không thể lấy thông tin lịch trình của tài xế");
+ return res.json();
+};
+
+export interface IDriverNotification {
+  id: number;
+  message: string;
+  type: string;
+  date: string; // YYYY-MM-DD HH:MM:SS
+}
+
+export const getDriverNotifications = async (token: string): Promise<IDriverNotification[]> => {
+  const res = await fetch(`http://localhost:5000/driver/me/notifications`, {
+    headers: {
+   Authorization: `Bearer ${token}`,
+  },
+ }); 
+ if (!res.ok) throw new Error("Không thể lấy thông báo của tài xế");
  return res.json();
 };

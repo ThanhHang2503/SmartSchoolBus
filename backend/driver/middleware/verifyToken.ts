@@ -23,3 +23,12 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
     res.status(401).json({ message: "Invalid token" });
   }
 };
+
+// Middleware riêng cho Driver (có thể thêm kiểm tra vai trò nếu cần)
+export const driverMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user && req.user.role === "driver") {
+    next();
+  } else {
+    res.status(403).json({ message: "Forbidden: Drivers only" });
+  }
+};

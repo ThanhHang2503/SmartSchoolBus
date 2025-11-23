@@ -37,8 +37,8 @@ export const getDriverById = async (id: number) => {
   return rows[0];
 };
 
-// Lấy Lịch trình làm việc và chi tiết học sinh theo ID TÀI KHOẢN (MaTK)
-export const getDriverSchedulesByAccountId = async (accountId: number) => {
+// Lấy Lịch trình làm việc theo MaTK
+export const getDriverSchedulesByAccountId = async (MaTK: number) => {
  const [rows]: any = await pool.query(
   `SELECT
     LT.MaLT AS id,
@@ -50,8 +50,8 @@ export const getDriverSchedulesByAccountId = async (accountId: number) => {
     TX.HoTen AS driverName,
     XB.BienSo AS busLicensePlate,
     
-    -- Danh sách học sinh tham gia lịch trình (16 trường chi tiết)
-    -- FORMAT: HoTen|MaHS|NgaySinh|Lop|TrangThai|TenPH|SDTPH|MaPH|TenDon|DiaChiDon|KinhDoDon|ViDoDon|TenTra|DiaChiTra|KinhDoTra|ViDoTra
+    -- Danh sách học sinh tham gia lịch trình 
+    -- FORMAT: HoTen|MaHS|NgaySinh|Lop|TrangThai|TenPH|SDTPH|MaPH|TenDon|TenTra|
     GROUP_CONCAT(
       CONCAT(
         HS.HoTen, '|', 
@@ -61,16 +61,9 @@ export const getDriverSchedulesByAccountId = async (accountId: number) => {
                 CTLT.TrangThai, '|',
                 PH.HoTen, '|', 
                 PH.SoDienThoai, '|',
-                PH.MaPH,    
-                '|',
+                PH.MaPH, '|',
                 TDON.TenTram, '|', 
-                TDON.DiaChi, '|', 
-                TDON.KinhDo, '|', 
-                TDON.ViDo, '|',
-                TTRA.TenTram, '|', 
-                TTRA.DiaChi, '|', 
-                TTRA.KinhDo, '|', 
-                TTRA.ViDo
+                TTRA.TenTram
       ) 
       ORDER BY HS.HoTen ASC 
       SEPARATOR ';'
@@ -95,9 +88,27 @@ export const getDriverSchedulesByAccountId = async (accountId: number) => {
     TX.HoTen, XB.BienSo
   ORDER BY
     LT.Ngay DESC, LT.GioBatDau ASC`
- , [accountId]
+ , [MaTK]
 );
 
 return rows; 
+};
+
+
+// Lấy thông báo cho tài khoản (MaTK)
+export const getNotificationsByAccountId = async (maTK: number) => {
+  const [rows]: any = await pool.query(
+    `SELECT TB.MaTB AS id, 
+      TB.NoiDung AS message, 
+      TB.LoaiTB AS type, 
+      DATE_FORMAT(CTTB.ThoiGian, '%Y-%m-%d %H:%i:%s') AS date
+
+     FROM CTTB
+     JOIN ThongBao TB ON CTTB.MaTB = TB.MaTB
+     WHERE CTTB.MaTK = ?
+     ORDER BY CTTB.ThoiGian DESC`,
+    [maTK]
+  );
+  return rows;
 };
 
