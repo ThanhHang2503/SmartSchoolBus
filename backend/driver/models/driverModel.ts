@@ -40,7 +40,7 @@ export const getDriverById = async (id: number) => {
 export const getDriverSchedulesByAccountId = async (MaTK: number) => {
  const [rows]: any = await pool.query(
   `SELECT
-    LT.MaLT AS id,
+    LT.MaLT AS id, 
     DATE_FORMAT(LT.Ngay, '%Y-%m-%d') AS scheduleDate,
     LT.GioBatDau AS startTime,
     LT.GioKetThuc AS endTime,
