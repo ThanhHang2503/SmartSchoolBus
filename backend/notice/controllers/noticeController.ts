@@ -17,7 +17,9 @@ export const sendNotice = async (req: Request, res: Response) => {
   }
 
   try {
+    console.log('POST /notice payload:', { content, receivers });
     const result = await createNotice(content.trim(), receivers);
+    console.log('createNotice result:', result);
 
     // Trả về dữ liệu đẹp cho frontend
     const now = new Date();
@@ -33,7 +35,9 @@ export const sendNotice = async (req: Request, res: Response) => {
     return res.status(201).json(responseData);
   } catch (err) {
     console.error("Lỗi gửi thông báo:", err);
-    return res.status(500).json({ message: "Gửi thông báo thất bại" });
+    // Nếu err có message từ model, trả về chi tiết hơn
+    const message = (err && (err as any).message) ? (err as any).message : "Gửi thông báo thất bại";
+    return res.status(500).json({ message });
   }
 };
 

@@ -27,6 +27,7 @@ import {
 import { useDriverSchedules } from '@/context/driverSchedulesContext';
 import { IStudentDetail, parseStudentList } from "@/api/driverApi";
 
+
 // Hàm cập nhật trạng thái (Giả định gọi API)
 const handleStatusChange = (maHS: number, newStatus: number) => {
     // TRONG THỰC TẾ: 
@@ -38,7 +39,7 @@ const handleStatusChange = (maHS: number, newStatus: number) => {
 export default function MapAndStudentPage() {
   // 🔥 LẤY DỮ LIỆU THỰC TẾ
   const { schedules, loading } = useDriverSchedules();
-
+  console.log("schedules:", schedules);
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [alertType, setAlertType] = useState("");
@@ -53,13 +54,11 @@ export default function MapAndStudentPage() {
     const nowTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }); // Lấy HH:MM:SS hiện tại
     const todaySchedules = schedules.filter(s => s.scheduleDate === today);// Lấy TẤT CẢ các chuyến trong ngày hôm nay
     const activeOrUpcomingTrips = todaySchedules // 2. Lọc và sắp xếp các chuyến chưa hoàn thành hoặc chưa kết thúc
-        .filter(s => {
-            return s.endTime === null || s.endTime > nowTime; 
-        })
-        .sort((a, b) => a.startTime.localeCompare(b.startTime)); // Sắp xếp theo giờ bắt đầu sớm nhất
 
+        .sort((a, b) => a.startTime.localeCompare(b.startTime)); // Sắp xếp theo giờ bắt đầu sớm nhất
+    console.log("Chuyến hôm nay (chưa kết thúc):", activeOrUpcomingTrips);
     const currentTrip = activeOrUpcomingTrips[0];
-    
+    const [selectedRouteId, setSelectedRouteId] = useState(currentTrip ? currentTrip.routeId : 0); // Tuyến đường được chọn
     // PHÂN TÍCH HỌC SINH TỪ CHUYẾN ĐANG CHỌN
     const allStudents: IStudentDetail[] = currentTrip 
         ? parseStudentList(currentTrip.studentListRaw) 
@@ -172,7 +171,7 @@ export default function MapAndStudentPage() {
     if (loading) {
         return <Box sx={{ p: 3 }}><Typography>Đang tải dữ liệu lịch trình...</Typography></Box>;
     }
-    if (!currentTrip) {
+    if (currentTrip==null || currentTrip===undefined) {
         return <Box sx={{ p: 3 }}><Typography variant="h6">Hôm nay bạn không có lịch làm việc.</Typography></Box>;
     }
 
@@ -199,7 +198,7 @@ export default function MapAndStudentPage() {
             }}
           >
             <Paper elevation={0} sx={{ height: "100%" }}>
-              <MyMap />
+              <MyMap routeId={selectedRouteId} />
             </Paper>
           </Box>
         </Grid>

@@ -35,20 +35,17 @@ export const createSchedule = async (req: Request, res: Response) => {
 
   try {
     // 1. Kiểm tra trùng giờ (chỉ tài xế + xe)
+    // Overlap logic: two intervals overlap when NOT (existing_end <= new_start OR existing_start >= new_end)
     const existing = await executeQuery(
       `SELECT * FROM LichTrinh
-       WHERE Ngay = ? AND (MaTX = ? OR MaXe = ?)
-       AND (
-           (GioBatDau <= ? AND GioKetThuc >= ?) OR
-           (GioBatDau <= ? AND GioKetThuc >= ?)
-       )`,
-      [Ngay, MaTX, MaXe, GioBatDau, GioBatDau, GioKetThuc, GioKetThuc]
+       WHERE Ngay = ?
+         AND (MaTX = ? OR MaXe = ?)
+         AND NOT (GioKetThuc <= ? OR GioBatDau >= ?)`,
+      [Ngay, MaTX, MaXe, GioBatDau, GioKetThuc]
     );
 
     if (existing.length > 0) {
-      return res
-        .status(409)
-        .json({ message: "Xe hoặc tài xế đã có lịch trùng giờ trong ngày" });
+      return res.status(409).json({ message: "Xe hoặc tài xế đã có lịch trùng giờ trong ngày" });
     }
 
     // 2. Insert nếu không trùng

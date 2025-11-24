@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { getAdminByMaTK } from "../models/adminModel";
+import { getAllAdmins } from "../models/adminModel";
 
 // Lấy thông tin admin hiện tại từ token
 export const getCurrentAdmin = async (req: Request, res: Response) => {
@@ -16,6 +17,16 @@ export const getCurrentAdmin = async (req: Request, res: Response) => {
     res.json(admin);
   } catch (err) {
     console.error("Lỗi khi lấy thông tin admin:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+export const getAdmins = async (_req: Request, res: Response) => {
+  try {
+    const admins = await getAllAdmins();
+    res.json(admins || []);
+  } catch (err) {
+    console.error("Lỗi khi lấy danh sách admin:", err);
     res.status(500).json({ message: "Lỗi server" });
   }
 };

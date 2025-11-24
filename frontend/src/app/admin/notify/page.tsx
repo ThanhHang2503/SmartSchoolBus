@@ -25,10 +25,11 @@ import PeopleIcon from "@mui/icons-material/People"
 
 import { getAllParents } from "@/api/parentApi"
 import { getAllDrivers } from "@/api/driverApi"
+import { getAllAdmins } from "@/api/adminApi"
 import { getNoticesByUser, sendNotice, type INotice } from "@/api/noticeApi"
 
-type UserType = "driver" | "parent"
-type NoticeType = "all" | "all-driver" | "all-parent" | "single"
+type UserType = "driver" | "parent" | "admin"
+type NoticeType = "all" | "all-driver" | "all-parent" | "all-admin" | "single"
 
 type ChatUser = {
   id: string
@@ -61,10 +62,15 @@ const AdminNotifyPage = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const [parentsRes, driversRes] = await Promise.all([getAllParents(), getAllDrivers()])
+        const [parentsRes, driversRes, adminsRes] = await Promise.all([
+          getAllParents(),
+          getAllDrivers(),
+          getAllAdmins(),
+        ])
 
         const activeParents = (parentsRes || []).filter((p: any) => p.Active === 1)
         const activeDrivers = (driversRes || []).filter((d: any) => d.Active === 1)
+        const activeAdmins = (adminsRes || []).filter((a: any) => a.TrangThai === 1)
 
         const parentList: ChatUser[] = activeParents.map((p: any) => ({
           id: `parent-${p.MaPH}`,
@@ -82,7 +88,15 @@ const AdminNotifyPage = () => {
           extraId: d.MaTX,
         }))
 
-        setChatUsers([...driverList, ...parentList])
+        const adminList: ChatUser[] = activeAdmins.map((a: any) => ({
+          id: `admin-${a.MaQL}`,
+          rawId: String(a.MaTK),
+          name: a.HoTen,
+          type: "admin" as const,
+          extraId: a.MaQL,
+        }))
+
+        setChatUsers([...driverList, ...parentList, ...adminList])
       } catch (err) {
         console.error("Lỗi tải danh sách người dùng:", err)
         setError("Không thể tải danh sách người dùng. Vui lòng thử lại.")
@@ -126,6 +140,9 @@ const AdminNotifyPage = () => {
       case "all-driver":
         receivers = chatUsers.filter((u) => u.type === "driver").map((u) => Number(u.rawId))
         break
+      case "all-admin":
+        receivers = chatUsers.filter((u) => u.type === "admin").map((u) => Number(u.rawId))
+        break
       case "all-parent":
         receivers = chatUsers.filter((u) => u.type === "parent").map((u) => Number(u.rawId))
         break
@@ -140,7 +157,8 @@ const AdminNotifyPage = () => {
 
     console.log("Gửi thông báo:", {
       noticeType,
-      receivers: receivers.length + " người",
+      receiversCount: receivers.length,
+      receiversSample: receivers.slice(0, 10),
     })
 
     setLoading(true)
@@ -148,7 +166,9 @@ const AdminNotifyPage = () => {
     setSuccess(false)
 
     try {
-      await sendNotice(content.trim(), receivers)
+      console.log('Calling sendNotice API...', { content: content.trim(), receivers })
+      const resp = await sendNotice(content.trim(), receivers)
+      console.log('sendNotice response:', resp)
 
       const now = new Date()
       const newNotice: INotice = {
@@ -170,16 +190,17 @@ const AdminNotifyPage = () => {
               noticeType === "all"
                 ? `Đã gửi cho tất cả (${receivers.length} người)`
                 : noticeType === "all-driver"
-                  ? `Đã gửi cho tất cả tài xế (${receivers.length} người)`
-                  : `Đã gửi cho tất cả phụ huynh (${receivers.length} người)`,
+                ? `Đã gửi cho tất cả tài xế (${receivers.length} người)`
+                : noticeType === "all-parent"
+                ? `Đã gửi cho tất cả phụ huynh (${receivers.length} người)`
+                : `Đã gửi cho tất cả quản trị viên (${receivers.length} người)`,
           },
           ...prev,
         ])
       }
-
       setContent("")
-      //   setSelectedUser(null)
-      //   setSuccess(true)
+      setSelectedUser(null)
+      setSuccess(true)
     } catch (err: any) {
       console.error("Lỗi gửi:", err)
       setError(err.message || "Gửi thất bại. Vui lòng thử lại.")
@@ -191,6 +212,7 @@ const AdminNotifyPage = () => {
   const historyToShow = selectedUser ? singleHistory : generalHistory
   const driverCount = chatUsers.filter((u) => u.type === "driver").length
   const parentCount = chatUsers.filter((u) => u.type === "parent").length
+  const adminCount = chatUsers.filter((u) => u.type === "admin").length
 
   return (
     <Box
@@ -298,6 +320,7 @@ const AdminNotifyPage = () => {
                   </MenuItem>
                   <MenuItem value="all-driver">Tất cả tài xế ({driverCount})</MenuItem>
                   <MenuItem value="all-parent">Tất cả phụ huynh ({parentCount})</MenuItem>
+                  <MenuItem value="all-admin">Tất cả quản trị viên ({adminCount})</MenuItem>
                   <MenuItem value="single">Gửi cá nhân</MenuItem>
                 </Select>
               </Box>
@@ -354,14 +377,20 @@ const AdminNotifyPage = () => {
                         <MenuItem key={user.id} value={user.id}>
                           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                             <Chip
-                              label={user.type === "driver" ? "TX" : "PH"}
+                              label={user.type === "driver" ? "TX" : user.type === "parent" ? "PH" : "AD"}
                               size="small"
                               sx={{
-                                background: user.type === "driver" ? "#dbeafe" : "#e9d5ff",
-                                color: user.type === "driver" ? "#1e40af" : "#6b21a8",
+                                background:
+                                  user.type === "driver" ? "#dbeafe" : user.type === "parent" ? "#e9d5ff" : "#fef9c3",
+                                color: user.type === "driver" ? "#1e40af" : user.type === "parent" ? "#6b21a8" : "#92400e",
                                 fontWeight: 600,
                                 fontSize: 11,
-                                border: user.type === "driver" ? "1px solid #93c5fd" : "1px solid #d8b4fe",
+                                border:
+                                  user.type === "driver"
+                                    ? "1px solid #93c5fd"
+                                    : user.type === "parent"
+                                    ? "1px solid #d8b4fe"
+                                    : "1px solid #fcd34d",
                               }}
                             />
                             <span>{user.name}</span>
@@ -540,11 +569,18 @@ const AdminNotifyPage = () => {
                     {selectedUser && (
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
                         <Chip
-                          label={selectedUser.type === "driver" ? "Tài xế" : "Phụ huynh"}
+                          label={
+                            selectedUser.type === "driver"
+                              ? "Tài xế"
+                              : selectedUser.type === "parent"
+                              ? "Phụ huynh"
+                              : "Quản trị"
+                          }
                           size="small"
                           sx={{
-                            background: selectedUser.type === "driver" ? "#dbeafe" : "#e9d5ff",
-                            color: selectedUser.type === "driver" ? "#1e40af" : "#6b21a8",
+                            background:
+                              selectedUser.type === "driver" ? "#dbeafe" : selectedUser.type === "parent" ? "#e9d5ff" : "#fef9c3",
+                            color: selectedUser.type === "driver" ? "#1e40af" : selectedUser.type === "parent" ? "#6b21a8" : "#92400e",
                             fontWeight: 600,
                           }}
                         />

@@ -82,6 +82,14 @@ const ScheduleAssignmentPage = () => {
   }
 
   const showDialog = (title: string, message: string) => {
+    // If an element currently has focus (e.g., the Save button), blur it
+    // before showing a dialog to avoid aria-hidden focus warnings.
+    try {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && typeof active.blur === 'function') active.blur();
+    } catch (err) {
+      // ignore (server-side rendering or non-browser)
+    }
     setDialogTitle(title)
     setDialogMessage(message)
     setOpenDialog(true)
@@ -178,7 +186,7 @@ const ScheduleAssignmentPage = () => {
           fullWidth
           label="Chọn tài xế"
           value={selectedDriver}
-          onChange={(e) => setSelectedDriver(e.target.value)}
+          onChange={(e) => setSelectedDriver(String(e.target.value ?? ""))}
           SelectProps={{
             MenuProps: {
               PaperProps: { sx: { maxHeight: 300 } },
@@ -208,7 +216,7 @@ const ScheduleAssignmentPage = () => {
             Nhập thông tin lịch trình
           </Typography>
 
-          <Box sx={{ overflowX: "auto", "-webkit-overflow-scrolling": "touch" }}>
+          <Box sx={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <Table sx={{ minWidth: 800 }}>
               <TableHead>
                 <TableRow sx={{ backgroundColor: "#f1f5f9" }}>

@@ -17,8 +17,9 @@ export const getDrivers = async (req: Request, res: Response) => {
 
 export const getCurrentDriver = async (req: AuthRequest, res: Response) => {
   try {
-    const driverId = Number(req.user.userId); // ← xem có bị NaN không
-    const driver = await getDriverById(driverId);
+    // The JWT contains the account id (MaTK). Map MaTK -> TaiXe row.
+    const maTK = Number(req.user.userId);
+    const driver = await getDriverById(maTK);
     if (!driver) return res.status(404).json({ message: "Không tìm thấy Tài xế" });
     res.json(driver);
   } catch (err) {

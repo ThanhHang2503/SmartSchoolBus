@@ -58,12 +58,6 @@ export interface IDriver {
 
 const BASE_URL = 'http://localhost:5000/driver'; 
 
-// Lấy tất cả tài xế
-export const getAllDrivers = async (): Promise<IDriver[]> => {
-  const res = await fetch(BASE_URL);
-  if (!res.ok) throw new Error('Failed to fetch drivers');
-  return res.json();
-};
 
 // Lấy thông tin tài xế hiện tại dựa trên token
 export const getCurrentDriver = async (token: string): Promise<IDriver> => {
@@ -97,7 +91,8 @@ export interface IStudentDetail {
 
 // Interface cho từng đối tượng Lịch trình trong mảng (Kết quả từ API)
 export interface IScheduleDriver {
-  id: number; // MaLT
+  id: number;
+  routeId: number; // MaLT
   scheduleDate: string; // YYYY-MM-DD
   startTime: string;
   endTime: string | null; 
@@ -163,4 +158,26 @@ export const getDriverNotifications = async (token: string): Promise<IDriverNoti
  }); 
  if (!res.ok) throw new Error("Không thể lấy thông báo của tài xế");
  return res.json();
+};
+
+// --- Driver location endpoints (live tracking) ---
+export const postDriverLocation = async (driverId: number, latitude: number, longitude: number, token?: string) => {
+  const res = await fetch(`http://localhost:5000/driver/location`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ driverId, latitude, longitude }),
+  });
+  return res.json();
+};
+
+export const getDriverLocation = async (driverId: number) => {
+  const res = await fetch(`http://localhost:5000/driver/location/${driverId}`);
+  if (!res.ok) {
+    return null;
+  }
+  const data = await res.json();
+  return data.position ?? null;
 };
