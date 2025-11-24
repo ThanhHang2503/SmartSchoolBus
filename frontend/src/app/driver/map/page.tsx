@@ -172,8 +172,20 @@ export default function MapAndStudentPage() {
     if (loading) {
         return <Box sx={{ p: 3 }}><Typography>Đang tải dữ liệu lịch trình...</Typography></Box>;
     }
+    // 1. Kiểm tra nếu không có lịch trình nào trong ngày hôm nay
+    if (!todaySchedules || todaySchedules.length === 0) {
+        return (
+            <Box sx={{ p: 3 }}><Typography variant="h6">Hôm nay bạn không có lịch làm việc.</Typography></Box>
+        );
+    }
+
+    // 2. Nếu có lịch trình (todaySchedules.length > 0), nhưng không có chuyến đi nào đang diễn ra (currentTrip là null/false).
     if (!currentTrip) {
-        return <Box sx={{ p: 3 }}><Typography variant="h6">Hôm nay bạn không có lịch làm việc.</Typography></Box>;
+        return (
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h6">Bạn đã hoàn thành tất cả lịch trình trong ngày hôm nay.</Typography>
+            </Box>
+        );
     }
 
   return (
