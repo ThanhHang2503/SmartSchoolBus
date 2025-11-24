@@ -1,4 +1,16 @@
-//frontend\src\api\driverApi.ts
+// frontend/src/api/driverApi.ts
+// Consolidated driver API used by frontend components
+
+export interface IDriverDetail {
+  id: number;      // frontend id mapped from MaTX
+  MaTX: number;
+  HoTen: string;
+  SoDienThoai: string;
+  BangLai: string;
+  TrangThai: number;
+  TenDangNhap: string;
+}
+
 export interface IDriver {
   id: number;
   name: string;
@@ -8,96 +20,97 @@ export interface IDriver {
   username?: string;
 }
 
-const BASE_URL = 'http://localhost:5000/driver'; 
+const BASE_URL = 'http://localhost:5000/driver';
 
-// Lấy tất cả tài xế
-export const getAllDrivers = async (): Promise<IDriver[]> => {
-  const res = await fetch(BASE_URL);
-  if (!res.ok) throw new Error('Failed to fetch drivers');
-  return res.json();
+export const getAllDrivers = async (): Promise<IDriverDetail[]> => {
+  const res = await fetch(`${BASE_URL}`);
+  if (!res.ok) throw new Error(`Lỗi khi fetch danh sách Tài xế: ${res.statusText}`);
+  const raw = await res.json();
+  // Map backend MaTX -> id for frontend convenience
+  return raw.map((d: any) => ({ ...d, id: d.MaTX }));
 };
 
-// Lấy thông tin tài xế hiện tại dựa trên token
+export const getDriverById = async (id: number): Promise<IDriverDetail> => {
+  const res = await fetch(`${BASE_URL}/${id}`);
+  if (!res.ok) throw new Error(`Không tìm thấy Tài xế có ID: ${id}`);
+  const d = await res.json();
+  return { ...d, id: d.MaTX };
+};
+
 export const getCurrentDriver = async (token: string): Promise<IDriver> => {
-  const res = await fetch(`http://localhost:5000/driver/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (!res.ok) throw new Error("Không thể lấy thông tin tài xế");
-  return res.json();
+  const res = await fetch(`${BASE_URL}/me`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error('Không thể lấy thông tin tài xế');
+  const d = await res.json();
+  return {
+    id: d.MaTX ?? d.id,
+    name: d.HoTen ?? d.name,
+    phone: d.SoDienThoai ?? d.phone,
+    license: d.BangLai ?? d.license,
+    status: d.TrangThai ?? d.status,
+    username: d.TenDangNhap ?? d.username,
+  };
 };
 
-// --- LỊCH TRÌNH TÀI XẾ ---
-//  Interface Chi tiết Học sinh 
+// Schedule / student parsing types & helpers
 export interface IStudentDetail {
-  // Thông tin Học sinh
-  id: number;           // MaHS
+  id: number; // MaHS
   name: string;
-  dob: string;          // NgaySinh (YYYY-MM-DD)
-  class: string;        // Lop
-  status: number;       // TrangThai (0: Chưa đón, 1: Đã đón, 2: Đã trả)
-  
-  // Thông tin Phụ huynh
-  parentID: number;     // MaPH (Dùng để gửi thông báo)
+  dob: string;
+  class: string;
+  status: number;
+  parentID: number;
   parentName: string;
   parentPhone: string;
-  
-  pickUpStopName: string; // Trạm Đón
-  dropOffStopName: string; // Trạm Trả
+  pickUpStopName: string;
+  dropOffStopName: string;
 }
 
-// Interface cho từng đối tượng Lịch trình trong mảng (Kết quả từ API)
 export interface IScheduleDriver {
   id: number; // MaLT
   scheduleDate: string; // YYYY-MM-DD
   startTime: string;
-  endTime: string | null; 
-  // Thông tin Tuyến đường và Xe/Tài xế
-  routeStart: string; 
-  routeEnd: string; 
+  endTime: string | null;
+  routeStart: string;
+  routeEnd: string;
   driverName: string;
-  busLicensePlate: string; 
-  // Danh sách học sinh (dữ liệu thô)
-  studentListRaw: string; 
+  busLicensePlate: string;
+  studentListRaw: string;
 }
 
- // Phân tích chuỗi studentListRaw thành mảng các đối tượng IStudentDetail.
 export const parseStudentList = (rawString: string): IStudentDetail[] => {
-    if (!rawString) return [];
-    
-    return rawString.split(';').map(item => {
-        const [
-            name, maHS, dob, studentClass, status, 
-            parentName, parentPhone, parentID, 
-            pickUpStopName, 
-            dropOffStopName
-        ] = item.split('|');
-
-        return {
-            id: parseInt(maHS),
-            name,
-            dob,
-            class: studentClass,
-            status: parseInt(status),
-            parentID: parseInt(parentID),
-            parentName,
-            parentPhone,
-            pickUpStopName,
-            dropOffStopName,
-        } as IStudentDetail; 
-    });
+  if (!rawString) return [];
+  return rawString.split(';').map((item) => {
+    const [
+      name,
+      maHS,
+      dob,
+      studentClass,
+      status,
+      parentName,
+      parentPhone,
+      parentID,
+      pickUpStopName,
+      dropOffStopName,
+    ] = item.split('|');
+    return {
+      id: parseInt(maHS || '0'),
+      name: name || '',
+      dob: dob || '',
+      class: studentClass || '',
+      status: parseInt(status || '0'),
+      parentID: parseInt(parentID || '0'),
+      parentName: parentName || '',
+      parentPhone: parentPhone || '',
+      pickUpStopName: pickUpStopName || '',
+      dropOffStopName: dropOffStopName || '',
+    } as IStudentDetail;
+  });
 };
 
-// Lấy lịch trình tài xế hiện tại dựa trên token
 export const getCurrentDriverSchedules = async (token: string): Promise<IScheduleDriver[]> => {
- const res = await fetch(`http://localhost:5000/driver/me/schedules`, {
-  headers: {
-   Authorization: `Bearer ${token}`,
-  },
- }); 
- if (!res.ok) throw new Error("Không thể lấy thông tin lịch trình của tài xế");
- return res.json();
+  const res = await fetch(`${BASE_URL}/me/schedules`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error('Không thể lấy thông tin lịch trình của tài xế');
+  return res.json();
 };
 
 export interface IDriverNotification {
@@ -108,11 +121,7 @@ export interface IDriverNotification {
 }
 
 export const getDriverNotifications = async (token: string): Promise<IDriverNotification[]> => {
-  const res = await fetch(`http://localhost:5000/driver/me/notifications`, {
-    headers: {
-   Authorization: `Bearer ${token}`,
-  },
- }); 
- if (!res.ok) throw new Error("Không thể lấy thông báo của tài xế");
- return res.json();
+  const res = await fetch(`${BASE_URL}/me/notifications`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error('Không thể lấy thông báo của tài xế');
+  return res.json();
 };

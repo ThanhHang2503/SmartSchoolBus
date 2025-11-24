@@ -22,11 +22,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   // Chưa load xong → loading
   if (!isInitialized) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        Loading...
-      </Box>
-    );
+    // Avoid rendering different markup between server and client during hydration.
+    // Return null so server and client produce the same initial HTML (no content)
+    // until the auth state is initialized on the client.
+    return null;
   }
 
   // Trang login → không có Layout

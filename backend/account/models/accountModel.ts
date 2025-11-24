@@ -2,10 +2,6 @@
 
 import { pool } from "../../config/db";
 
-/**
- * Tìm user theo email + password
- * Trả về object có: id (string), email, name, role
- */
 export const findUserByCredentials = async (email: string, password: string) => {
   const [rows]: any = await pool.execute(
     `
@@ -16,8 +12,10 @@ export const findUserByCredentials = async (email: string, password: string) => 
       COALESCE(ph.HoTen, tx.HoTen, ql.HoTen, 'Người dùng') AS name
     FROM TaiKhoan tk
     LEFT JOIN PhuHuynh ph ON tk.MaTK = ph.MaTK
-    LEFT JOIN TaiXe     tx ON tk.MaTK = tx.MaTK
-    LEFT JOIN QuanLy    ql ON tk.MaTK = ql.MaTK
+    -- Some DB seeds map TaiKhoan.MaTK to TaiXe.MaTX + 13, so join using expression
+    LEFT JOIN TaiXe     tx ON tk.MaTK = tx.MaTX + 13
+    -- Some DB seeds map TaiKhoan.MaTK to QuanLy.MaQL + 10, so join using expression
+    LEFT JOIN QuanLy    ql ON ql.MaQL + 10 = tk.MaTK
     WHERE tk.TenDangNhap = ?
       AND tk.MatKhau = ?
       AND tk.TrangThai = 1
@@ -29,17 +27,17 @@ export const findUserByCredentials = async (email: string, password: string) => 
 
   const user = rows[0];
 
-  let role: "parent" | "admin" | "driver" = "parent";
-  if (user.VaiTro === 2) role = "admin";
-  else if (user.VaiTro === 3) role = "driver";
+  let roleText: "parent" | "admin" | "driver" = "parent";
+  if (user.VaiTro === 2) roleText = "admin";
+  if (user.VaiTro === 3) roleText = "driver";
 
   return {
     id: user.id.toString(),
     email: user.email,
     name: user.name || "Người dùng",
-    role,
+    role: roleText,    // TEXT
+    VaiTro: user.VaiTro, // SỐ THẬT — QUAN TRỌNG
   };
 };
-
-
 export { pool };
+

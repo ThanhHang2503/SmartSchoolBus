@@ -8,7 +8,8 @@ export const pool = mysql.createPool({
   port: 3306,
 });
 
-//Kiểm tra kết nối
-pool.query("SELECT DATABASE()").then(([rows]) => {
-  console.log("Connected to DB:", rows);
-});
+// Hàm thực hiện query
+export const executeQuery = async (query: string, params: any[] = []) => {
+  const [rows] = await pool.execute(query, params);
+  return rows;
+};

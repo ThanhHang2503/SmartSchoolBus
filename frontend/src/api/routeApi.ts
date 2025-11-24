@@ -1,45 +1,87 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/routers';
+const API_URL = 'http://localhost:5000/route';
 
-// export const getRoutes = async () => {
-//   const res = await axios.get(API_URL);
-//   return res.data;
-// };
-// định nghĩa kiểu Route bên frontend
+// Tuyến đường - khớp với database backend
 export type Route = {
-  id: string;
-  name: string;
-  vehicleNumber: string;
-  defaultTime: string;
+  MaTD: number;           // Mã tuyến đường
+  NoiBatDau: string;      // Nơi bắt đầu
+  NoiKetThuc: string;     // Nơi kết thúc
+  VanTocTB: number;       // Vận tốc TB (km/h)
+  DoDai: number;          // Độ dài (km)
 };
 
-// Lấy tất cả routes
+// Trạm dừng trong tuyến đường
+export type StopInRoute = {
+  MaTram: number;
+  TenTram: string;
+  DiaChi: string;
+  KinhDo: number;
+  ViDo: number;
+  ThuTuDung: number;
+};
+
+// Tuyến đường với danh sách trạm
+export type RouteWithStops = Route & {
+  stops: StopInRoute[];
+};
+
+// Response từ API
+type ApiResponse<T> = {
+  success: boolean;
+  message: string;
+  data: T;
+};
+
+// Lấy tất cả tuyến đường
 export const getRoutes = async (): Promise<Route[]> => {
-  const res = await axios.get(API_URL);
-  return res.data as Route[];
+  const res = await axios.get<ApiResponse<Route[]>>(API_URL);
+  return res.data.data;
 };
 
-// Lấy route theo ID
-export const getRouteById = async (id: string) => {
-  const res = await axios.get(`${API_URL}/${id}`);
-  return res.data;
+// Frontend-friendly route detail type (maps backend `MaTD` to `id`)
+export type IRouteDetail = Route & { id: number };
+
+// Backwards-compatible helper used by UI: return routes with `id` field
+export const getAllRoutes = async (): Promise<IRouteDetail[]> => {
+  const routes = await getRoutes();
+  return routes.map((r) => ({ id: r.MaTD, ...r }));
 };
 
-// Thêm route mới
-export const addRoute = async (route: any) => {
-  const res = await axios.post(API_URL, route);
-  return res.data;
+// Lấy tuyến đường theo ID
+export const getRouteById = async (id: number): Promise<Route> => {
+  const res = await axios.get<ApiResponse<Route>>(`${API_URL}/${id}`);
+  return res.data.data;
 };
 
-// Cập nhật route
-export const updateRoute = async (id: string, route: any) => {
-  const res = await axios.put(`${API_URL}/${id}`, route);
-  return res.data;
+// Lấy tuyến đường với danh sách trạm
+export const getRouteWithStops = async (id: number): Promise<RouteWithStops> => {
+  const res = await axios.get<ApiResponse<RouteWithStops>>(`${API_URL}/${id}/stops`);
+  return res.data.data;
 };
 
-// Xóa route
-export const deleteRoute = async (id: string) => {
-  const res = await axios.delete(`${API_URL}/${id}`);
-  return res.data;
+// Tạo tuyến đường mới
+export const addRoute = async (route: Omit<Route, 'MaTD'>): Promise<{ MaTD: number }> => {
+  const res = await axios.post<ApiResponse<{ MaTD: number }>>(API_URL, route);
+  return res.data.data;
+};
+
+// Cập nhật tuyến đường
+export const updateRoute = async (id: number, route: Partial<Omit<Route, 'MaTD'>>): Promise<void> => {
+  await axios.put(`${API_URL}/${id}`, route);
+};
+
+// Xóa tuyến đường
+export const deleteRoute = async (id: number): Promise<void> => {
+  await axios.delete(`${API_URL}/${id}`);
+};
+
+// Thêm trạm vào tuyến đường
+export const addStopToRoute = async (data: { MaTram: number; MaTD: number; ThuTuDung: number }): Promise<void> => {
+  await axios.post(`${API_URL}/stops`, data);
+};
+
+// Xóa trạm khỏi tuyến đường
+export const removeStopFromRoute = async (maTD: number, maTram: number): Promise<void> => {
+  await axios.delete(`${API_URL}/${maTD}/stops/${maTram}`);
 };

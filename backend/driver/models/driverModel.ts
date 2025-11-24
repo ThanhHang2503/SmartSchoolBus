@@ -1,47 +1,46 @@
-// backend/driver/driverModel.ts
 import { pool } from "../../config/db";
 
-// Lấy tất cả Tài xế, JOIN với TaiKhoan (sử dụng logic +13 dựa trên dữ liệu mẫu)
 export const getAllDrivers = async () => {
   const [rows]: any = await pool.query(
-    `SELECT 
-      TX.MaTX AS id, 
-      TX.HoTen AS name, 
-      TX.SoDienThoai, 
-      TX.BangLai,
-      TX.TrangThai,
-      TK.TenDangNhap
-    FROM TaiXe TX
-    JOIN TaiKhoan TK 
-      ON TX.MaTX + 13 = TK.MaTK 
-    WHERE TK.VaiTro = 3` // VaiTro = 3 là Tài xế
+    `SELECT
+       TX.MaTX,
+       TX.HoTen,
+       TX.SoDienThoai,
+       TX.BangLai,
+         TX.TrangThai,
+       TK.MaTK,
+       TK.TenDangNhap
+     FROM TaiXe TX
+     JOIN TaiKhoan TK ON TX.MaTK = TK.MaTK
+       WHERE TX.TrangThai = 1 AND TK.VaiTro = 3`
   );
   return rows;
 };
 
-// Lấy Tài xế theo ID (MaTX)
 export const getDriverById = async (id: number) => {
   const [rows]: any = await pool.query(
-    `SELECT 
-      TX.MaTX AS id, 
-      TX.HoTen AS name, 
-      TX.SoDienThoai AS phone, 
-      TX.BangLai AS license,
-      TX.TrangThai AS status,
-      TK.TenDangNhap AS username
-    FROM TaiXe TX
-    JOIN TaiKhoan TK ON TX.MaTX + 13 = TK.MaTK
-    WHERE TX.MaTK = ? AND TK.VaiTro = 3`,
+    `SELECT
+       TX.MaTX,
+       TX.HoTen,
+       TX.SoDienThoai,
+       TX.BangLai,
+         TX.TrangThai,
+       TK.MaTK,
+       TK.TenDangNhap
+     FROM TaiXe TX
+     JOIN TaiKhoan TK ON TX.MaTK = TK.MaTK
+     WHERE TX.MaTX = ? AND TK.VaiTro = 3`,
     [id]
   );
-  return rows[0];
+  return rows[0] || null;
 };
+
 
 // Lấy Lịch trình làm việc theo MaTK
 export const getDriverSchedulesByAccountId = async (MaTK: number) => {
  const [rows]: any = await pool.query(
   `SELECT
-    LT.MaLT AS id,
+    LT.MaLT AS id, 
     DATE_FORMAT(LT.Ngay, '%Y-%m-%d') AS scheduleDate,
     LT.GioBatDau AS startTime,
     LT.GioKetThuc AS endTime,
