@@ -8,6 +8,7 @@ import driverRoutes from "./driver/routes/driverRoutes";
 import noticeRoutes from "./notice/routes/noticeRoutes";
 import parentRoutes from "./parent/routes/parentRoutes";
 import routeRoutes from "./route/routes/routeRoutes";
+import stopRoutes from "./stop/routes/stopRoutes";
 import statsRoutes from "./stats/routes/statsRoutes";
 import studentRoutes from "./student/routes/studentRoutes";
 
@@ -44,6 +45,9 @@ app.use("/stats", statsRoutes);
 
 //TUYEN DUONG
 app.use("/route", routeRoutes);
+
+// TRẠM DỪNG
+app.use("/stop", stopRoutes);
 
 //thong bao
 app.use("/notice", noticeRoutes);
