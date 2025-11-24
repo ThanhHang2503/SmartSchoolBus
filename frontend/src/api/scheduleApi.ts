@@ -66,7 +66,17 @@ export const createSchedule = async (data: ICreateSchedule, existingSchedules?: 
         body: JSON.stringify(data),
     });
 
-    if (!response.ok) throw new Error(`Lỗi khi lưu lịch trình: ${response.statusText}`);
+    if (!response.ok) {
+        // Try to parse JSON body for a helpful message
+        let body: any = null;
+        try {
+            body = await response.json();
+        } catch (e) {
+            // ignore parse errors
+        }
+        const msg = body && body.message ? body.message : response.statusText;
+        throw new Error(`Lỗi khi lưu lịch trình: ${msg}`);
+    }
     return await response.json();
 };
 

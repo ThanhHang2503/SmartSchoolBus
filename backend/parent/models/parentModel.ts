@@ -1,6 +1,7 @@
+import { pool } from "../../config/db";
+
 // Lấy thông tin phụ huynh và danh sách học sinh theo MaTK
 export const getParentAndStudentsByAccountId = async (maTK: number) => {
-  // Lấy thông tin phụ huynh
   const [parentRows]: any = await pool.query(
     `SELECT PH.MaPH, PH.HoTen, PH.SoDienThoai, TK.TenDangNhap
      FROM PhuHuynh PH
@@ -11,12 +12,11 @@ export const getParentAndStudentsByAccountId = async (maTK: number) => {
   if (!parentRows[0]) return null;
   const parent = parentRows[0];
 
-  // Lấy danh sách học sinh của phụ huynh này
   const [studentRows]: any = await pool.query(
     `SELECT HS.MaHS, HS.HoTen, HS.NgaySinh, HS.Lop, TD_DON.TenTram AS TenTramDon, TD_TRA.TenTram AS TenTramTra
      FROM HocSinh HS
-     JOIN TramDung TD_DON ON HS.DiemDon = TD_DON.MaTram
-     JOIN TramDung TD_TRA ON HS.DiemTra = TD_TRA.MaTram
+     LEFT JOIN TramDung TD_DON ON HS.DiemDon = TD_DON.MaTram
+     LEFT JOIN TramDung TD_TRA ON HS.DiemTra = TD_TRA.MaTram
      WHERE HS.MaPH = ?`,
     [parent.MaPH]
   );
@@ -44,22 +44,20 @@ export const getNotificationsByAccountId = async (maTK: number) => {
   );
   return rows;
 };
-// backend/parent/parentModel.ts
-import { pool } from "../../config/db";
 
 // Lấy tất cả Phụ huynh, JOIN với TaiKhoan để lấy TenDangNhap
 export const getAllParents = async () => {
   const [rows]: any = await pool.query(
     `SELECT
-       PH.MaPH,
-       PH.HoTen,
-       PH.SoDienThoai,
-       PH.Active,
-       TK.MaTK,
-       TK.TenDangNhap
+       PH.MaPH AS MaPH,
+       PH.HoTen AS HoTen,
+       PH.SoDienThoai AS SoDienThoai,
+       PH.Active AS Active,
+       TK.MaTK AS MaTK,
+       TK.TenDangNhap AS TenDangNhap
      FROM PhuHuynh PH
      JOIN TaiKhoan TK ON PH.MaTK = TK.MaTK
-     WHERE PH.Active = 1 AND TK.VaiTro = 1`
+     WHERE (PH.Active IS NULL OR PH.Active = 1) AND TK.VaiTro = 1`
   );
   return rows;
 };

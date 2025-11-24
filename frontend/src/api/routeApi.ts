@@ -55,9 +55,18 @@ export const getRouteById = async (id: number): Promise<Route> => {
 };
 
 // Lấy tuyến đường với danh sách trạm
-export const getRouteWithStops = async (id: number): Promise<RouteWithStops> => {
-  const res = await axios.get<ApiResponse<RouteWithStops>>(`${API_URL}/${id}/stops`);
-  return res.data.data;
+export const getRouteWithStops = async (id: number): Promise<RouteWithStops | null> => {
+  try {
+    const res = await axios.get<ApiResponse<RouteWithStops>>(`${API_URL}/${id}/stops`);
+    return res.data.data;
+  } catch (err: any) {
+    // If backend returns 404 (not found), return null so callers can handle it gracefully
+    if (err && err.response && err.response.status === 404) {
+      return null;
+    }
+    // Re-throw other errors (network, 500, etc.) so they can be handled upstream
+    throw err;
+  }
 };
 
 // Tạo tuyến đường mới

@@ -53,7 +53,7 @@ const RoutingControl: React.FC<{ stops: Array<{ ViDo: number; KinhDo: number }> 
     const waypoints = stops.map(stop => L.latLng(stop.ViDo, stop.KinhDo));
 
     // Tạo routing control
-    const routingControl = L.Routing.control({
+    const routingControl = (L as any).Routing.control({
       waypoints,
       routeWhileDragging: false,
       addWaypoints: false,
@@ -64,8 +64,20 @@ const RoutingControl: React.FC<{ stops: Array<{ ViDo: number; KinhDo: number }> 
         extendToWaypoints: true,
         missingRouteTolerance: 0
       },
-      createMarker: () => null // Ẩn marker mặc định
+      // Avoid returning `null` from createMarker: returning null is known to
+      // cause internal errors in some versions of leaflet-routing-machine
+      // when it tries to remove layers. Create a non-interactive invisible
+      // marker instead so the control can safely add/remove it.
+      createMarker: (i: number, wp: any) => L.marker(wp.latLng, { interactive: false, opacity: 0 }),
+      // Use the public OSRM demo by default (same as before). Keep a router
+      // instance so we can attach error handling if needed.
+      router: (L as any).Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
     }).addTo(map);
+
+    // Prevent uncaught exceptions from bubbling when the router fails
+    routingControl.on && routingControl.on('routingerror', (err: any) => {
+      console.warn('Routing error from leaflet-routing-machine:', err);
+    });
 
     return () => {
       if (map && routingControl) {
@@ -107,6 +119,11 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1 }) => {
   // Hiển thị khi có lỗi
   if (error) {
     return <p>Lỗi: {error.message}</p>;
+  }
+
+  // Nếu backend trả về 404 (route không tồn tại), getRouteWithStops trả về null
+  if (routeData === null && !loadingRoute) {
+    return <p>Không tìm thấy tuyến đường với id {routeId}.</p>;
   }
 
   if (!latitude || !longitude) {
