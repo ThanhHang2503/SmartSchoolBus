@@ -1,6 +1,7 @@
 // src/components/MyMap.tsx
 
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
@@ -40,6 +41,8 @@ L.Icon.Default.mergeOptions({
 
 interface MyMapProps {
   routeId?: number; // ID tuyến đường cần hiển thị (optional)
+  useDriverPosition?: boolean; // when true, show driver's last known position (parent view)
+  driverId?: number; // id of driver to track when useDriverPosition is true
 }
 
 // Component để vẽ routing
@@ -89,10 +92,15 @@ const RoutingControl: React.FC<{ stops: Array<{ ViDo: number; KinhDo: number }> 
   return null;
 };
 
-const MyMap: React.FC<MyMapProps> = ({ routeId = 1 }) => {
+const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, driverId }) => {
   const { loading, error, latitude, longitude } = useGeolocation();
+  // Auth to detect if current user is driver (to POST location)
+  const { user: authUser } = useAuth();
   const [routeData, setRouteData] = useState<RouteWithStops | null>(null);
   const [loadingRoute, setLoadingRoute] = useState(false);
+
+  // Driver position state (for parent view)
+  const [driverPos, setDriverPos] = React.useState<{ latitude: number; longitude: number } | null>(null);
 
   // Lấy tuyến đường từ backend
   useEffect(() => {
@@ -111,22 +119,52 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1 }) => {
     fetchRoute();
   }, [routeId]);
 
-  // Hiển thị khi đang tải
-  if (loading || loadingRoute) {
-    return <p>Đang tải bản đồ...</p>;
-  }
+  // If this component is used by a driver (not parent), push updates to backend
+  React.useEffect(() => {
+    let mounted = true;
+    // Only send driver location if this is the driver's own view (useDriverPosition is false)
+    // and authUser.role indicates driver
+    if (!useDriverPosition && authUser && authUser.role === 'driver' && latitude && longitude) {
+      console.log('[MyMap] will POST driver location', { driverId: authUser.id, latitude, longitude });
+      // dynamic import to avoid cycles
+      import('../api/driverApi').then(mod => {
+        const token = localStorage.getItem('token');
+        mod.postDriverLocation(Number(authUser.id || authUser.MaTX || authUser.id), latitude, longitude, token)
+          .then((res: any) => {
+            if (mounted) console.log('[MyMap] postDriverLocation response', res);
+          })
+          .catch(err => {
+            if (mounted) console.warn('[MyMap] Failed to post driver location', err);
+          });
+      }).catch(err => console.warn('driverApi import failed', err));
+    }
 
-  // Hiển thị khi có lỗi
-  if (error) {
-    return <p>Lỗi: {error.message}</p>;
-  }
+    return () => { mounted = false; };
+  }, [useDriverPosition, authUser, latitude, longitude]);
 
-  // Nếu backend trả về 404 (route không tồn tại), getRouteWithStops trả về null
-  if (routeData === null && !loadingRoute) {
-    return <p>Không tìm thấy tuyến đường với id {routeId}.</p>;
-  }
+  // If used in parent mode, poll backend for driver's location
+  React.useEffect(() => {
+    if (!useDriverPosition || !driverId) return;
+    let stopped = false;
+    const poll = async () => {
+      try {
+        const mod = await import('../api/driverApi');
+        const pos = await mod.getDriverLocation(Number(driverId));
+        if (stopped) return;
+        if (pos && pos.latitude !== undefined) {
+          setDriverPos({ latitude: pos.latitude, longitude: pos.longitude });
+        }
+      } catch (err) {
+        console.warn('poll driver location error', err);
+      }
+    };
+    poll();
+    const id = window.setInterval(poll, 2000);
+    return () => { stopped = true; window.clearInterval(id); };
+  }, [useDriverPosition, driverId]);
 
-  if (!latitude || !longitude) {
+  // If we cannot get coordinates and we're not in parent tracking mode, we cannot render the map
+  if (!useDriverPosition && (!latitude || !longitude)) {
     return <p>Không thể lấy vị trí của bạn.</p>;
   }
 
@@ -138,19 +176,34 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1 }) => {
   // Sắp xếp các trạm theo thứ tự
   const sortedStops = routeData?.stops.sort((a, b) => a.ThuTuDung - b.ThuTuDung) || [];
 
+  // Component inside MapContainer to follow user's location updates
+  const FollowUser: React.FC<{ lat: number; lng: number }> = ({ lat, lng }) => {
+    const map = useMap();
+    useEffect(() => {
+      if (!map) return;
+      try {
+        map.panTo([lat, lng]);
+      } catch (e) {
+        // ignore pan errors
+      }
+    }, [lat, lng, map]);
+    return null;
+  };
+
   return (
-    <MapContainer 
-      center={centerPosition} 
-      zoom={13} 
-      style={{ height: '100%', width: '100%' }}
-    >
+    <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+      <MapContainer
+        center={centerPosition}
+        zoom={13}
+        style={{ height: '100%', width: '100%' }}
+      >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* Vẽ đường đi theo tuyến thực tế */}
-      {sortedStops.length > 0 && <RoutingControl stops={sortedStops} />}
+        {/* Vẽ đường đi theo tuyến thực tế */}
+        {sortedStops.length > 0 && <RoutingControl stops={sortedStops} />}
 
       {/* Hiển thị các trạm dừng */}
       {routeData?.stops
@@ -171,13 +224,45 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1 }) => {
           </Marker>
         ))}
 
-      {/* Marker vị trí hiện tại */}
-      <Marker position={[latitude, longitude]}>
-        <Popup>
-          Vị trí của bạn
-        </Popup>
-      </Marker>
-    </MapContainer>
+        {/* Marker vị trí hiện tại (driver view) or driver's marker (parent view) */}
+        {!useDriverPosition && latitude && longitude && (
+          <>
+            <Marker position={[latitude, longitude]}>
+              <Popup>Vị trí của bạn</Popup>
+            </Marker>
+            {latitude && longitude && <FollowUser lat={latitude} lng={longitude} />}
+          </>
+        )}
+
+        {useDriverPosition && driverPos && (
+          <>
+            <Marker position={[driverPos.latitude, driverPos.longitude]}>
+              <Popup>Vị trí tài xế</Popup>
+            </Marker>
+            <FollowUser lat={driverPos.latitude} lng={driverPos.longitude} />
+          </>
+        )}
+      </MapContainer>
+
+      {/* Overlay messages for loading / error / no-route to avoid unmounting the map */}
+      {(loading || loadingRoute) && (
+        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 1000, background: 'white', padding: 8, borderRadius: 6 }}>
+          Đang tải bản đồ...
+        </div>
+      )}
+
+      {error && (
+        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 1000, background: 'rgba(255,240,240,0.95)', padding: 8, borderRadius: 6 }}>
+          Lỗi: {error.message}
+        </div>
+      )}
+
+      {routeData === null && !loadingRoute && (
+        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 1000, background: 'rgba(250,250,210,0.95)', padding: 8, borderRadius: 6 }}>
+          Không tìm thấy tuyến đường với id {routeId}.
+        </div>
+      )}
+    </div>
   );
 };
 

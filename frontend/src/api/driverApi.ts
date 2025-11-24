@@ -159,3 +159,25 @@ export const getDriverNotifications = async (token: string): Promise<IDriverNoti
  if (!res.ok) throw new Error("Không thể lấy thông báo của tài xế");
  return res.json();
 };
+
+// --- Driver location endpoints (live tracking) ---
+export const postDriverLocation = async (driverId: number, latitude: number, longitude: number, token?: string) => {
+  const res = await fetch(`http://localhost:5000/driver/location`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ driverId, latitude, longitude }),
+  });
+  return res.json();
+};
+
+export const getDriverLocation = async (driverId: number) => {
+  const res = await fetch(`http://localhost:5000/driver/location/${driverId}`);
+  if (!res.ok) {
+    return null;
+  }
+  const data = await res.json();
+  return data.position ?? null;
+};

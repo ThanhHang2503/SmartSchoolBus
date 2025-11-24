@@ -52,12 +52,11 @@ export const getAllParents = async () => {
        PH.MaPH AS MaPH,
        PH.HoTen AS HoTen,
        PH.SoDienThoai AS SoDienThoai,
-       PH.Active AS Active,
        TK.MaTK AS MaTK,
        TK.TenDangNhap AS TenDangNhap
      FROM PhuHuynh PH
      JOIN TaiKhoan TK ON PH.MaTK = TK.MaTK
-     WHERE (PH.Active IS NULL OR PH.Active = 1) AND TK.VaiTro = 1`
+     WHERE TK.VaiTro = 1`
   );
   return rows;
 };

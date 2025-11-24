@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { Box } from '@mui/material';
+import GeolocationMockController from './GeolocationMockController';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, isInitialized } = useAuth();
@@ -47,6 +48,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     >
       {/* HEADER – TOÀN CHIỀU RỘNG, CỐ ĐỊNH TRÊN CÙNG */}
       <Header user={user} />
+      <GeolocationMockController />
 
       {/* NỘI DUNG CHÍNH: Sidebar + Main */}
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>

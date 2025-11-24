@@ -54,9 +54,7 @@ export default function MapAndStudentPage() {
     const nowTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }); // Lấy HH:MM:SS hiện tại
     const todaySchedules = schedules.filter(s => s.scheduleDate === today);// Lấy TẤT CẢ các chuyến trong ngày hôm nay
     const activeOrUpcomingTrips = todaySchedules // 2. Lọc và sắp xếp các chuyến chưa hoàn thành hoặc chưa kết thúc
-        .filter(s => {
-            return s.endTime === null || s.endTime > nowTime; 
-        })
+
         .sort((a, b) => a.startTime.localeCompare(b.startTime)); // Sắp xếp theo giờ bắt đầu sớm nhất
     console.log("Chuyến hôm nay (chưa kết thúc):", activeOrUpcomingTrips);
     const currentTrip = activeOrUpcomingTrips[0];
