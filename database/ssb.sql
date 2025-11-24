@@ -232,6 +232,24 @@ INSERT INTO ThongBao (MaTB, NoiDung, LoaiTB) VALUES
 (3, 'Thông báo khác: Học sinh nghỉ học hôm nay theo yêu cầu phụ huynh', 'Khác');
 
 -- ======================
+-- Chi tiết thông báo (CTTB)
+-- ======================
+-- MaTK tham chiếu đến TaiKhoan.MaTK (1..10 là phụ huynh theo seed trên)
+INSERT INTO CTTB (MaTK, MaTB, ThoiGian) VALUES
+    (1, 1, '2025-11-17 06:20:00'),
+    (1, 3, '2025-11-17 07:05:00'),
+    (2, 1, '2025-11-17 06:25:00'),
+    (2, 3, '2025-11-17 07:10:00'),
+    (3, 2, '2025-11-17 06:40:00'),
+    (4, 1, '2025-11-17 06:22:00'),
+    (5, 3, '2025-11-17 07:12:00'),
+    (6, 2, '2025-11-17 06:45:00'),
+    (7, 1, '2025-11-17 06:28:00'),
+    (8, 2, '2025-11-17 06:50:00'),
+    (9, 3, '2025-11-17 07:15:00'),
+    (10, 1, '2025-11-17 06:30:00');
+
+-- ======================
 -- Tuyến đường
 -- ======================
 INSERT INTO TuyenDuong (MaTD, NoiBatDau, NoiKetThuc, VanTocTB, DoDai) VALUES
