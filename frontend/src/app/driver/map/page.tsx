@@ -26,18 +26,12 @@ import {
 } from "@mui/material";
 import { useDriverSchedules } from '@/context/driverSchedulesContext';
 import { IStudentDetail, parseStudentList } from "@/api/driverApi";
+import axios from "axios";
 
 
-// Hàm cập nhật trạng thái (Giả định gọi API)
-const handleStatusChange = (maHS: number, newStatus: number) => {
-    // TRONG THỰC TẾ: 
-    // 1. Gửi API PATCH/PUT lên Backend (ví dụ: /api/ctlt/update-status)
-    // 2. Nếu thành công, kích hoạt cập nhật Global State (refreshSchedules)
-    console.log(`[ACTION] Cập nhật trạng thái học sinh ${maHS} thành ${newStatus}`);
-};
 
 export default function MapAndStudentPage() {
-  // 🔥 LẤY DỮ LIỆU THỰC TẾ
+  //LẤY DỮ LIỆU THỰC TẾ
   const { schedules, loading } = useDriverSchedules();
 
   const [selectedRouteId, setSelectedRouteId] = useState(1); // Tuyến đường được chọn
@@ -50,6 +44,22 @@ export default function MapAndStudentPage() {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
+  const { refreshSchedules } = useDriverSchedules();
+  // Hàm cập nhật trạng thái 
+  const handleStatusChange = async (maHS: number, newStatus: number, maLT: number) => {
+      try {
+          const res = await axios.put("http://localhost:5000/driver/update-status", {
+              maLT,
+              maHS,
+              status: newStatus,
+          });
+          console.log("OK:", res.data);
+          refreshSchedules(); // Load lại lịch trình thực tế
+
+      } catch (error) {
+          console.error("Lỗi cập nhật:", error);
+      }
+  };
 
  // LỌC CHUYẾN MỚI THEO THỜI GIAN THỰC
     const today = new Date().toISOString().slice(0, 10);
@@ -94,7 +104,7 @@ export default function MapAndStudentPage() {
             switch (status) {
                 case 1: return 'success.main';
                 case 2: return 'error.main';
-                default: return 'warning.main';
+                default: return 'default';
             }
         };
 
@@ -142,15 +152,15 @@ export default function MapAndStudentPage() {
                                             <Select
                                                 value={student.status}
                                                 // Gọi hàm cập nhật API
-                                                onChange={(e) => handleStatusChange(student.id, e.target.value as number)}
+                                                onChange={(e) => handleStatusChange(student.id, e.target.value as number, currentTrip.id)}
                                                 sx={{ 
                                                     fontSize: "0.875rem",
-                    
+                                                    color: statusColor,
                                                     fontWeight: 600,
                                                 }}
                                             >
                                                 <MenuItem value={0} sx={{  }}>Chưa đón</MenuItem>
-                                                <MenuItem value={1} sx={{ }}>Đã đón</MenuItem>
+                                                <MenuItem value={1} sx={{}}>Đã đón</MenuItem>
                                                 <MenuItem value={2} sx={{ }}>Đã trả</MenuItem>
                                             </Select>
                                         </FormControl>
@@ -202,8 +212,9 @@ export default function MapAndStudentPage() {
       <Typography variant="body2" fontWeight={600} gutterBottom>
        Tuyến: {currentTrip.routeStart} → {currentTrip.routeEnd}
       </Typography>
-      {/* BẢN ĐỒ + GỬI CẢNH BÁO */}
+      
       <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* BẢN ĐỒ*/}
         <Grid size={{ xs: 12, md: 8 }}>
           <Box
             sx={{
@@ -219,6 +230,7 @@ export default function MapAndStudentPage() {
           </Box>
         </Grid>
 
+        {/*GỬI CẢNH BÁO */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ p: 2, height: "90%" }}>
             <CardContent>
