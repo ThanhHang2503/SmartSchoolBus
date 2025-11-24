@@ -7,13 +7,12 @@ export const getAllDrivers = async () => {
        TX.HoTen,
        TX.SoDienThoai,
        TX.BangLai,
-       TX.TrangThai,
-       TX.Active,
+         TX.TrangThai,
        TK.MaTK,
        TK.TenDangNhap
      FROM TaiXe TX
      JOIN TaiKhoan TK ON TX.MaTK = TK.MaTK
-     WHERE TX.Active = 1 AND TK.VaiTro = 3`
+       WHERE TX.TrangThai = 1 AND TK.VaiTro = 3`
   );
   return rows;
 };
@@ -25,8 +24,7 @@ export const getDriverById = async (id: number) => {
        TX.HoTen,
        TX.SoDienThoai,
        TX.BangLai,
-       TX.TrangThai,
-       TX.Active,
+         TX.TrangThai,
        TK.MaTK,
        TK.TenDangNhap
      FROM TaiXe TX
@@ -36,20 +34,7 @@ export const getDriverById = async (id: number) => {
   );
   return rows[0] || null;
 };
-    `SELECT 
-      TX.MaTX AS id, 
-      TX.HoTen AS name, 
-      TX.SoDienThoai AS phone, 
-      TX.BangLai AS license,
-      TX.TrangThai AS status,
-      TK.TenDangNhap AS username
-    FROM TaiXe TX
-    JOIN TaiKhoan TK ON TX.MaTX + 13 = TK.MaTK
-    WHERE TX.MaTK = ? AND TK.VaiTro = 3`,
-    [id]
-  );
-  return rows[0];
-};
+
 
 // Lấy Lịch trình làm việc theo MaTK
 export const getDriverSchedulesByAccountId = async (MaTK: number) => {

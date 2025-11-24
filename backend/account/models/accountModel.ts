@@ -12,8 +12,10 @@ export const findUserByCredentials = async (email: string, password: string) => 
       COALESCE(ph.HoTen, tx.HoTen, ql.HoTen, 'Người dùng') AS name
     FROM TaiKhoan tk
     LEFT JOIN PhuHuynh ph ON tk.MaTK = ph.MaTK
-    LEFT JOIN TaiXe     tx ON tk.MaTK = tx.MaTK
-    LEFT JOIN QuanLy    ql ON tk.MaTK = ql.MaTK
+    -- Some DB seeds map TaiKhoan.MaTK to TaiXe.MaTX + 13, so join using expression
+    LEFT JOIN TaiXe     tx ON tk.MaTK = tx.MaTX + 13
+    -- Some DB seeds map TaiKhoan.MaTK to QuanLy.MaQL + 10, so join using expression
+    LEFT JOIN QuanLy    ql ON ql.MaQL + 10 = tk.MaTK
     WHERE tk.TenDangNhap = ?
       AND tk.MatKhau = ?
       AND tk.TrangThai = 1

@@ -27,6 +27,7 @@ import {
 import { useDriverSchedules } from '@/context/driverSchedulesContext';
 import { IStudentDetail, parseStudentList } from "@/api/driverApi";
 
+
 // Hàm cập nhật trạng thái (Giả định gọi API)
 const handleStatusChange = (maHS: number, newStatus: number) => {
     // TRONG THỰC TẾ: 
@@ -38,6 +39,8 @@ const handleStatusChange = (maHS: number, newStatus: number) => {
 export default function MapAndStudentPage() {
   // 🔥 LẤY DỮ LIỆU THỰC TẾ
   const { schedules, loading } = useDriverSchedules();
+
+  const [selectedRouteId, setSelectedRouteId] = useState(1); // Tuyến đường được chọn
 
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
@@ -199,7 +202,7 @@ export default function MapAndStudentPage() {
             }}
           >
             <Paper elevation={0} sx={{ height: "100%" }}>
-              <MyMap />
+              <MyMap routeId={selectedRouteId} />
             </Paper>
           </Box>
         </Grid>
