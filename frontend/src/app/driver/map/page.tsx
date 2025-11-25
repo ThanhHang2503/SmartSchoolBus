@@ -23,12 +23,14 @@ import {
   TableRow,
   TextField,
   Typography,
+  InputLabel,
+  OutlinedInput,
+  Checkbox,
+  ListItemText
 } from "@mui/material";
 import { useDriverSchedules } from '@/context/driverSchedulesContext';
-import { IStudentDetail, parseStudentList } from "@/api/driverApi";
-import axios from "axios";
-
-
+import { IStudentDetail, parseStudentList, updateStudentStatus } from "@/api/driverApi";
+import { sendNotice } from "@/api/noticeApi";
 
 export default function MapAndStudentPage() {
   //LẤY DỮ LIỆU THỰC TẾ
@@ -37,23 +39,13 @@ export default function MapAndStudentPage() {
   const [selectedRouteId, setSelectedRouteId] = useState(1); // Tuyến đường được chọn
 
   const [search, setSearch] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  const [alertType, setAlertType] = useState("");
-  const [message, setMessage] = useState("");
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
   const { refreshSchedules } = useDriverSchedules();
   // Hàm cập nhật trạng thái 
   const handleStatusChange = async (maHS: number, newStatus: number, maLT: number) => {
       try {
-          const res = await axios.put("http://localhost:5000/driver/update-status", {
-              maLT,
-              maHS,
-              status: newStatus,
-          });
-          console.log("OK:", res.data);
+          const result = await updateStudentStatus(maHS, newStatus, maLT);
+          console.log("OK:", result);
           refreshSchedules(); // Load lại lịch trình thực tế
 
       } catch (error) {
@@ -62,41 +54,72 @@ export default function MapAndStudentPage() {
   };
 
  // LỌC CHUYẾN MỚI THEO THỜI GIAN THỰC
-    const today = new Date().toISOString().slice(0, 10);
-    const nowTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }); // Lấy HH:MM:SS hiện tại
-    const todaySchedules = schedules.filter(s => s.scheduleDate === today);// Lấy TẤT CẢ các chuyến trong ngày hôm nay
-    const activeOrUpcomingTrips = todaySchedules // 2. Lọc và sắp xếp các chuyến chưa hoàn thành hoặc chưa kết thúc
-        .filter(s => {
-            return s.endTime === null || s.endTime > nowTime; 
-        })
-        .sort((a, b) => a.startTime.localeCompare(b.startTime)); // Sắp xếp theo giờ bắt đầu sớm nhất
+  const today = new Date().toISOString().slice(0, 10);
+  const nowTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }); // Lấy HH:MM:SS hiện tại
+  const todaySchedules = schedules.filter(s => s.scheduleDate === today);// Lấy TẤT CẢ các chuyến trong ngày hôm nay
+  const activeOrUpcomingTrips = todaySchedules // 2. Lọc và sắp xếp các chuyến chưa hoàn thành hoặc chưa kết thúc
+    .filter(s => {
+      return s.endTime === null || s.endTime > nowTime; 
+    })
+    .sort((a, b) => a.startTime.localeCompare(b.startTime)); // Sắp xếp theo giờ bắt đầu sớm nhất
 
-    const currentTrip = activeOrUpcomingTrips[0];
+  const currentTrip = activeOrUpcomingTrips[0];
     
-    // PHÂN TÍCH HỌC SINH TỪ CHUYẾN ĐANG CHỌN
-    const allStudents: IStudentDetail[] = currentTrip 
-        ? parseStudentList(currentTrip.studentListRaw) 
-        : [];
+  // PHÂN TÍCH HỌC SINH TỪ CHUYẾN ĐANG CHỌN
+  const allStudents: IStudentDetail[] = currentTrip 
+      ? parseStudentList(currentTrip.studentListRaw) 
+      : [];
 
-    // LỌC THEO TÊN HỌC SINH
-    const filteredStudents = allStudents.filter((s) =>
-        s.name.toLowerCase().includes(search.toLowerCase())
-    );
-
+  // LỌC THEO TÊN HỌC SINH
+  const filteredStudents = allStudents.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase())
+  );
+  
   // GỬI CẢNH BÁO
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!alertType || !message.trim()) return;
+  const adminIds = [11, 12, 13]; // ID 3 admin cố định
+    
+  // === State gửi thông báo ===
+  const [message, setMessage] = useState("");
+  const [selectedParentIds, setSelectedParentIds] = useState<number[]>([]); // mặc định tất cả
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+  //==== Lấy người nhận ===
+  const getReceivers = () => {
+    const receivers: number[] = [...adminIds]; // luôn gửi tất cả admin
 
-    setSnackbarMessage("Cảnh báo đã được gửi thành công!");
-    setSnackbarSeverity("success");
-    setOpenSnackbar(true);
+    if (selectedParentIds.length === allStudents.length) {
+    // nếu chưa chọn gì hoặc chọn tất cả
+    receivers.push(...allStudents.map(s => s.parentID));
+  } else {
+    receivers.push(...selectedParentIds);
+  }
 
-    console.log("Gửi cảnh báo:", { alertType, message, timestamp: new Date() });
-
-    setAlertType("");
-    setMessage("");
+    return receivers;
   };
+
+  //=== Gửi thông báo ===
+  const handleSendNotice = async () => {
+  if (!message.trim()) return;
+
+  const receivers = getReceivers();
+  if (receivers.length === 0) {
+    setSnackbar({ open: true, message: "Chưa có người nhận!", severity: "error" });
+    return;
+  }
+
+  try {
+    await sendNotice(message, receivers);
+    setSnackbar({ open: true, message: "Thông báo đã gửi!", severity: "success" });
+    setMessage("");
+    setSelectedParentIds([]);  // reset về tất cả phụ huynh
+  } catch (err: any) {
+    console.error(err);
+    setSnackbar({ open: true, message: err.message || "Gửi thất bại!", severity: "error" });
+  }
+};
 
   //HÀM RENDER BẢNG HỌC SINH (NỘI TUYẾN)
     const renderStudentTable = (students: IStudentDetail[]) => {
@@ -238,43 +261,72 @@ export default function MapAndStudentPage() {
                 Gửi cảnh báo khẩn
               </Typography>
 
-              <form onSubmit={handleSubmit}>
-                <TextField
-                  select
-                  label="Loại cảnh báo"
-                  fullWidth
-                  value={alertType}
-                  onChange={(e) => setAlertType(e.target.value)}
-                  sx={{ mb: 2 }}
-                >
-                  <MenuItem value="vehicle">Sự cố phương tiện</MenuItem>
-                  <MenuItem value="weather">Ảnh hưởng thời tiết</MenuItem>
-                  <MenuItem value="student">Sự cố học sinh</MenuItem>
-                  <MenuItem value="delay">Trễ giờ</MenuItem>
-                  <MenuItem value="other">Khác</MenuItem>
-                </TextField>
+              {/* 1. Chọn phụ huynh */}
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="parent-select-label">Chọn phụ huynh</InputLabel>
+                <Select
+                  labelId="parent-select-label"
+                  multiple
+                  value={selectedParentIds}
+                  onChange={(e) => {
+                    const val = e.target.value as number[];
+                    if (val.includes(0)) {
+                      // chọn tất cả
+                      setSelectedParentIds(allStudents.map(s => s.parentID));
+                    } else {
+                      setSelectedParentIds(val);
+                    }
+                  }}
+                  input={<OutlinedInput label="Chọn phụ huynh" />}
+                  renderValue={(selected) => {
+                    const selectedIds = selected as number[];
+                    if (selectedIds.length === allStudents.length) return "Tất cả phụ huynh";
 
-                <TextField
-                  label="Nội dung chi tiết"
-                  multiline
-                  rows={4}
-                  fullWidth
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  sx={{ mb: 2 }}
-                  placeholder="Nhập chi tiết..."
-                />
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="error"
-                  fullWidth
-                  disabled={!alertType || !message.trim()}
+                    return selectedIds
+                      .map((id) => {
+                        const student = allStudents.find((s) => s.parentID === id);
+                        return student ? `${student.parentName} - con: ${student.name}` : "";
+                      })
+                      .join(", ");
+                  }}
                 >
-                  Gửi cảnh báo ngay
-                </Button>
-              </form>
+                  <MenuItem value={0}>
+                    <Checkbox checked={selectedParentIds.length === allStudents.length} />
+                    <ListItemText primary="Tất cả phụ huynh" />
+                  </MenuItem>
+
+                  {allStudents.map((s) => (
+                    <MenuItem key={s.parentID} value={s.parentID}>
+                      <Checkbox checked={selectedParentIds.includes(s.parentID)} />
+                      <ListItemText primary={`${s.parentName} - con: ${s.name}`} />
+                    </MenuItem>
+                  ))}
+                  
+                </Select>
+              </FormControl>
+
+              {/* 2. Nhập nội dung */}
+              <TextField
+                label="Nội dung chi tiết"
+                multiline
+                rows={4}
+                fullWidth
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                sx={{ mb: 2 }}
+                placeholder="Nhập nội dung thông báo..."
+              />
+
+              {/* 3. Nút gửi */}
+              <Button
+                variant="contained"
+                color="error"
+                fullWidth
+                onClick={handleSendNotice}
+                disabled={!message.trim() || selectedParentIds.length === 0}
+              >
+                Gửi thông báo
+              </Button>
             </CardContent>
           </Card>
         </Grid>
@@ -294,15 +346,15 @@ export default function MapAndStudentPage() {
       {/*BẢNG HỌC SINH DÙNG DỮ LIỆU THỰC TẾ (Nội tuyến) */}
             {renderStudentTable(filteredStudents)}
 
-      {/* THÔNG BÁO */}
+      {/* Snackbar */}
       <Snackbar
-        open={openSnackbar}
+        open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setOpenSnackbar(false)}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <Alert severity={snackbarSeverity} onClose={() => setOpenSnackbar(false)}>
-          {snackbarMessage}
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>

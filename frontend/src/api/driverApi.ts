@@ -1,5 +1,6 @@
 // frontend/src/api/driverApi.ts
 // Consolidated driver API used by frontend components
+import axios from "axios";
 
 export interface IDriverDetail {
   id: number;      // frontend id mapped from MaTX
@@ -120,8 +121,24 @@ export interface IDriverNotification {
   date: string; // YYYY-MM-DD HH:MM:SS
 }
 
+//Lấy thông báo của tài xế
 export const getDriverNotifications = async (token: string): Promise<IDriverNotification[]> => {
   const res = await fetch(`${BASE_URL}/me/notifications`, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error('Không thể lấy thông báo của tài xế');
   return res.json();
 };
+
+//cập nhật trạng thái đón/trả học sinh
+export const updateStudentStatus = async (
+  maHS: number,
+  newStatus: number,
+  maLT: number
+) => {
+  const res = await axios.put(`${BASE_URL}/update-status`, {
+    maHS,
+    status: newStatus,
+    maLT
+  });
+  return res.data;
+};
+

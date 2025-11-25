@@ -10,7 +10,7 @@ interface SchedulesContextType {
   loading: boolean;
   setLoading: (l: boolean) => void;
 
-  // 👉 Thêm hàm refreshSchedules
+  // Thêm hàm refreshSchedules
   refreshSchedules: () => Promise<void>;
 }
 
@@ -26,7 +26,7 @@ export const SchedulesProvider: React.FC<SchedulesProviderProps> = ({ children }
   const [schedules, setSchedules] = useState<IScheduleDriver[]>([]);
   const [loading, setLoading] = useState(false); // Ban đầu không tải
 
-  // 👉 Hàm tải lịch trình từ API
+  // Hàm tải lịch trình từ API
   const refreshSchedules = async () => {
     try {
       setLoading(true);
@@ -44,7 +44,7 @@ export const SchedulesProvider: React.FC<SchedulesProviderProps> = ({ children }
     }
   };
 
-  // 👉 Tự load khi Provider được tạo
+  // Tự load khi Provider được tạo
   useEffect(() => {
     refreshSchedules();
   }, []);
