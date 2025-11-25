@@ -112,3 +112,17 @@ export const getNotificationsByAccountId = async (maTK: number) => {
   );
   return rows;
 };
+
+// Cập nhật trạng thái học sinh trong lịch trình
+export const updateStudentStatus = async (maLT: number, maHS: number, newStatus: number) => {
+  const [result]: any = await pool.query(
+    `
+      UPDATE CTLT
+      SET TrangThai = ?
+      WHERE MaLT = ? AND MaHS = ?
+    `,
+    [newStatus, maLT, maHS]
+  );
+
+  return result.affectedRows > 0;
+};

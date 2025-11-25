@@ -1,6 +1,6 @@
 // backend/driver/driverController.ts
 import { Request, Response } from "express";
-import { getAllDrivers, getDriverById, getDriverSchedulesByAccountId, getNotificationsByAccountId } from "../models/driverModel";
+import { getAllDrivers, getDriverById, getDriverSchedulesByAccountId, getNotificationsByAccountId, updateStudentStatus } from "../models/driverModel";
 import { AuthRequest } from "../middleware/verifyToken";
 // Lấy tất cả tài xế
 export const getDrivers = async (req: Request, res: Response) => {
@@ -54,4 +54,25 @@ export const getDriverNotifications = async (req: AuthRequest, res: Response) =>
     console.error(err);
     res.status(500).json({ message: "Lỗi server" });
   }
+};
+
+
+export const UpdateStudentStatus = async (req: Request, res: Response) => {
+    try {
+        const { maLT, maHS, status } = req.body;
+
+        if (!maLT || !maHS) {
+            return res.status(400).json({ message: "Thiếu thông tin lịch trình hoặc học sinh" });
+        }
+
+        const ok = await updateStudentStatus(maLT, maHS, status);
+
+        if (!ok)
+            return res.status(400).json({ message: "Không tìm thấy học sinh trong lịch trình" });
+
+        res.json({ message: "Cập nhật trạng thái thành công!" });
+    } catch (error) {
+        console.error("Lỗi cập nhật trạng thái:", error);
+        res.status(500).json({ message: "Lỗi server" });
+    }
 };

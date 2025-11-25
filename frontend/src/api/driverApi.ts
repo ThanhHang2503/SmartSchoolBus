@@ -1,4 +1,7 @@
-// frontend/api/driverApi.ts
+// frontend/src/api/driverApi.ts
+// Consolidated driver API used by frontend components
+import axios from "axios";
+
 export interface IDriverDetail {
   id: number;           // ← frontend dùng cái này
   MaTX: number;         // ← backend trả về cái này
@@ -150,6 +153,7 @@ export interface IDriverNotification {
   date: string; // YYYY-MM-DD HH:MM:SS
 }
 
+//Lấy thông báo của tài xế
 export const getDriverNotifications = async (token: string): Promise<IDriverNotification[]> => {
   const res = await fetch(`http://localhost:5000/driver/me/notifications`, {
     headers: {
@@ -174,10 +178,30 @@ export const postDriverLocation = async (driverId: number, latitude: number, lon
 };
 
 export const getDriverLocation = async (driverId: number) => {
-  const res = await fetch(`http://localhost:5000/driver/location/${driverId}`);
+  const res = await fetch(`http://localhost:5000/driver/location/${driverId}`, {
+    // prevent cached 304 responses during frequent polling
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache'
+    }
+  });
   if (!res.ok) {
     return null;
   }
   const data = await res.json();
   return data.position ?? null;
 };
+//cập nhật trạng thái đón/trả học sinh
+export const updateStudentStatus = async (
+  maHS: number,
+  newStatus: number,
+  maLT: number
+) => {
+  const res = await axios.put(`${BASE_URL}/update-status`, {
+    maHS,
+    status: newStatus,
+    maLT
+  });
+  return res.data;
+};
+

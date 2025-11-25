@@ -168,10 +168,19 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, d
     return <p>Không thể lấy vị trí của bạn.</p>;
   }
 
-  // Vị trí trung tâm (sử dụng trạm đầu tiên hoặc vị trí hiện tại)
-  const centerPosition: L.LatLngExpression = routeData?.stops[0]
-    ? [routeData.stops[0].ViDo, routeData.stops[0].KinhDo]
-    : [latitude, longitude];
+  // Vị trí trung tâm (sử dụng trạm đầu tiên > driverPos (parent) > local geolocation)
+  let centerPosition: L.LatLngExpression | null = null;
+  if (routeData?.stops && routeData.stops.length > 0) {
+    const s0 = routeData.stops[0];
+    if (s0 && s0.ViDo != null && s0.KinhDo != null) centerPosition = [s0.ViDo, s0.KinhDo];
+  }
+  if (!centerPosition) {
+    if (useDriverPosition && driverPos) {
+      centerPosition = [driverPos.latitude, driverPos.longitude];
+    } else if (latitude && longitude) {
+      centerPosition = [latitude, longitude];
+    }
+  }
 
   // Sắp xếp các trạm theo thứ tự
   const sortedStops = routeData?.stops.sort((a, b) => a.ThuTuDung - b.ThuTuDung) || [];
@@ -189,6 +198,10 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, d
     }, [lat, lng, map]);
     return null;
   };
+
+  if (!centerPosition) {
+    return <p>Đang chờ vị trí để hiển thị bản đồ...</p>;
+  }
 
   return (
     <div style={{ position: 'relative', height: '100%', width: '100%' }}>

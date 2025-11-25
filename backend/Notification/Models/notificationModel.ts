@@ -1,4 +1,4 @@
-import { pool } from "../../config/database.js";
+import { pool } from "../../config/db";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 
 // Thông báo
