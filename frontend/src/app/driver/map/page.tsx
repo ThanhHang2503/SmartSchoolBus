@@ -2,7 +2,7 @@
 
 import MyMap from "@/components/Map";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Alert,
   Box,
@@ -26,17 +26,56 @@ import {
   InputLabel,
   OutlinedInput,
   Checkbox,
-  ListItemText
+  ListItemText,
+  List,
+  ListItem,
+  Divider,
+  Collapse,
+  IconButton,
+  Badge
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useDriverSchedules } from '@/context/driverSchedulesContext';
-import { IStudentDetail, parseStudentList, updateStudentStatus } from "@/api/driverApi";
+import { IStudentDetail, parseStudentList, updateStudentStatus, IDriverNotification, getDriverNotifications } from "@/api/driverApi";
 import { sendNotice } from "@/api/noticeApi";
+import { useAuth } from "@/context/AuthContext";
 
 export default function MapAndStudentPage() {
   //LẤY DỮ LIỆU THỰC TẾ
   const { schedules, loading } = useDriverSchedules();
+  const { token } = useAuth();
   console.log("schedules:", schedules);
   const [search, setSearch] = useState("");
+  
+  // State cho thông báo từ admin
+  const [notifications, setNotifications] = useState<IDriverNotification[]>([]);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isNotificationLoading, setIsNotificationLoading] = useState(false);
+  
+  // Lấy thông báo từ admin
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!token) return;
+      
+      setIsNotificationLoading(true);
+      try {
+        const data = await getDriverNotifications(token);
+        setNotifications(data || []);
+      } catch (err) {
+        console.error("Lỗi khi lấy thông báo:", err);
+        setNotifications([]);
+      } finally {
+        setIsNotificationLoading(false);
+      }
+    };
+    
+    fetchNotifications();
+    // Refresh thông báo mỗi 30 giây
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [token]);
 
   const { refreshSchedules } = useDriverSchedules();
   // Hàm cập nhật trạng thái 
@@ -357,6 +396,141 @@ export default function MapAndStudentPage() {
 
       {/*BẢNG HỌC SINH DÙNG DỮ LIỆU THỰC TẾ (Nội tuyến) */}
             {renderStudentTable(filteredStudents)}
+
+      {/* THÔNG BÁO TỪ ADMIN */}
+      <Box sx={{ mb: 3, mt: 4 }}>
+        <Card sx={{ border: "1px solid #e2e8f0", borderRadius: 2 }}>
+          <CardContent sx={{ p: 0 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                p: 2,
+                cursor: "pointer",
+                "&:hover": {
+                  backgroundColor: "#f8fafc",
+                },
+              }}
+              onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Badge badgeContent={notifications.length} color="error">
+                  <NotificationsIcon sx={{ color: "#3b82f6", fontSize: 28 }} />
+                </Badge>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b" }}>
+                  Thông báo từ Admin
+                </Typography>
+                {notifications.length > 0 && (
+                  <Typography variant="body2" sx={{ color: "#64748b" }}>
+                    ({notifications.length} thông báo mới)
+                  </Typography>
+                )}
+              </Box>
+              <IconButton size="small">
+                {isNotificationOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </IconButton>
+            </Box>
+            
+            <Collapse in={isNotificationOpen}>
+              <Divider />
+              {isNotificationLoading ? (
+                <Box sx={{ p: 3, textAlign: "center" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Đang tải thông báo...
+                  </Typography>
+                </Box>
+              ) : notifications.length === 0 ? (
+                <Box sx={{ p: 3, textAlign: "center" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Chưa có thông báo nào
+                  </Typography>
+                </Box>
+              ) : (
+                <List
+                  sx={{
+                    maxHeight: 240, // Chỉ hiển thị khoảng 2 thông báo (mỗi thông báo ~120px)
+                    overflowY: "auto",
+                    p: 0,
+                    "&::-webkit-scrollbar": {
+                      width: "8px",
+                    },
+                    "&::-webkit-scrollbar-track": {
+                      background: "#f1f5f9",
+                      borderRadius: "4px",
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      background: "#cbd5e1",
+                      borderRadius: "4px",
+                      "&:hover": {
+                        background: "#94a3b8",
+                      },
+                    },
+                  }}
+                >
+                  {notifications.map((notification, index) => (
+                    <React.Fragment key={notification.id || index}>
+                      <ListItem
+                        sx={{
+                          flexDirection: "column",
+                          alignItems: "flex-start",
+                          py: 2,
+                          px: 3,
+                        }}
+                      >
+                        <Box sx={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
+                          <Box>
+                            {notification.loaiTB && (
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  display: "inline-block",
+                                  px: 1,
+                                  py: 0.5,
+                                  borderRadius: 1,
+                                  backgroundColor: 
+                                    notification.loaiTB === "Xe trễ" ? "#fef3c7" :
+                                    notification.loaiTB === "Sự cố" ? "#fee2e2" :
+                                    "#e0e7ff",
+                                  color: 
+                                    notification.loaiTB === "Xe trễ" ? "#92400e" :
+                                    notification.loaiTB === "Sự cố" ? "#991b1b" :
+                                    "#3730a3",
+                                  fontWeight: 600,
+                                  mb: 0.5,
+                                }}
+                              >
+                                {notification.loaiTB}
+                              </Typography>
+                            )}
+                          </Box>
+                          <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 500 }}>
+                            {notification.date 
+                              ? new Date(notification.date).toLocaleString("vi-VN", {
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : notification.ngayTao && notification.gioTao
+                              ? `${notification.ngayTao} ${notification.gioTao}`
+                              : "Chưa có thời gian"}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ color: "#1e293b", lineHeight: 1.6 }}>
+                          {notification.message}
+                        </Typography>
+                      </ListItem>
+                      {index < notifications.length - 1 && <Divider />}
+                    </React.Fragment>
+                  ))}
+                </List>
+              )}
+            </Collapse>
+          </CardContent>
+        </Card>
+      </Box>
 
       {/* Snackbar */}
       <Snackbar

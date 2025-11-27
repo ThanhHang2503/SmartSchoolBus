@@ -20,8 +20,9 @@
     "stats/**/*.ts",
     "route/**/*.ts",
     "notice/**/*.ts",
+    "Notification/**/*.ts",
     "backend/**/*.ts",
     "*.ts"
-, "notice/controllers/noticeController.ts"  ],
+  ],
   "exclude": ["node_modules"]
 }

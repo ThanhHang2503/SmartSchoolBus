@@ -5,6 +5,8 @@ import axios from "axios";
 export interface IDriverDetail {
   id: number;           // ← frontend dùng cái này
   MaTX: number;         // ← backend trả về cái này
+  MaTK?: number;        // ← Mã tài khoản (để gửi thông báo)
+  Active?: number;      // ← Trạng thái active
   HoTen: string;
   SoDienThoai: string;
   BangLai: string;
@@ -24,11 +26,19 @@ export const getAllDrivers = async (): Promise<IDriverDetail[]> => {
 
   const rawData = await response.json();
 
-  // ← ĐOẠN NÀY LÀ "CỨU MẠNG" CỦA BẠN
-  return rawData.map((driver: any) => ({
-    ...driver,
-    id: driver.MaTX,        // ← chuyển MaTX → id để frontend dùng được
-  }));
+  // Map để đảm bảo có cả id và MaTX với giá trị đúng (đảm bảo là number)
+  return rawData.map((driver: any) => {
+    const maTX = Number(driver.MaTX || driver.id);
+    return {
+      ...driver,
+      id: maTX,
+      MaTX: maTX,
+      MaTK: driver.MaTK ? Number(driver.MaTK) : undefined,
+      Active: driver.Active ?? 1, // Mặc định Active = 1 nếu không có
+      HoTen: driver.HoTen || driver.name,
+      SoDienThoai: driver.SoDienThoai || driver.phone,
+    };
+  });
 };
 
 /**
@@ -149,8 +159,10 @@ export const getCurrentDriverSchedules = async (token: string): Promise<ISchedul
 export interface IDriverNotification {
   id: number;
   message: string;
-  type: string;
   date: string; // YYYY-MM-DD HH:MM:SS
+  ngayTao?: string;
+  gioTao?: string;
+  loaiTB?: string; // Loại thông báo
 }
 
 //Lấy thông báo của tài xế

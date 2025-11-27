@@ -48,10 +48,12 @@ export const getDriverNotifications = async (req: AuthRequest, res: Response) =>
     const maTK = Number(req.user.userId);
     const notifications = await getNotificationsByAccountId(maTK);
     
-    if (!notifications) return res.status(404).json({ message: "Không tìm thấy thông báo" });
+    if (!notifications || notifications.length === 0) {
+      return res.json([]); // Trả về array rỗng thay vì 404
+    }
     res.json(notifications);
   } catch (err) {
-    console.error(err);
+    console.error("Lỗi khi lấy thông báo:", err);
     res.status(500).json({ message: "Lỗi server" });
   }
 };

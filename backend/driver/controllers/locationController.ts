@@ -124,7 +124,7 @@ export const updateDriverLocation = (req: any, res: Response) => {
                 const message = `Xe sắp tới trạm ${stop.TenTram} để ${action} học sinh ${s.studentName}.`;
                 try {
                   console.log(`[notify] creating notification for parent ${s.parentId} (student ${s.maHS}) message="${message}"`);
-                  const maTB = await createNotification({ NoiDung: message, LoaiTB: 'vehicle_near_stop' } as any);
+                  const maTB = await createNotification({ NoiDung: message });
                   console.log(`[notify] created MaTB=${maTB}`);
                   await sendNotificationToAccount(maTB, s.parentId);
                   console.log(`[notify] sent MaTB=${maTB} to MaTK=${s.parentId}`);

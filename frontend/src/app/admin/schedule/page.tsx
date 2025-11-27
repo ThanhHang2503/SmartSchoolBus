@@ -19,6 +19,10 @@ import {
 } from "@mui/material"
 
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
+import { DatePicker } from "@mui/x-date-pickers/DatePicker"
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"
+import dayjs, { type Dayjs } from "dayjs"
 import { getAllBuses, type IBus } from "@/api/busApi"
 import { getAllDrivers, type IDriverDetail } from "@/api/driverApi"
 import { getAllRoutes, type IRouteDetail } from "@/api/routeApi"
@@ -43,6 +47,7 @@ const ScheduleAssignmentPage = () => {
   const [dialogMessage, setDialogMessage] = useState("")
   const [dateInput, setDateInput] = useState("")
   const [dateError, setDateError] = useState("")
+  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null)
 
   useEffect(() => {
     Promise.all([getAllBuses(), getAllDrivers(), getAllRoutes()]).then(
@@ -167,14 +172,45 @@ const ScheduleAssignmentPage = () => {
   useEffect(() => {
     if (schedule.dayFormatted) {
       const [y, m, d] = schedule.dayFormatted.split("-")
-      setDateInput(`${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`)
+      const formattedDate = `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`
+      setDateInput(formattedDate)
+      // Cập nhật selectedDate cho DatePicker
+      const dateObj = dayjs(`${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`)
+      setSelectedDate(dateObj.isValid() ? dateObj : null)
     } else {
       setDateInput("")
+      setSelectedDate(null)
     }
   }, [schedule.dayFormatted])
 
+  // Xử lý khi chọn ngày từ DatePicker
+  const handleDatePickerChange = (newValue: Dayjs | null) => {
+    setSelectedDate(newValue)
+    if (newValue && newValue.isValid()) {
+      const y = newValue.year()
+      const m = newValue.month() + 1
+      const d = newValue.date()
+      const formattedDate = `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`
+      setDateInput(formattedDate)
+      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      const selectedDateObj = new Date(y, m - 1, d)
+      if (selectedDateObj < todayDate) {
+        setDateError("Ngày phải lớn hơn hoặc bằng hôm nay!")
+        handleChange("dayFormatted", "")
+        return
+      }
+      setDateError("")
+      handleChange("dayFormatted", `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`)
+    } else {
+      setDateInput("")
+      handleChange("dayFormatted", "")
+      setDateError("")
+    }
+  }
+
   return (
-    <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: 1200, mx: "auto" }}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: 1200, mx: "auto" }}>
       <Typography variant="h4" gutterBottom fontWeight="bold" color="#1e293b" sx={{ fontSize: { xs: "1.8rem", sm: "2.2rem" } }}>
         Phân công lịch trình cho tài xế
       </Typography>
@@ -184,7 +220,7 @@ const ScheduleAssignmentPage = () => {
         <TextField
           select
           fullWidth
-          label="Chọn tài xế"
+          label="Chọn tài xế "
           value={selectedDriver}
           onChange={(e) => setSelectedDriver(String(e.target.value ?? ""))}
           SelectProps={{
@@ -200,6 +236,9 @@ const ScheduleAssignmentPage = () => {
           <MenuItem value="">-- Chọn tài xế --</MenuItem>
           {driverList.map((driver) => (
             <MenuItem key={driver.id} value={driver.id}>
+              <Box component="span" sx={{ fontWeight: "bold", color: "#1976d2", mr: 1 }}>
+                Mã: {driver.MaTX || driver.id}
+              </Box>
               <Box component="span" sx={{ fontWeight: "bold" }}>{driver.HoTen}</Box>
               <Box component="span" sx={{ ml: 1, color: "text.secondary", fontSize: "0.9rem" }}>
                 - {driver.SoDienThoai}
@@ -232,53 +271,41 @@ const ScheduleAssignmentPage = () => {
                 <TableRow>
                   {/* Ngày */}
                   <TableCell sx={{ p: { xs: 0.5, sm: 1 } }}>
-                    <TextField
-                      type="text"
-                      placeholder={todayFormatted}
-                      value={dateInput}
-                      onChange={(e) => {
-                        let v = e.target.value.replace(/[^\d]/g, "")
-                        if (v.length > 8) v = v.slice(0, 8)
-                        if (v.length >= 5) v = v.slice(0, 2) + "/" + v.slice(2, 4) + "/" + v.slice(4)
-                        else if (v.length >= 3) v = v.slice(0, 2) + "/" + v.slice(2)
-                        setDateInput(v)
-                        if (v.length === 10) {
-                          const d = Number(v.slice(0, 2))
-                          const m = Number(v.slice(3, 5))
-                          const y = Number(v.slice(6))
-                          const parsed = new Date(y, m - 1, d)
-                          const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-                          if (!isValidDate(d, m, y) || parsed < todayDate) {
-                            setDateError("Ngày không hợp lệ hoặc nhỏ hơn hôm nay!")
-                            handleChange("dayFormatted", "")
-                            return
-                          }
-                          setDateError("")
-                          handleChange("dayFormatted", `${y}-${m.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`)
-                        } else {
-                          handleChange("dayFormatted", "")
-                          setDateError("")
-                        }
+                    <DatePicker
+                      value={selectedDate}
+                      onChange={handleDatePickerChange}
+                      format="DD/MM/YYYY"
+                      minDate={dayjs(today)}
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          placeholder: todayFormatted,
+                          error: Boolean(dateError),
+                          helperText: dateError || "dd/mm/yyyy hoặc click icon lịch",
+                          inputProps: { maxLength: 10 },
+                          sx: {
+                            "& .MuiInputBase-root": {
+                              height: 44,
+                              display: "flex",
+                              alignItems: "center",
+                            },
+                            "& .MuiOutlinedInput-input": {
+                              py: 0,
+                            },
+                          },
+                        },
+                        openPickerIcon: {
+                          sx: { color: "text.secondary", fontSize: 19 },
+                        },
                       }}
-                      error={Boolean(dateError)}
-                      helperText={dateError || "dd/mm/yyyy"}
-                      inputProps={{ maxLength: 10 }}
-                      size="small"
-                      fullWidth
-                      InputProps={{
-                        startAdornment: (
-                          <CalendarTodayIcon sx={{ color: "text.secondary", fontSize: 19, mr: 1, flexShrink: 0 }} />
-                        ),
+                      slots={{
+                        openPickerIcon: CalendarTodayIcon,
                       }}
-                      // QUAN TRỌNG NHẤT: ép chiều cao cố định + căn giữa dọc
                       sx={{
+                        width: "100%",
                         "& .MuiInputBase-root": {
                           height: 44,
-                          display: "flex",
-                          alignItems: "center",
-                        },
-                        "& .MuiOutlinedInput-input": {
-                          py: 0, // bỏ padding dọc thừa do adornment gây ra
                         },
                       }}
                     />
@@ -393,7 +420,8 @@ const ScheduleAssignmentPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      </Box>
+    </LocalizationProvider>
   )
 }
 

@@ -286,11 +286,8 @@ export default function DriverDashboard() {
                                   {n.message || "Không có nội dung"} 
                               </Typography>
                               <Box sx={{ ml: 1, mt: 0.5 }}>
-                                  <Typography variant="body2">
-                                      Loại: <Typography component="span" fontWeight="bold">{n.type}</Typography>
-                                  </Typography>
-                                  <Typography variant="body2">
-                                      Thời gian: {n.date}
+                                  <Typography variant="body2" color="text.secondary">
+                                      Thời gian: {n.date || (n.ngayTao && n.gioTao ? `${n.ngayTao} ${n.gioTao}` : 'Chưa có thời gian')}
                                   </Typography>
                               </Box>
                           </Box>

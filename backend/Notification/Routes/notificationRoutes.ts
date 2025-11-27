@@ -4,7 +4,7 @@ import {
   getNotificationsByAccount,
   createAndSendNotification,
   deleteNotification,
-} from '../Controllers/NotificationController.js';
+} from '../Controllers/NotificationController';
 
 const router = express.Router();
 
