@@ -156,6 +156,12 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
               </StyledLink>
             </MenuItem>
             <MenuItem>
+              <StyledLink href="/admin/list" className={getLinkClasses('/admin/list')}>
+                <FaUser/>
+                <span>Xem danh sách</span>
+              </StyledLink>
+            </MenuItem>
+            <MenuItem>
               <StyledLink href="/admin/schedule" className={getLinkClasses('/admin/schedule')}>
                 <FaCalendar />
                 <span>Lịch trình và phân công</span>
