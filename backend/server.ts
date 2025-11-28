@@ -50,5 +50,5 @@ app.use("/notifications", notificationRoutes);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`SSB 1.0 Backend đang chạy tại http://localhost:${PORT}`);
+  // Server started
 });

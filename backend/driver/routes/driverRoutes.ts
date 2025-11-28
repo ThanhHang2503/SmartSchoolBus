@@ -10,7 +10,7 @@ const router = express.Router();
 router.get("/", getDrivers); // GET /drivers
 router.get("/me", verifyToken, driverMiddleware, getCurrentDriver); // GET /driver/me dùng token
 router.get("/me/schedules", verifyToken, driverMiddleware, getCurrentDriverSchedules); // GET /driver/me/schedules dùng token
-router.get("/me/notifications/", verifyToken, driverMiddleware, getDriverNotifications); // GET /driver/me/notifications dùng token
+router.get("/me/notifications", verifyToken, driverMiddleware, getDriverNotifications); // GET /driver/me/notifications dùng token
 // Driver location endpoints
 router.post("/location", verifyToken, driverMiddleware, updateDriverLocation); // POST driver location (driver only)
 // Test endpoint (no auth) for simulation/dev only

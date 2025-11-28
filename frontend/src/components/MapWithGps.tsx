@@ -78,12 +78,32 @@ export default function MapWithGps({ simulate = false, simulateRoute, height = '
     if (!pos) return;
     const map = mapRef.current;
     if (!map) return;
+    
+    // Check if map container is still valid
+    try {
+      if (!map.getContainer() || !map.getContainer()._leaflet_id) {
+        return;
+      }
+    } catch (e) {
+      return;
+    }
+    
     try {
       map.panTo([pos.lat, pos.lng]);
       // calling invalidateSize can fix tiled artifacts when container layout changed
-      setTimeout(() => map.invalidateSize(), 150);
+      setTimeout(() => {
+        try {
+          const currentMap = mapRef.current;
+          if (currentMap && currentMap.getContainer() && currentMap.getContainer()._leaflet_id) {
+            currentMap.invalidateSize();
+          }
+        } catch (e) {
+          // ignore errors
+        }
+      }, 150);
     } catch (e) {
       // ignore errors
+      console.warn('Error panning map:', e);
     }
   }, [pos]);
 
@@ -98,7 +118,15 @@ export default function MapWithGps({ simulate = false, simulateRoute, height = '
         whenCreated={(map) => {
           mapRef.current = map;
           // ensure correct sizing after mount
-          setTimeout(() => map.invalidateSize(), 200);
+          setTimeout(() => {
+            try {
+              if (map && map.getContainer() && map.getContainer()._leaflet_id) {
+                map.invalidateSize();
+              }
+            } catch (e) {
+              console.warn('Error invalidating map size:', e);
+            }
+          }, 200);
         }}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />

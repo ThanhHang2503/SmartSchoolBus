@@ -20,7 +20,6 @@ const getMaTKFromToken = (req: Request): number | undefined => {
     return Number(decoded.userId || decoded.id || decoded.MaTK);
   } catch (err) {
     // Nếu token không hợp lệ, không báo lỗi, chỉ return undefined
-    console.log("Không thể lấy MaTK từ token (có thể không có token hoặc token không hợp lệ)");
     return undefined;
   }
 };
@@ -67,8 +66,6 @@ export const sendNotice = async (req: Request, res: Response) => {
   }
 
   try {
-    console.log('POST /notice payload:', { content, receivers, senderMaTK, tokenSource: getMaTKFromToken(req) ? 'token' : 'body' });
-    
     // Lọc danh sách người nhận: loại bỏ admin và người gửi
     const filteredReceivers = await filterValidReceivers(receivers, senderMaTK);
     
@@ -79,7 +76,6 @@ export const sendNotice = async (req: Request, res: Response) => {
     }
     
     const result = await createNotice(content.trim(), filteredReceivers);
-    console.log('createNotice result:', result);
 
     // Trả về dữ liệu đẹp cho frontend (chỉ những người thực sự nhận được)
     const now = new Date();
@@ -94,7 +90,6 @@ export const sendNotice = async (req: Request, res: Response) => {
 
     return res.status(201).json(responseData);
   } catch (err) {
-    console.error("Lỗi gửi thông báo:", err);
     // Nếu err có message từ model, trả về chi tiết hơn
     const message = (err && (err as any).message) ? (err as any).message : "Gửi thông báo thất bại";
     return res.status(500).json({ message });
@@ -111,7 +106,6 @@ export const fetchNotices = async (req: Request, res: Response) => {
     const notices = await getNoticesByUser(MaTK);
     return res.json(notices);
   } catch (err) {
-    console.error("Lỗi lấy thông báo:", err);
     return res.status(500).json({ message: "Lỗi server" });
   }
 };
@@ -122,7 +116,6 @@ export const fetchAllNotices = async (req: Request, res: Response) => {
     const notices = await getAllNotices();
     return res.json(notices);
   } catch (err) {
-    console.error("Lỗi lấy tất cả thông báo:", err);
     return res.status(500).json({ message: "Lỗi server" });
   }
 };

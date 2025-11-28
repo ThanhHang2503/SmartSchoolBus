@@ -17,7 +17,6 @@ export const getAllNotifications = async (_req: Request, res: Response) => {
     const notifications = await getAllNotificationsModel();
     res.json({ success: true, data: notifications });
   } catch (err: any) {
-    console.error(err);
     res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
 };
@@ -37,7 +36,6 @@ export const getNotificationByIdCtrl = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: noti });
   } catch (err: any) {
-    console.error(err);
     res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
 };
@@ -53,7 +51,6 @@ export const getNotificationsByAccount = async (req: Request, res: Response) => 
     const list = await getNotificationsByAccountModel(maTK);
     res.json({ success: true, data: list });
   } catch (err: any) {
-    console.error(err);
     res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
 };
@@ -120,7 +117,6 @@ export const createAndSendNotification = async (req: Request, res: Response) => 
       },
     });
   } catch (err: any) {
-    console.error('createNotificationCtrl error:', err);
     res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
 };
@@ -143,7 +139,6 @@ export const sendToOneAccountCtrl = async (req: Request, res: Response) => {
     await sendNotificationToAccount(maTB, MaTK);
     res.json({ success: true, message: 'Đã gửi thông báo đến tài khoản' });
   } catch (err: any) {
-    console.error(err);
     res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
 };
@@ -176,7 +171,6 @@ export const sendToManyAccountsCtrl = async (req: Request, res: Response) => {
     await sendNotificationToAccounts(maTB, validIds);
     res.json({ success: true, message: `Đã gửi thông báo đến ${validIds.length} tài khoản` });
   } catch (err: any) {
-    console.error(err);
     res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
 };
@@ -200,7 +194,6 @@ export const sendByRoleCtrl = async (req: Request, res: Response) => {
     const roleName = Role === 1 ? 'Phụ huynh' : Role === 2 ? 'Quản lý' : 'Tài xế';
     res.json({ success: true, message: `Đã gửi thông báo đến tất cả ${roleName}` });
   } catch (err: any) {
-    console.error(err);
     res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
 };
@@ -220,7 +213,6 @@ export const deleteNotification = async (req: Request, res: Response) => {
 
     res.json({ success: true, message: 'Xóa thông báo thành công' });
   } catch (err: any) {
-    console.error(err);
     res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
 };

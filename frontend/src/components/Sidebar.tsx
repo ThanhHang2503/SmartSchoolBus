@@ -110,7 +110,7 @@ const LogoutButton = styled('button')(({ theme }) => ({
   },
   [theme.breakpoints.down('sm')]: {
     padding: theme.spacing(0.5),
-    gap: theme.spacing(0.5),
+gap: theme.spacing(0.5),
   },
   [theme.breakpoints.down('xs')]: {
     padding: theme.spacing(0.5),
@@ -208,7 +208,7 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
         {user.role === 'parent' && (
           <>
             <MenuItem>
-              <StyledLink href="/parent/overview" className={getLinkClasses('/parent/overview')}>
+<StyledLink href="/parent/overview" className={getLinkClasses('/parent/overview')}>
                 <FaHome />
                 <span>Tổng quan</span>
               </StyledLink>

@@ -35,6 +35,8 @@ export default function DanhSachPage() {
   const [view, setView] = useState<ViewType | "">("");
   const [loading, setLoading] = useState(false) // Đổi thành false vì ban đầu chưa cần load
   const [dataList, setDataList] = useState<any[]>([])
+  const [searchKeyword, setSearchKeyword] = useState<string>("")
+  const [filteredDataList, setFilteredDataList] = useState<any[]>([])
 
   useEffect(() => {
     if (!view) {
@@ -48,12 +50,15 @@ export default function DanhSachPage() {
         if (view === "driver") {
           const drivers = await getAllDrivers()
           setDataList(drivers)
+          setFilteredDataList(drivers)
         } else if (view === "parent") {
           const parents = await getAllParents()
           setDataList(parents)
+          setFilteredDataList(parents)
         } else if (view === "student") {
           const students = await getAllStudents()
           setDataList(students)
+          setFilteredDataList(students)
         }
       } catch (err) {
         console.error("Lỗi load dữ liệu:", err)
@@ -63,14 +68,16 @@ export default function DanhSachPage() {
     loadData()
   }, [view])
 
-  const getIcon = () => {
+  const getIcon = (sx?: any) => {
     switch (view) {
       case "driver":
-        return <DirectionsBusIcon sx={{ color: "#0f766e", fontSize: "2rem" }} />
+        return <DirectionsBusIcon sx={sx || { color: "#0f766e", fontSize: "2rem" }} />
       case "parent":
-        return <PersonIcon sx={{ color: "#1e40af", fontSize: "2rem" }} />
+        return <PersonIcon sx={sx || { color: "#1e40af", fontSize: "2rem" }} />
       case "student":
-        return <SchoolIcon sx={{ color: "#be123c", fontSize: "2rem" }} />
+        return <SchoolIcon sx={sx || { color: "#be123c", fontSize: "2rem" }} />
+      default:
+        return <SchoolIcon sx={sx || { color: "#be123c", fontSize: "2rem" }} />
     }
   }
 
@@ -81,6 +88,37 @@ export default function DanhSachPage() {
   const getStatusLabel = (status: boolean) => {
     return status ? "Hoạt động" : "Không hoạt động"
   }
+
+  // Hàm lọc dữ liệu dựa trên từ khóa tìm kiếm (chỉ lọc theo tên)
+  const handleSearch = () => {
+    if (!searchKeyword.trim()) {
+      // Nếu từ khóa rỗng, hiển thị tất cả
+      setFilteredDataList(dataList)
+      return
+    }
+
+    const keyword = searchKeyword.trim().toLowerCase()
+    const filtered = dataList.filter((item) => {
+      if (view === "driver") {
+        // Chỉ lọc theo tên tài xế
+        return item.name?.toLowerCase().includes(keyword)
+      } else if (view === "parent") {
+        // Chỉ lọc theo tên phụ huynh
+        return item.HoTen?.toLowerCase().includes(keyword)
+      } else if (view === "student") {
+        // Chỉ lọc theo tên học sinh
+        return item.name?.toLowerCase().includes(keyword)
+      }
+      return false
+    })
+    setFilteredDataList(filtered)
+  }
+
+  // Reset filter khi view thay đổi
+  useEffect(() => {
+    setSearchKeyword("")
+    setFilteredDataList(dataList)
+  }, [view, dataList])
 
   return (
     <Box
@@ -107,7 +145,7 @@ export default function DanhSachPage() {
               justifyContent: "center",
             }}
           >
-            {view ? React.cloneElement(getIcon() as React.ReactElement, { sx: { color: "white", fontSize: "2rem" } }) : 
+            {view ? getIcon({ color: "white", fontSize: "2rem" }) : 
               <SchoolIcon sx={{ color: "white", fontSize: "2rem" }} />
             }
           </Box>
@@ -134,6 +172,7 @@ export default function DanhSachPage() {
           gap: 2.5,
           mb: 4,
           alignItems: "center",
+          flexWrap: { xs: "wrap", sm: "nowrap" },
         }}
       >
         <TextField
@@ -169,6 +208,77 @@ export default function DanhSachPage() {
           <MenuItem value="parent">👨‍👩‍👧 Phụ huynh</MenuItem>
           <MenuItem value="student">🎓 Học sinh</MenuItem>
         </TextField>
+        
+        {/* Search Box */}
+        <Box
+          sx={{
+            p: 2,
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+            width: { xs: "100%", sm: "280px", md: "320px" },
+            backgroundColor: "white",
+            "&:hover": {
+              borderColor: "#cbd5e1",
+            },
+            "&:focus-within": {
+              borderColor: "#0f766e",
+              boxShadow: "0 0 0 3px rgba(15, 118, 110, 0.1)",
+            },
+          }}
+        >
+          <TextField
+            type="text"
+            placeholder="Tìm kiếm…"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                handleSearch()
+              }
+            }}
+            fullWidth
+            variant="standard"
+            InputProps={{
+              disableUnderline: true,
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "#94a3b8", fontSize: "1.2rem" }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              "& .MuiInputBase-input": {
+                fontSize: "0.95rem",
+                color: "#1e293b",
+                "&::placeholder": {
+                  color: "#94a3b8",
+                  opacity: 1,
+                },
+              },
+            }}
+          />
+        </Box>
+        
+        {/* Search Button */}
+        <Button
+          variant="contained"
+          onClick={handleSearch}
+          sx={{
+            minWidth: { xs: "100%", sm: "120px" },
+            height: "56px",
+            borderRadius: "8px",
+            backgroundColor: "#0f766e",
+            color: "white",
+            fontWeight: 600,
+            textTransform: "none",
+            fontSize: "0.95rem",
+            "&:hover": {
+              backgroundColor: "#0d9488",
+            },
+          }}
+        >
+          Tìm kiếm
+        </Button>
       </Box>
 
       {/* Màn hình khi chưa chọn gì */}
@@ -221,6 +331,22 @@ export default function DanhSachPage() {
             overflow: "hidden",
             backgroundColor: "white",
             border: "1px solid #e2e8f0",
+            maxHeight: "600px",
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: "#f1f5f9",
+              borderRadius: "4px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: "#cbd5e1",
+              borderRadius: "4px",
+              "&:hover": {
+                background: "#94a3b8",
+              },
+            },
           }}
         >
           <Table>
@@ -279,8 +405,8 @@ export default function DanhSachPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {dataList.length > 0 ? (
-                dataList.map((item, index) => (
+              {filteredDataList.length > 0 ? (
+                filteredDataList.map((item, index) => (
                   <TableRow
                     key={item.id}
                     sx={{
@@ -414,7 +540,7 @@ export default function DanhSachPage() {
                 <TableRow>
                   <TableCell colSpan={view === "student" ? 4 : view === "driver" ? 4 : 3} align="center" sx={{ py: 6, color: "#94a3b8" }}>
                     <Typography variant="h6" sx={{ color: "#64748b" }}>
-                      Không có dữ liệu
+                      {searchKeyword.trim() ? "Không tìm thấy kết quả phù hợp" : "Không có dữ liệu"}
                     </Typography>
                   </TableCell>
                 </TableRow>

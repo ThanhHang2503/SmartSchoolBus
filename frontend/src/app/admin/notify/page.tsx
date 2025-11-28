@@ -108,21 +108,21 @@ const AdminNotifyPage = () => {
           .filter((p: any) => p.MaTK) // Chỉ lấy những người có MaTK
           .map((p: any) => ({
             id: `parent-${p.MaPH || p.id}`,
-            rawId: String(p.MaTK),
+          rawId: String(p.MaTK),
             name: p.HoTen || p.name || "Không có tên",
-            type: "parent" as const,
+          type: "parent" as const,
             extraId: p.MaPH || p.id,
-          }))
+        }))
 
         const driverList: ChatUser[] = activeDrivers
           .filter((d: any) => d.MaTK) // Chỉ lấy những người có MaTK
           .map((d: any) => ({
             id: `driver-${d.MaTX || d.id}`,
-            rawId: String(d.MaTK),
+          rawId: String(d.MaTK),
             name: d.HoTen || d.name || "Không có tên",
-            type: "driver" as const,
+          type: "driver" as const,
             extraId: d.MaTX || d.id,
-          }))
+        }))
 
         // Không thêm admin vào danh sách vì admin chỉ có thể gửi cho tài xế và phụ huynh
         setChatUsers([...driverList, ...parentList])
@@ -188,26 +188,26 @@ const AdminNotifyPage = () => {
       
       // Xử lý theo loại thông báo
     switch (noticeType) {
-        case "all":
+      case "all":
           // Gửi cho tất cả tài xế và phụ huynh (không gửi cho admin)
           const allReceivers = chatUsers.map((u) => Number(u.rawId))
           // Gửi qua API notice (sẽ tự động lọc admin)
           result = await sendNotice(content.trim(), allReceivers, currentAdminMaTK || undefined)
-          break
+        break
           
-        case "all-driver":
+      case "all-driver":
           // Gửi cho tất cả tài xế - dùng Role = 3
           result = await createAndSendNotification(content.trim(), undefined, 3, currentAdminMaTK || undefined, loaiTB)
-          break
+        break
           
-        case "all-parent":
+      case "all-parent":
           // Gửi cho tất cả phụ huynh - dùng Role = 1
           result = await createAndSendNotification(content.trim(), undefined, 1, currentAdminMaTK || undefined, loaiTB)
-          break
+        break
           
-        case "single":
-          if (!selectedUser) {
-            setError("Vui lòng chọn người nhận!")
+      case "single":
+        if (!selectedUser) {
+          setError("Vui lòng chọn người nhận!")
             setLoading(false)
             return
           }
@@ -215,11 +215,11 @@ const AdminNotifyPage = () => {
           if (currentAdminMaTK && Number(selectedUser.rawId) === currentAdminMaTK) {
             setError("Bạn không thể gửi thông báo cho chính mình!")
             setLoading(false)
-            return
-          }
+          return
+        }
           // Gửi cho 1 người - dùng API notice (sẽ tự động lọc admin)
           result = await sendNotice(content.trim(), [Number(selectedUser.rawId)], currentAdminMaTK || undefined)
-          break
+        break
           
         default:
           throw new Error("Loại thông báo không hợp lệ")
@@ -228,7 +228,7 @@ const AdminNotifyPage = () => {
       console.log('createAndSendNotification response:', result)
 
       // Refresh lịch sử từ server
-      try {
+    try {
         const [notices, notifications] = await Promise.all([
           getAllNotices().catch(() => []),
           getAllNotifications().catch(() => []),
@@ -774,8 +774,8 @@ const AdminNotifyPage = () => {
                           sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}
                         >
                           <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1e293b" }}>
-                              {selectedUser ? selectedUser.name : "Thông báo hệ thống"}
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1e293b" }}>
+                            {selectedUser ? selectedUser.name : "Thông báo hệ thống"}
                               {!selectedUser && (notice as any).SoNguoiNhan && (
                                 <Typography component="span" variant="body2" sx={{ color: "#64748b", ml: 1 }}>
                                   ({(notice as any).SoNguoiNhan} người nhận)
@@ -803,7 +803,7 @@ const AdminNotifyPage = () => {
                                 }}
                               >
                                 {(notice as any).LoaiTB}
-                              </Typography>
+                          </Typography>
                             )}
                           </Box>
                           <Typography variant="body2" sx={{ color: "#94a3b8" }}>

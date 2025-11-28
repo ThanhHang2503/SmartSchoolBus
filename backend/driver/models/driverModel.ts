@@ -1,10 +1,10 @@
 // backend/driver/driverModel.ts
 import { pool } from "../../config/db";
 
-// Lấy tất cả Tài xế, JOIN với TaiKhoan (sử dụng logic +13 dựa trên dữ liệu mẫu)
+// Lấy tất cả Tài xế, JOIN với TaiKhoan
 export const getAllDrivers = async () => {
   try {
-    // Thử query với Active trước
+    // Thử query với MaTK trước (nếu cột MaTK đã được UPDATE)
     const [rows]: any = await pool.query(
       `SELECT 
         TX.MaTX,
@@ -17,7 +17,7 @@ export const getAllDrivers = async () => {
         TK.TenDangNhap
       FROM TaiXe TX
       INNER JOIN TaiKhoan TK 
-        ON TX.MaTX + 13 = TK.MaTK 
+        ON TX.MaTK = TK.MaTK 
       WHERE TK.VaiTro = 3 AND TK.TrangThai = 1`
     );
     // Map để đảm bảo có cả id và MaTX
@@ -29,10 +29,62 @@ export const getAllDrivers = async () => {
       Active: Number(row.Active) || 1, // Đảm bảo là number
     }));
   } catch (err: any) {
-    console.error("Lỗi getAllDrivers:", err);
+    // Nếu lỗi do cột MaTK chưa được UPDATE, thử query với logic +13
+    if (err.code === 'ER_BAD_FIELD_ERROR' && err.message?.includes('MaTK')) {
+      try {
+        const [rows]: any = await pool.query(
+          `SELECT 
+            TX.MaTX,
+            TX.HoTen, 
+            TX.SoDienThoai, 
+            TX.BangLai,
+            TX.TrangThai,
+            IFNULL(TX.Active, 1) AS Active,
+            TK.MaTK,
+            TK.TenDangNhap
+          FROM TaiXe TX
+          INNER JOIN TaiKhoan TK 
+            ON TX.MaTX + 13 = TK.MaTK 
+          WHERE TK.VaiTro = 3 AND TK.TrangThai = 1`
+        );
+        return rows.map((row: any) => ({
+          ...row,
+          id: row.MaTX,
+          MaTX: row.MaTX,
+          MaTK: row.MaTK,
+          Active: Number(row.Active) || 1,
+        }));
+      } catch (fallbackErr: any) {
+        // Nếu lỗi do cột Active không tồn tại, thử query không có Active
+        if (fallbackErr.code === 'ER_BAD_FIELD_ERROR' && fallbackErr.message?.includes('Active')) {
+          const [rows]: any = await pool.query(
+            `SELECT 
+              TX.MaTX,
+              TX.HoTen, 
+              TX.SoDienThoai, 
+              TX.BangLai,
+              TX.TrangThai,
+              1 AS Active,
+              TK.MaTK,
+              TK.TenDangNhap
+            FROM TaiXe TX
+            INNER JOIN TaiKhoan TK 
+              ON TX.MaTX + 13 = TK.MaTK 
+            WHERE TK.VaiTro = 3 AND TK.TrangThai = 1`
+          );
+          return rows.map((row: any) => ({
+            ...row,
+            id: row.MaTX,
+            MaTX: row.MaTX,
+            MaTK: row.MaTK,
+            Active: 1,
+          }));
+        }
+        throw fallbackErr;
+      }
+    }
     // Nếu lỗi do cột Active không tồn tại, thử query không có Active
     if (err.code === 'ER_BAD_FIELD_ERROR' && err.message?.includes('Active')) {
-      console.log("Cột Active không tồn tại, sử dụng query không có Active");
       const [rows]: any = await pool.query(
         `SELECT 
           TX.MaTX,
@@ -45,7 +97,7 @@ export const getAllDrivers = async () => {
           TK.TenDangNhap
         FROM TaiXe TX
         INNER JOIN TaiKhoan TK 
-          ON TX.MaTX + 13 = TK.MaTK 
+          ON TX.MaTK = TK.MaTK 
         WHERE TK.VaiTro = 3 AND TK.TrangThai = 1`
       );
       return rows.map((row: any) => ({
@@ -60,22 +112,75 @@ export const getAllDrivers = async () => {
   }
 };
 
-// Lấy Tài xế theo ID (MaTX)
-export const getDriverById = async (id: number) => {
-  const [rows]: any = await pool.query(
-    `SELECT 
-      TX.MaTX AS id, 
-      TX.HoTen AS name, 
-      TX.SoDienThoai AS phone, 
-      TX.BangLai AS license,
-      TX.TrangThai AS status,
-      TK.TenDangNhap AS username
-    FROM TaiXe TX
-    JOIN TaiKhoan TK ON TX.MaTX + 13 = TK.MaTK
-    WHERE TX.MaTK = ? AND TK.VaiTro = 3`,
-    [id]
-  );
-  return rows[0];
+// Lấy Tài xế theo ID (MaTK từ token)
+export const getDriverById = async (maTK: number) => {
+  try {
+    // Thử query với TX.MaTK = TK.MaTK trước (nếu cột MaTK đã được UPDATE)
+    let [rows]: any = await pool.query(
+      `SELECT 
+        TX.MaTX AS id, 
+        TX.HoTen AS name, 
+        TX.SoDienThoai AS phone, 
+        TX.BangLai AS license,
+        TX.TrangThai AS status,
+        TK.TenDangNhap AS username
+      FROM TaiXe TX
+      JOIN TaiKhoan TK ON TX.MaTK = TK.MaTK
+      WHERE TK.MaTK = ? AND TK.VaiTro = 3 AND TK.TrangThai = 1`,
+      [maTK]
+    );
+    
+    // Nếu không tìm thấy và có lỗi về cột MaTK, thử query với logic +13
+    if (rows.length === 0) {
+      [rows] = await pool.query(
+        `SELECT 
+          TX.MaTX AS id, 
+          TX.HoTen AS name, 
+          TX.SoDienThoai AS phone, 
+          TX.BangLai AS license,
+          TX.TrangThai AS status,
+          TK.TenDangNhap AS username
+        FROM TaiXe TX
+        JOIN TaiKhoan TK ON TX.MaTX + 13 = TK.MaTK
+        WHERE TK.MaTK = ? AND TK.VaiTro = 3 AND TK.TrangThai = 1`,
+        [maTK]
+      );
+    }
+    
+    if (rows.length === 0) {
+      return null;
+    }
+    
+    return rows[0];
+  } catch (err: any) {
+    // Nếu lỗi do cột MaTK không tồn tại, thử query với logic +13
+    if (err.code === 'ER_BAD_FIELD_ERROR' && err.message?.includes('MaTK')) {
+      try {
+        const [rows]: any = await pool.query(
+          `SELECT 
+            TX.MaTX AS id, 
+            TX.HoTen AS name, 
+            TX.SoDienThoai AS phone, 
+            TX.BangLai AS license,
+            TX.TrangThai AS status,
+            TK.TenDangNhap AS username
+          FROM TaiXe TX
+          JOIN TaiKhoan TK ON TX.MaTX + 13 = TK.MaTK
+          WHERE TK.MaTK = ? AND TK.VaiTro = 3 AND TK.TrangThai = 1`,
+          [maTK]
+        );
+        
+        if (rows.length === 0) {
+          return null;
+        }
+        
+        return rows[0];
+      } catch (fallbackErr: any) {
+        throw fallbackErr;
+      }
+    }
+    throw err;
+  }
 };
 
 // Lấy Lịch trình làm việc theo MaTK
@@ -114,6 +219,7 @@ export const getDriverSchedulesByAccountId = async (MaTK: number) => {
   FROM
     LichTrinh LT
   JOIN TaiXe TX ON LT.MaTX = TX.MaTX
+  JOIN TaiKhoan TK ON TX.MaTK = TK.MaTK
   JOIN XeBus XB ON LT.MaXe = XB.MaXe
   JOIN TuyenDuong TD ON LT.MaTD = TD.MaTD
   LEFT JOIN CTLT ON LT.MaLT = CTLT.MaLT
@@ -123,7 +229,7 @@ export const getDriverSchedulesByAccountId = async (MaTK: number) => {
   LEFT JOIN TramDung TTRA ON HS.DiemTra = TTRA.MaTram
 
   WHERE
-    TX.MaTK = ? 
+    TK.MaTK = ? 
     
   GROUP BY
     LT.MaLT, LT.Ngay, LT.GioBatDau, LT.GioKetThuc, TD.NoiBatDau, TD.NoiKetThuc, 

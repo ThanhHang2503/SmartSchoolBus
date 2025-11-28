@@ -71,10 +71,8 @@ export const getAllParents = async () => {
       Active: Number(row.Active) || 1, // Đảm bảo là number
     }));
   } catch (err: any) {
-    console.error("Lỗi getAllParents:", err);
     // Nếu lỗi do cột Active không tồn tại, thử query không có Active
     if (err.code === 'ER_BAD_FIELD_ERROR' && err.message?.includes('Active')) {
-      console.log("Cột Active không tồn tại, sử dụng query không có Active");
       const [rows]: any = await pool.query(
         `SELECT
            PH.MaPH AS MaPH,

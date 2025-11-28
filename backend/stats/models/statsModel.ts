@@ -15,8 +15,6 @@ export const getTripsMonthly = async (yearStr?: string): Promise<ITripMonthlyDat
       targetYear = String(now.getFullYear())
     }
 
-    console.log(`[Backend] Getting stats for year: ${targetYear}`)
-
     // Dựa trên file mẫu bạn cung cấp, project đang dùng thư viện mysql2/promise
     const [rows]: any = await pool.query(
       `SELECT 
@@ -28,8 +26,6 @@ export const getTripsMonthly = async (yearStr?: string): Promise<ITripMonthlyDat
       ORDER BY month ASC`,
       [targetYear],
     )
-
-    console.log(`[Backend] Found ${Array.isArray(rows) ? rows.length : 0} rows`)
 
     // Tạo mảng đủ 12 tháng (mặc định 0 chuyến)
     const fullYearData: ITripMonthlyData[] = Array.from({ length: 12 }, (_, i) => ({
@@ -50,7 +46,6 @@ export const getTripsMonthly = async (yearStr?: string): Promise<ITripMonthlyDat
 
     return fullYearData
   } catch (error) {
-    console.error("[Backend] Error in getTripsMonthly:", error)
     // Trả về mảng rỗng thay vì crash
     return Array.from({ length: 12 }, (_, i) => ({ month: i + 1, trips: 0 }))
   }

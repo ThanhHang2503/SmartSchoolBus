@@ -189,14 +189,14 @@ export const sendNotificationByRole = async (
     } catch (err: any) {
       // Nếu lỗi do cột Active không tồn tại, thử query không có Active
       if (err.code === 'ER_BAD_FIELD_ERROR' && err.message?.includes('Active')) {
-        await pool.query(
-          `INSERT INTO CTTB (MaTK, MaTB, ThoiGian)
+  await pool.query(
+    `INSERT INTO CTTB (MaTK, MaTB, ThoiGian)
            SELECT TK.MaTK, ?, ?
            FROM TaiKhoan TK
            INNER JOIN TaiXe TX ON TX.MaTX + 13 = TK.MaTK
            WHERE TK.VaiTro = 3 AND TK.TrangThai = 1 ${excludeCondition}`,
           params
-        );
+  );
       } else {
         throw err;
       }
