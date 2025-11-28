@@ -1,153 +1,281 @@
-"use client";
+// src/components/MyMap.tsx
 
-import React, { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import type { Map as LeafletMap } from 'leaflet';
-import { GpsSimulator, Point } from '../mock/gpsSimulator';
+import 'leaflet-routing-machine';
+import { useGeolocation } from '../mock/mockUserLocation';
+import { getRouteWithStops, type RouteWithStops } from '../api/routeApi';
 
-// Fix default marker icons for Leaflet
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-    iconUrl: require('leaflet/dist/images/marker-icon.png'),
-    shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
-  });
-} catch (e) {
-  // ignore in environments where require isn't available
+// Import CSS và sửa lỗi icon
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+const iconUrl = 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png';
+const iconRetinaUrl = 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png';
+const shadowUrl = 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png';
+
+// Icon trạm dừng: chấm tròn màu đỏ
+const stopIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: shadowUrl,
+  iconSize: [15, 21],
+  iconAnchor: [0, 0],
+  popupAnchor: [0, 0],
+  shadowSize: [0, 0]
+});
+
+// Xóa và thiết lập lại icon mặc định
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: iconUrl,
+  iconRetinaUrl: iconRetinaUrl,
+  shadowUrl: shadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+
+interface MyMapProps {
+  routeId?: number; // ID tuyến đường cần hiển thị (optional)
+  useDriverPosition?: boolean; // when true, show driver's last known position (parent view)
+  driverId?: number; // id of driver to track when useDriverPosition is true
 }
 
-type Props = {
-  simulate?: boolean;
-  simulateRoute?: Point[];
-  height?: string;
-  simulateSpeedKmh?: number; // optional speed in km/h for simulator
-};
-
-// Component to set map reference when map is created
-const MapRefSetter: React.FC<{ mapRef: React.MutableRefObject<LeafletMap | null> }> = ({ mapRef }) => {
+// Component để vẽ routing
+const RoutingControl: React.FC<{ stops: Array<{ ViDo: number; KinhDo: number }> }> = ({ stops }) => {
   const map = useMap();
-  
+
   useEffect(() => {
-    mapRef.current = map;
-    // ensure correct sizing after mount
-    setTimeout(() => {
-      try {
-        if (map) {
-          const container = map.getContainer();
-          if (container && (container as any)._leaflet_id) {
-            map.invalidateSize();
-          }
-        }
-      } catch (e) {
-        console.warn('Error invalidating map size:', e);
+    if (!map || stops.length < 2) return;
+
+    // Tạo waypoints từ các trạm
+    const waypoints = stops.map(stop => L.latLng(stop.ViDo, stop.KinhDo));
+
+    // Tạo routing control
+    const routingControl = (L as any).Routing.control({
+      waypoints,
+      routeWhileDragging: false,
+      addWaypoints: false,
+      fitSelectedRoutes: true,
+      showAlternatives: false,
+      lineOptions: {
+        styles: [{ color: '#d21919ff', weight: 4, opacity: 0.7 }],
+        extendToWaypoints: true,
+        missingRouteTolerance: 0
+      },
+      // Avoid returning `null` from createMarker: returning null is known to
+      // cause internal errors in some versions of leaflet-routing-machine
+      // when it tries to remove layers. Create a non-interactive invisible
+      // marker instead so the control can safely add/remove it.
+      createMarker: (i: number, wp: any) => L.marker(wp.latLng, { interactive: false, opacity: 0 }),
+      // Use the public OSRM demo by default (same as before). Keep a router
+// instance so we can attach error handling if needed.
+      router: (L as any).Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
+    }).addTo(map);
+
+    // Prevent uncaught exceptions from bubbling when the router fails
+    routingControl.on && routingControl.on('routingerror', (err: any) => {
+      console.warn('Routing error from leaflet-routing-machine:', err);
+    });
+
+    return () => {
+      if (map && routingControl) {
+        map.removeControl(routingControl);
       }
-    }, 200);
-  }, [map, mapRef]);
-  
+    };
+  }, [map, stops]);
+
   return null;
 };
 
-export default function MapWithGps({ simulate = false, simulateRoute, height = '500px', simulateSpeedKmh }: Props) {
-  const [pos, setPos] = useState<Point | null>(null);
-  const watchIdRef = useRef<number | null>(null);
-  const simRef = useRef<GpsSimulator | null>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
+const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, driverId }) => {
+  const { loading, error, latitude, longitude } = useGeolocation();
+  // Auth to detect if current user is driver (to POST location)
+  const { user: authUser } = useAuth();
+  const [routeData, setRouteData] = useState<RouteWithStops | null>(null);
+  const [loadingRoute, setLoadingRoute] = useState(false);
 
+  // Driver position state (for parent view)
+  const [driverPos, setDriverPos] = React.useState<{ latitude: number; longitude: number } | null>(null);
+
+  // Lấy tuyến đường từ backend
   useEffect(() => {
-    if (!simulate && 'geolocation' in navigator) {
-      // prefer browser geolocation
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
-        (err) => {
-          console.warn('Geolocation error, fallback to simulator if provided', err);
-          if (simulateRoute) startSimulator();
-        },
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
-      );
-    } else {
-      startSimulator();
-    }
-
-    function startSimulator() {
-      if (!simulateRoute || simulateRoute.length < 2) {
-        console.warn('simulateRoute missing or too short — simulator not started');
-        return;
-      }
-      const speedMps = simulateSpeedKmh ? simulateSpeedKmh / 3.6 : 6; // convert km/h to m/s
-      const sim = new GpsSimulator(simulateRoute, { speedMps, intervalMs: 1000, loop: true });
-      sim.onPosition((p) => setPos(p));
-      sim.start();
-      simRef.current = sim;
-    }
-
-    return () => {
-      if (watchIdRef.current != null && 'geolocation' in navigator) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-      if (simRef.current) {
-        simRef.current.stop();
-        simRef.current = null;
+    const fetchRoute = async () => {
+      try {
+        setLoadingRoute(true);
+        const data = await getRouteWithStops(routeId);
+        setRouteData(data);
+      } catch (err) {
+        console.error('Lỗi khi lấy tuyến đường:', err);
+      } finally {
+        setLoadingRoute(false);
       }
     };
-  }, [simulate, simulateRoute, simulateSpeedKmh]);
 
-  // when position changes, pan map to new position and ensure size invalidated
-  useEffect(() => {
-    if (!pos) return;
-    const map = mapRef.current;
-    if (!map) return;
-    
-    // Check if map container is still valid
-    try {
-      const container = map.getContainer();
-      if (!container || !(container as any)._leaflet_id) {
-        return;
-      }
-    } catch (e) {
-      return;
+    fetchRoute();
+  }, [routeId]);
+
+  // If this component is used by a driver (not parent), push updates to backend
+  React.useEffect(() => {
+    let mounted = true;
+    // Only send driver location if this is the driver's own view (useDriverPosition is false)
+    // and authUser.role indicates driver
+    if (!useDriverPosition && authUser && authUser.role === 'driver' && latitude && longitude) {
+      // dynamic import to avoid cycles
+      import('../api/driverApi').then(mod => {
+        const token = localStorage.getItem('token');
+        const driverId = Number(authUser.id || authUser.MaTX || authUser.id);
+        mod.postDriverLocation(driverId, latitude, longitude, token || undefined)
+          .catch(() => {
+            // Silently handle location post errors
+          });
+      }).catch(() => {
+        // Silently handle import errors
+      });
     }
-    
-    try {
-      map.panTo([pos.lat, pos.lng]);
-      // calling invalidateSize can fix tiled artifacts when container layout changed
-      setTimeout(() => {
-        try {
-          const currentMap = mapRef.current;
-          if (currentMap) {
-            const container = currentMap.getContainer();
-            if (container && (container as any)._leaflet_id) {
-              currentMap.invalidateSize();
-            }
-          }
-        } catch (e) {
-          // ignore errors
+
+    return () => { mounted = false; };
+  }, [useDriverPosition, authUser, latitude, longitude]);
+
+  // If used in parent mode, poll backend for driver's location
+  React.useEffect(() => {
+    if (!useDriverPosition || !driverId) return;
+    let stopped = false;
+    const poll = async () => {
+      try {
+        const mod = await import('../api/driverApi');
+const pos = await mod.getDriverLocation(Number(driverId));
+        if (stopped) return;
+        if (pos && pos.latitude !== undefined) {
+          setDriverPos({ latitude: pos.latitude, longitude: pos.longitude });
         }
-      }, 150);
-    } catch (e) {
-      // ignore errors
-      console.warn('Error panning map:', e);
-    }
-  }, [pos]);
+      } catch (err) {
+        console.warn('poll driver location error', err);
+      }
+    };
+    poll();
+    const id = window.setInterval(poll, 2000);
+    return () => { stopped = true; window.clearInterval(id); };
+  }, [useDriverPosition, driverId]);
 
-  const center: [number, number] = pos ? [pos.lat, pos.lng] : [10.7769, 106.6999];
+  // If we cannot get coordinates and we're not in parent tracking mode, we cannot render the map
+  if (!useDriverPosition && (!latitude || !longitude)) {
+    return <p>Không thể lấy vị trí của bạn.</p>;
+  }
+
+  // Vị trí trung tâm (sử dụng trạm đầu tiên > driverPos (parent) > local geolocation)
+  let centerPosition: L.LatLngExpression | null = null;
+  if (routeData?.stops && routeData.stops.length > 0) {
+    const s0 = routeData.stops[0];
+    if (s0 && s0.ViDo != null && s0.KinhDo != null) centerPosition = [s0.ViDo, s0.KinhDo];
+  }
+  if (!centerPosition) {
+    if (useDriverPosition && driverPos) {
+      centerPosition = [driverPos.latitude, driverPos.longitude];
+    } else if (latitude && longitude) {
+      centerPosition = [latitude, longitude];
+    }
+  }
+
+  // Sắp xếp các trạm theo thứ tự
+  const sortedStops = routeData?.stops.sort((a, b) => a.ThuTuDung - b.ThuTuDung) || [];
+
+  // Component inside MapContainer to follow user's location updates
+  const FollowUser: React.FC<{ lat: number; lng: number }> = ({ lat, lng }) => {
+    const map = useMap();
+    useEffect(() => {
+      if (!map) return;
+      try {
+        map.panTo([lat, lng]);
+      } catch (e) {
+        // ignore pan errors
+      }
+    }, [lat, lng, map]);
+    return null;
+  };
+
+  if (!centerPosition) {
+    return <p>Đang chờ vị trí để hiển thị bản đồ...</p>;
+  }
 
   return (
-    <div style={{ height }}>
+    <div style={{ position: 'relative', height: '100%', width: '100%' }}>
       <MapContainer
-        center={center}
-        zoom={14}
+        center={centerPosition}
+        zoom={13}
         style={{ height: '100%', width: '100%' }}
       >
-        <MapRefSetter mapRef={mapRef} />
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {pos && <Marker position={[pos.lat, pos.lng]} />}
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+        {/* Vẽ đường đi theo tuyến thực tế */}
+        {sortedStops.length > 0 && <RoutingControl stops={sortedStops} />}
+
+      {/* Hiển thị các trạm dừng */}
+      {routeData?.stops && latitude !== null && longitude !== null && routeData.stops
+        .filter((stop: RouteWithStops['stops'][number]) => !(Math.abs(stop.ViDo - latitude) < 1e-6 && Math.abs(stop.KinhDo - longitude) < 1e-6))
+        .map((stop: RouteWithStops['stops'][number]) => (
+          <Marker 
+            key={stop.MaTram} 
+            position={[stop.ViDo, stop.KinhDo]}
+            icon={stopIcon}
+          >
+            <Popup>
+              <strong>{stop.TenTram}</strong>
+              <br />
+              Địa chỉ: {stop.DiaChi}
+              <br />
+              Thứ tự: {stop.ThuTuDung}
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* Marker vị trí hiện tại (driver view) or driver's marker (parent view) */}
+        {!useDriverPosition && latitude && longitude && (
+          <>
+            <Marker position={[latitude, longitude]}>
+              <Popup>Vị trí của bạn</Popup>
+            </Marker>
+            {latitude && longitude && <FollowUser lat={latitude} lng={longitude} />}
+          </>
+        )}
+
+        {useDriverPosition && driverPos && (
+          <>
+            <Marker position={[driverPos.latitude, driverPos.longitude]}>
+              <Popup>Vị trí tài xế</Popup>
+            </Marker>
+            <FollowUser lat={driverPos.latitude} lng={driverPos.longitude} />
+          </>
+        )}
       </MapContainer>
+
+      {/* Overlay messages for loading / error / no-route to avoid unmounting the map */}
+      {(loading || loadingRoute) && (
+        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 1000, background: 'white', padding: 8, borderRadius: 6 }}>
+          Đang tải bản đồ...
+        </div>
+      )}
+
+      {error && (
+        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 1000, background: 'rgba(255,240,240,0.95)', padding: 8, borderRadius: 6 }}>
+          Lỗi: {error.message}
+        </div>
+      )}
+
+      {routeData === null && !loadingRoute && (
+        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 1000, background: 'rgba(250,250,210,0.95)', padding: 8, borderRadius: 6 }}>
+          Không tìm thấy tuyến đường với id {routeId}.
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default MyMap;
