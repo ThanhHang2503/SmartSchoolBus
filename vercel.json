@@ -1,24 +1,15 @@
 {
-    "version": 3,
-    "framework": "nextjs",
-    "build": {
-      "env": {
-        "NODE_VERSION": "20"
-      }
-    },
-    "regions": ["sin1"],
-    "functions": {
-      "frontend/app/api/**/*": {
-        "memory": 1024,
-        "maxDuration": 10
-      }
-    },
-    "rewrites": [
+    "version": 2,
+    "builds": [
       {
-        "source": "/(.*)",
-        "destination": "/frontend/$1"
+        "src": "frontend/package.json",
+        "use": "@vercel/next"
       }
     ],
-    "cleanUrls": true,
-    "trailingSlash": false
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "frontend/$1"
+      }
+    ]
   }
