@@ -73,7 +73,7 @@ const RoutingControl: React.FC<{ stops: Array<{ ViDo: number; KinhDo: number }> 
       // marker instead so the control can safely add/remove it.
       createMarker: (i: number, wp: any) => L.marker(wp.latLng, { interactive: false, opacity: 0 }),
       // Use the public OSRM demo by default (same as before). Keep a router
-      // instance so we can attach error handling if needed.
+// instance so we can attach error handling if needed.
       router: (L as any).Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
     }).addTo(map);
 
@@ -125,18 +125,17 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, d
     // Only send driver location if this is the driver's own view (useDriverPosition is false)
     // and authUser.role indicates driver
     if (!useDriverPosition && authUser && authUser.role === 'driver' && latitude && longitude) {
-      console.log('[MyMap] will POST driver location', { driverId: authUser.id, latitude, longitude });
       // dynamic import to avoid cycles
       import('../api/driverApi').then(mod => {
         const token = localStorage.getItem('token');
-        mod.postDriverLocation(Number(authUser.id || authUser.MaTX || authUser.id), latitude, longitude, token)
-          .then((res: any) => {
-            if (mounted) console.log('[MyMap] postDriverLocation response', res);
-          })
-          .catch(err => {
-            if (mounted) console.warn('[MyMap] Failed to post driver location', err);
+        const driverId = Number(authUser.id || authUser.MaTX || authUser.id);
+        mod.postDriverLocation(driverId, latitude, longitude, token || undefined)
+          .catch(() => {
+            // Silently handle location post errors
           });
-      }).catch(err => console.warn('driverApi import failed', err));
+      }).catch(() => {
+        // Silently handle import errors
+      });
     }
 
     return () => { mounted = false; };
@@ -149,7 +148,7 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, d
     const poll = async () => {
       try {
         const mod = await import('../api/driverApi');
-        const pos = await mod.getDriverLocation(Number(driverId));
+const pos = await mod.getDriverLocation(Number(driverId));
         if (stopped) return;
         if (pos && pos.latitude !== undefined) {
           setDriverPos({ latitude: pos.latitude, longitude: pos.longitude });
@@ -168,10 +167,19 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, d
     return <p>Không thể lấy vị trí của bạn.</p>;
   }
 
-  // Vị trí trung tâm (sử dụng trạm đầu tiên hoặc vị trí hiện tại)
-  const centerPosition: L.LatLngExpression = routeData?.stops[0]
-    ? [routeData.stops[0].ViDo, routeData.stops[0].KinhDo]
-    : [latitude, longitude];
+  // Vị trí trung tâm (sử dụng trạm đầu tiên > driverPos (parent) > local geolocation)
+  let centerPosition: L.LatLngExpression | null = null;
+  if (routeData?.stops && routeData.stops.length > 0) {
+    const s0 = routeData.stops[0];
+    if (s0 && s0.ViDo != null && s0.KinhDo != null) centerPosition = [s0.ViDo, s0.KinhDo];
+  }
+  if (!centerPosition) {
+    if (useDriverPosition && driverPos) {
+      centerPosition = [driverPos.latitude, driverPos.longitude];
+    } else if (latitude && longitude) {
+      centerPosition = [latitude, longitude];
+    }
+  }
 
   // Sắp xếp các trạm theo thứ tự
   const sortedStops = routeData?.stops.sort((a, b) => a.ThuTuDung - b.ThuTuDung) || [];
@@ -190,6 +198,10 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, d
     return null;
   };
 
+  if (!centerPosition) {
+    return <p>Đang chờ vị trí để hiển thị bản đồ...</p>;
+  }
+
   return (
     <div style={{ position: 'relative', height: '100%', width: '100%' }}>
       <MapContainer
@@ -206,7 +218,7 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, d
         {sortedStops.length > 0 && <RoutingControl stops={sortedStops} />}
 
       {/* Hiển thị các trạm dừng */}
-      {routeData?.stops
+      {routeData?.stops && latitude !== null && longitude !== null && routeData.stops
         .filter((stop: RouteWithStops['stops'][number]) => !(Math.abs(stop.ViDo - latitude) < 1e-6 && Math.abs(stop.KinhDo - longitude) < 1e-6))
         .map((stop: RouteWithStops['stops'][number]) => (
           <Marker 

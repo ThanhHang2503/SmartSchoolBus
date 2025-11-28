@@ -41,7 +41,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (err: any) {
-    console.error("Lỗi login:", err);
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };

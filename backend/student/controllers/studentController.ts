@@ -7,7 +7,6 @@ export const getStudents = async (req: Request, res: Response) => {
     const students = await getAllStudents();
     res.json(students);
   } catch (err) {
-    console.error("Lỗi khi lấy danh sách Học sinh:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
@@ -18,7 +17,6 @@ export const getStudent = async (req: Request, res: Response) => {
     if (!student) return res.status(404).json({ message: "Không tìm thấy Học sinh này" });
     res.json(student);
   } catch (err) {
-    console.error("Lỗi khi lấy thông tin Học sinh:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };

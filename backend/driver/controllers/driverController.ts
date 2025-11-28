@@ -1,6 +1,6 @@
 // backend/driver/driverController.ts
 import { Request, Response } from "express";
-import { getAllDrivers, getDriverById, getDriverSchedulesByAccountId, getNotificationsByAccountId } from "../models/driverModel";
+import { getAllDrivers, getDriverById, getDriverSchedulesByAccountId, getNotificationsByAccountId, updateStudentStatus } from "../models/driverModel";
 import { AuthRequest } from "../middleware/verifyToken";
 // Lấy tất cả tài xế
 export const getDrivers = async (req: Request, res: Response) => {
@@ -8,7 +8,6 @@ export const getDrivers = async (req: Request, res: Response) => {
     const drivers = await getAllDrivers();
     res.json(drivers);
   } catch (err) {
-    console.error("Lỗi khi lấy danh sách Tài xế:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
@@ -18,13 +17,30 @@ export const getDrivers = async (req: Request, res: Response) => {
 export const getCurrentDriver = async (req: AuthRequest, res: Response) => {
   try {
     // The JWT contains the account id (MaTK). Map MaTK -> TaiXe row.
-    const maTK = Number(req.user.userId);
+    const maTK = Number(req.user?.userId || req.user?.id);
+    
+    if (!maTK || isNaN(maTK)) {
+      return res.status(400).json({ 
+        message: "Token không hợp lệ",
+        user: req.user 
+      });
+    }
+    
     const driver = await getDriverById(maTK);
-    if (!driver) return res.status(404).json({ message: "Không tìm thấy Tài xế" });
+    
+    if (!driver) {
+      return res.status(404).json({ 
+        message: "Không tìm thấy Tài xế",
+        maTK: maTK
+      });
+    }
+    
     res.json(driver);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Lỗi server" });
+  } catch (err: any) {
+    res.status(500).json({ 
+      message: "Lỗi server",
+      error: err?.message || "Unknown error"
+    });
   }
 };
 
@@ -34,10 +50,12 @@ export const getCurrentDriverSchedules = async (req: AuthRequest, res: Response)
     const MaTK = Number(req.user.userId); // Lấy MaTK từ token
     const schedules = await getDriverSchedulesByAccountId(MaTK);
 
-    if (!schedules) return res.status(404).json({ message: "Không tìm thấy lịch trình" });
+    // Trả về mảng rỗng nếu không có lịch trình thay vì 404
+    if (!schedules || schedules.length === 0) {
+      return res.json([]);
+    }
     res.json(schedules);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Lỗi server" });
   }
 };
@@ -48,10 +66,31 @@ export const getDriverNotifications = async (req: AuthRequest, res: Response) =>
     const maTK = Number(req.user.userId);
     const notifications = await getNotificationsByAccountId(maTK);
     
-    if (!notifications) return res.status(404).json({ message: "Không tìm thấy thông báo" });
+    if (!notifications || notifications.length === 0) {
+      return res.json([]); // Trả về array rỗng thay vì 404
+    }
     res.json(notifications);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Lỗi server" });
   }
+};
+
+
+export const UpdateStudentStatus = async (req: Request, res: Response) => {
+    try {
+        const { maLT, maHS, status } = req.body;
+
+        if (!maLT || !maHS) {
+            return res.status(400).json({ message: "Thiếu thông tin lịch trình hoặc học sinh" });
+        }
+
+        const ok = await updateStudentStatus(maLT, maHS, status);
+
+        if (!ok)
+            return res.status(400).json({ message: "Không tìm thấy học sinh trong lịch trình" });
+
+        res.json({ message: "Cập nhật trạng thái thành công!" });
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi server" });
+    }
 };

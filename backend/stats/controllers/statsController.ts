@@ -29,7 +29,6 @@ export const getTripsMonthlyController = async (req: Request, res: Response) => 
     // Trả về dữ liệu 12 tháng
     res.status(200).json(tripData)
   } catch (err: any) {
-    console.error("Lỗi khi lấy thống kê số chuyến xe theo tháng:", err)
     res.status(500).json({
       message: "Lỗi máy chủ khi lấy dữ liệu thống kê",
       error: err.message || String(err),

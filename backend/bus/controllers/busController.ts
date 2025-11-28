@@ -9,7 +9,6 @@ export const getBuses = async (req: Request, res: Response) => {
     const buses = await getAllBuses();
     res.json(buses);
   } catch (err) {
-    console.error("Lỗi khi lấy danh sách Xe Bus:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
@@ -20,7 +19,6 @@ export const getSchedules = async (req: Request, res: Response) => {
     const schedules = await getTodaySchedules();
     res.json(schedules);
   } catch (err) {
-    console.error("Lỗi khi lấy Lịch trình:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
@@ -57,7 +55,6 @@ export const createSchedule = async (req: Request, res: Response) => {
     const newId = result.insertId;
     res.json({ id: newId, Ngay, GioBatDau, GioKetThuc, MaTX, MaXe, MaTD });
   } catch (err) {
-    console.error("Lỗi khi tạo lịch trình:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
@@ -73,7 +70,6 @@ export const deleteSchedule = async (req: Request, res: Response) => {
     await removeSchedule(Number(id));
     res.json({ message: "Xóa lịch trình thành công" });
   } catch (err) {
-    console.error("Lỗi khi xóa lịch trình:", err);
     res.status(500).json({ message: "Lỗi máy chủ", error: err });
   }
 };

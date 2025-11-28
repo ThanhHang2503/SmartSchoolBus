@@ -6,7 +6,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "ssb10_2025_ok_done";
 
 export const adminMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
-  console.log("Authorization header:", authHeader); // debug
   if (!authHeader) return res.status(401).json({ message: "Chưa có token" });
 
   const token = authHeader.split(" ")[1];
@@ -17,7 +16,6 @@ export const adminMiddleware = (req: Request, res: Response, next: NextFunction)
     (req as any).user = decoded;
     next();
   } catch (err) {
-    console.error("Token lỗi:", err);
     return res.status(401).json({ message: "Token không hợp lệ" });
   }
 };

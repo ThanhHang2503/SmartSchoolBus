@@ -35,21 +35,32 @@ export default function DriverDashboard() {
 
   // 2. EFFECT CHO DỮ LIỆU TỪ BACKEND
   // useEffect 1: Lấy thông tin tài xế
+  const { logout } = useAuth();
+  
   useEffect(() => {
     if (!token) return;
 
     const fetchDriver = async () => {
       try {
-        const data = await getCurrentDriver(token);
+        const data = await getCurrentDriver(token, () => {
+          // Handle auth error: clear token and redirect
+          logout();
+        });
         console.log("Data từ backend:", data); 
         setDriver(data);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Lỗi khi lấy thông tin tài xế:", err);
+        // If it's an auth error, logout will be called by getCurrentDriver
+        // For other errors, just log them
+        if (err?.message?.includes("hết hạn") || err?.message?.includes("đăng nhập")) {
+          // Auth error already handled by getCurrentDriver callback
+          return;
+        }
       }
     };
 
     fetchDriver();
-  }, [token]);
+  }, [token, logout]);
 
   // useEffect 2: Lấy lịch trình và lưu vào Global State
   useEffect(() => {
@@ -57,11 +68,19 @@ export default function DriverDashboard() {
     const fetchAndCacheSchedules = async () => {
       setLoading(true);
       try {
-        const data = await getCurrentDriverSchedules(token);
+        const data = await getCurrentDriverSchedules(token, () => {
+          // Handle auth error: clear token and redirect
+          logout();
+        });
         // CẬP NHẬT DỮ LIỆU VÀO GLOBAL STATE
         setSchedules(data); 
-      } catch (err) {
+      } catch (err: any) {
         console.error("Lỗi khi lấy lịch trình:", err);
+        // If it's an auth error, logout will be called by getCurrentDriverSchedules
+        if (err?.message?.includes("hết hạn") || err?.message?.includes("đăng nhập")) {
+          // Auth error already handled, don't set empty schedules
+          return;
+        }
         setSchedules([]); 
       } finally {
         setLoading(false);
@@ -69,7 +88,7 @@ export default function DriverDashboard() {
     };
 
     fetchAndCacheSchedules();
-  }, [token, setSchedules, setLoading]);
+  }, [token, setSchedules, setLoading, logout]);
 
   // useEffect 3: Lấy thông báo cho tài xế (DÙNG API MỚI)
  useEffect(() => {
@@ -78,7 +97,10 @@ export default function DriverDashboard() {
       
       setIsNotificationLoading(true);
    try {
-    const data = await getDriverNotifications(token); 
+    const data = await getDriverNotifications(token, () => {
+      // Handle auth error: clear token and redirect
+      logout();
+    }); 
     setNotifications(data); 
     
    } catch (err) {
@@ -89,7 +111,7 @@ export default function DriverDashboard() {
    }
    };
    fetchNotifications();
- }, [token]);
+ }, [token, logout]);
 
   // 3. LOGIC TÍNH TOÁN (Chạy khi schedules thay đổi)
   const today = new Date().toISOString().slice(0, 10); 
@@ -278,7 +300,27 @@ export default function DriverDashboard() {
               ) : notifications.length === 0 ? (
                   <Typography color="text.secondary">Hiện không có thông báo nào.</Typography>
               ) : (
-                  <Box>
+                  <Box
+                    sx={{
+                      maxHeight: '400px',
+                      overflowY: 'auto',
+                      pr: 1,
+                      '&::-webkit-scrollbar': {
+                        width: '8px',
+                      },
+                      '&::-webkit-scrollbar-track': {
+                        background: '#f1f5f9',
+                        borderRadius: '4px',
+                      },
+                      '&::-webkit-scrollbar-thumb': {
+                        background: '#cbd5e1',
+                        borderRadius: '4px',
+                        '&:hover': {
+                          background: '#94a3b8',
+                        },
+                      },
+                    }}
+                  >
                         {notifications.map((n) => (
                           // Sử dụng key để React có thể theo dõi các phần tử
                           <Box key={n.id} sx={{ mb: 2, p: 1 , borderBottom: '1px solid #eee'}}> 
@@ -286,11 +328,8 @@ export default function DriverDashboard() {
                                   {n.message || "Không có nội dung"} 
                               </Typography>
                               <Box sx={{ ml: 1, mt: 0.5 }}>
-                                  <Typography variant="body2">
-                                      Loại: <Typography component="span" fontWeight="bold">{n.type}</Typography>
-                                  </Typography>
-                                  <Typography variant="body2">
-                                      Thời gian: {n.date}
+                                  <Typography variant="body2" color="text.secondary">
+                                      Thời gian: {n.date || (n.ngayTao && n.gioTao ? `${n.ngayTao} ${n.gioTao}` : 'Chưa có thời gian')}
                                   </Typography>
                               </Box>
                           </Box>
