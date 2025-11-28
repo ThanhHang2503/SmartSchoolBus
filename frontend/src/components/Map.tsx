@@ -279,4 +279,3 @@ const pos = await mod.getDriverLocation(Number(driverId));
 };
 
 export default MyMap;
-//da fix
