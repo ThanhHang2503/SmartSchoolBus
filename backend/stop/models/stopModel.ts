@@ -11,7 +11,7 @@ export interface IStop {
 }
 
 // Lấy tất cả trạm dừng
-const getAllStops = async (): Promise<IStop[]> => {
+export const getAllStops = async (): Promise<IStop[]> => {
   const [rows] = await pool.query<RowDataPacket[]>(
     "SELECT * FROM TramDung ORDER BY MaTram"
   );
@@ -19,7 +19,7 @@ const getAllStops = async (): Promise<IStop[]> => {
 };
 
 // Lấy trạm dừng theo ID
-const getStopById = async (id: number): Promise<IStop | null> => {
+export const getStopById = async (id: number): Promise<IStop | null> => {
   const [rows] = await pool.query<RowDataPacket[]>(
     "SELECT * FROM TramDung WHERE MaTram = ?",
     [id]
@@ -28,7 +28,7 @@ const getStopById = async (id: number): Promise<IStop | null> => {
 };
 
 // Tạo trạm dừng mới
-const createStop = async (stop: Omit<IStop, "MaTram">): Promise<number> => {
+export const createStop = async (stop: Omit<IStop, "MaTram">): Promise<number> => {
   const [result] = await pool.query<ResultSetHeader>(
     "INSERT INTO TramDung (TenTram, DiaChi, KinhDo, ViDo) VALUES (?, ?, ?, ?)",
     [stop.TenTram, stop.DiaChi, stop.KinhDo, stop.ViDo]
@@ -37,25 +37,18 @@ const createStop = async (stop: Omit<IStop, "MaTram">): Promise<number> => {
 };
 
 // Cập nhật trạm dừng
-const updateStop = async (id: number, stop: Partial<IStop>): Promise<boolean> => {
+export const updateStop = async (id: number, stop: Partial<IStop>): Promise<boolean> => {
   const [result] = await pool.query<ResultSetHeader>(
     "UPDATE TramDung SET TenTram = ?, DiaChi = ?, KinhDo = ?, ViDo = ? WHERE MaTram = ?",
     [stop.TenTram, stop.DiaChi, stop.KinhDo, stop.ViDo, id]
   );
   return result.affectedRows > 0;
 };
-const deleteStop = async (id: number): Promise<boolean> => {
+
+export const deleteStop = async (id: number): Promise<boolean> => {
   const [result] = await pool.query<ResultSetHeader>(
     "DELETE FROM TramDung WHERE MaTram = ?",
     [id]
   );
   return result.affectedRows > 0;
-};
-
-module.exports = {
-  getAllStops,
-  getStopById,
-  createStop,
-  updateStop,
-  deleteStop
 };
