@@ -49,7 +49,7 @@ const Tracking: React.FC = () => {
       <h2 className="text-xl font-semibold mb-4 text-sky-700">Theo dõi hành trình</h2>
       <div className="bg-sky-50 p-4 rounded-xl shadow-sm" style={{ height: "520px" }}>
         <Paper elevation={0} sx={{ height: "100%" }}>
-          <MyMap routeId={selectedRouteId} useDriverPosition={true} driverId={driverIdToTrack} />
+          <MyMap routeId={selectedRouteId} useDriverPosition={true} driverId={driverIdToTrack ?? undefined} />
         </Paper>
       </div>
     </div>
