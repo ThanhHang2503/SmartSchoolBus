@@ -1,10 +1,13 @@
 // frontend/src/api/driverApi.ts
 // Consolidated driver API used by frontend components
 import axios from "axios";
+import { parseErrorResponse, isAuthError } from "@/utils/authHelper";
 
 export interface IDriverDetail {
   id: number;           // ← frontend dùng cái này
   MaTX: number;         // ← backend trả về cái này
+  MaTK?: number;        // ← Mã tài khoản (để gửi thông báo)
+  Active?: number;      // ← Trạng thái active
   HoTen: string;
   SoDienThoai: string;
   BangLai: string;
@@ -24,11 +27,19 @@ export const getAllDrivers = async (): Promise<IDriverDetail[]> => {
 
   const rawData = await response.json();
 
-  // ← ĐOẠN NÀY LÀ "CỨU MẠNG" CỦA BẠN
-  return rawData.map((driver: any) => ({
-    ...driver,
-    id: driver.MaTX,        // ← chuyển MaTX → id để frontend dùng được
-  }));
+  // Map để đảm bảo có cả id và MaTX với giá trị đúng (đảm bảo là number)
+  return rawData.map((driver: any) => {
+    const maTX = Number(driver.MaTX || driver.id);
+    return {
+      ...driver,
+      id: maTX,
+      MaTX: maTX,
+      MaTK: driver.MaTK ? Number(driver.MaTK) : undefined,
+      Active: driver.Active ?? 1, // Mặc định Active = 1 nếu không có
+      HoTen: driver.HoTen || driver.name,
+      SoDienThoai: driver.SoDienThoai || driver.phone,
+    };
+  });
 };
 
 /**
@@ -63,14 +74,60 @@ const BASE_URL = 'http://localhost:5000/driver';
 
 
 // Lấy thông tin tài xế hiện tại dựa trên token
-export const getCurrentDriver = async (token: string): Promise<IDriver> => {
-  const res = await fetch(`http://localhost:5000/driver/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (!res.ok) throw new Error("Không thể lấy thông tin tài xế");
-  return res.json();
+export const getCurrentDriver = async (
+  token: string | null,
+  onAuthError?: () => void
+): Promise<IDriver> => {
+  // Validate token
+  if (!token || typeof token !== "string" || token.trim() === "") {
+    throw new Error("Token không hợp lệ hoặc đã hết hạn");
+  }
+
+  try {
+    const res = await fetch(`http://localhost:5000/driver/me`, {
+      headers: {
+        Authorization: `Bearer ${token.trim()}`,
+        "Content-Type": "application/json",
+      },
+    });
+    
+    if (!res.ok) {
+      // Parse error response
+      const errorData = await parseErrorResponse(res);
+      
+      // Log error với đầy đủ thông tin
+      console.error("Backend error response:", {
+        status: res.status,
+        statusText: res.statusText,
+        body: errorData,
+        url: res.url,
+        headers: Object.fromEntries(res.headers.entries()),
+      });
+      
+      // Handle authentication errors
+      if (isAuthError(res.status)) {
+        console.warn(`Authentication error (${res.status}): Token invalid or expired`);
+        if (onAuthError) {
+          onAuthError();
+        }
+        throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
+      
+      const errorMessage = 
+        errorData.message || 
+        errorData.error || 
+        `Không thể lấy thông tin tài xế (${res.status} ${res.statusText})`;
+      throw new Error(errorMessage);
+    }
+    
+    return await res.json();
+  } catch (err: any) {
+    // Re-throw if already an Error with message
+    if (err instanceof Error) {
+      throw err;
+    }
+    throw new Error(`Không thể lấy thông tin tài xế: ${err?.message || "Unknown error"}`);
+  }
 };
 
 // --- LỊCH TRÌNH TÀI XẾ ---
@@ -136,32 +193,118 @@ export const parseStudentList = (rawString: string): IStudentDetail[] => {
 };
 
 // Lấy lịch trình tài xế hiện tại dựa trên token
-export const getCurrentDriverSchedules = async (token: string): Promise<IScheduleDriver[]> => {
- const res = await fetch(`http://localhost:5000/driver/me/schedules`, {
-  headers: {
-   Authorization: `Bearer ${token}`,
-  },
- }); 
- if (!res.ok) throw new Error("Không thể lấy thông tin lịch trình của tài xế");
- return res.json();
+export const getCurrentDriverSchedules = async (
+  token: string | null,
+  onAuthError?: () => void
+): Promise<IScheduleDriver[]> => {
+  // Validate token
+  if (!token || typeof token !== "string" || token.trim() === "") {
+    throw new Error("Token không hợp lệ hoặc đã hết hạn");
+  }
+
+  try {
+    const res = await fetch(`http://localhost:5000/driver/me/schedules`, {
+      headers: {
+        Authorization: `Bearer ${token.trim()}`,
+        "Content-Type": "application/json",
+      },
+    }); 
+    
+    if (!res.ok) {
+      // Parse error response
+      const errorData = await parseErrorResponse(res);
+      
+      // Log error với đầy đủ thông tin
+      console.error("Backend error response:", {
+        status: res.status,
+        statusText: res.statusText,
+        body: errorData,
+        url: res.url,
+      });
+      
+      // Handle authentication errors
+      if (isAuthError(res.status)) {
+        console.warn(`Authentication error (${res.status}): Token invalid or expired`);
+        if (onAuthError) {
+          onAuthError();
+        }
+        throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
+      
+      const errorMessage = 
+        errorData.message || 
+        errorData.error || 
+        `Không thể lấy thông tin lịch trình của tài xế (${res.status})`;
+      throw new Error(errorMessage);
+    }
+    
+    return await res.json();
+  } catch (err: any) {
+    // Re-throw if already an Error with message
+    if (err instanceof Error) {
+      throw err;
+    }
+    throw new Error(`Không thể lấy thông tin lịch trình: ${err?.message || "Unknown error"}`);
+  }
 };
 
 export interface IDriverNotification {
   id: number;
   message: string;
-  type: string;
   date: string; // YYYY-MM-DD HH:MM:SS
+  ngayTao?: string;
+  gioTao?: string;
+  loaiTB?: string; // Loại thông báo
 }
 
 //Lấy thông báo của tài xế
-export const getDriverNotifications = async (token: string): Promise<IDriverNotification[]> => {
-  const res = await fetch(`http://localhost:5000/driver/me/notifications`, {
-    headers: {
-   Authorization: `Bearer ${token}`,
-  },
- }); 
- if (!res.ok) throw new Error("Không thể lấy thông báo của tài xế");
- return res.json();
+export const getDriverNotifications = async (
+  token: string | null,
+  onAuthError?: () => void
+): Promise<IDriverNotification[]> => {
+  // Validate token
+  if (!token || typeof token !== "string" || token.trim() === "") {
+    return []; // Return empty array instead of throwing for notifications
+  }
+
+  try {
+    const res = await fetch(`http://localhost:5000/driver/me/notifications`, {
+      headers: {
+        Authorization: `Bearer ${token.trim()}`,
+        "Content-Type": "application/json",
+      },
+    }); 
+    
+    if (!res.ok) {
+      // Parse error response
+      const errorData = await parseErrorResponse(res);
+      
+      // Log error
+      console.error("Backend error response:", {
+        status: res.status,
+        statusText: res.statusText,
+        body: errorData,
+      });
+      
+      // Handle authentication errors
+      if (isAuthError(res.status)) {
+        console.warn(`Authentication error (${res.status}): Token invalid or expired`);
+        if (onAuthError) {
+          onAuthError();
+        }
+        return []; // Return empty array for notifications on auth error
+      }
+      
+      // For other errors, return empty array (notifications are not critical)
+      console.warn("Failed to fetch notifications, returning empty array");
+      return [];
+    }
+    
+    return await res.json();
+  } catch (err: any) {
+    console.error("Error fetching notifications:", err);
+    return []; // Return empty array on any error
+  }
 };
 
 // --- Driver location endpoints (live tracking) ---

@@ -2,7 +2,7 @@
 
 import MyMap from "@/components/Map";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Alert,
   Box,
@@ -26,24 +26,25 @@ import {
   InputLabel,
   OutlinedInput,
   Checkbox,
-  ListItemText
+  ListItemText,
+  Divider
 } from "@mui/material";
 import { useDriverSchedules } from '@/context/driverSchedulesContext';
 import { IStudentDetail, parseStudentList, updateStudentStatus } from "@/api/driverApi";
 import { sendNotice } from "@/api/noticeApi";
+import { useAuth } from "@/context/AuthContext";
 
 export default function MapAndStudentPage() {
   //LẤY DỮ LIỆU THỰC TẾ
   const { schedules, loading } = useDriverSchedules();
-  console.log("schedules:", schedules);
+  const { token, logout } = useAuth();
   const [search, setSearch] = useState("");
 
   const { refreshSchedules } = useDriverSchedules();
   // Hàm cập nhật trạng thái 
   const handleStatusChange = async (maHS: number, newStatus: number, maLT: number) => {
       try {
-          const result = await updateStudentStatus(maHS, newStatus, maLT);
-          console.log("OK:", result);
+          await updateStudentStatus(maHS, newStatus, maLT);
           refreshSchedules(); // Load lại lịch trình thực tế
 
       } catch (error) {
@@ -71,10 +72,8 @@ export default function MapAndStudentPage() {
   };
 
   const todaySchedules = schedules.filter(s => isSameLocalDate(s.scheduleDate)); // Lấy TẤT CẢ các chuyến trong ngày hôm nay (local)
-    console.log("Lịch trình hôm nay:", todaySchedules);
     const activeOrUpcomingTrips = todaySchedules // 2. Lọc và sắp xếp các chuyến chưa hoàn thành hoặc chưa kết thúc
         .sort((a, b) => a.startTime.localeCompare(b.startTime)); // Sắp xếp theo giờ bắt đầu sớm nhất
-    console.log("Chuyến hôm nay (chưa kết thúc):", activeOrUpcomingTrips);
     const currentTrip = activeOrUpcomingTrips[0];
     const [selectedRouteId, setSelectedRouteId] = useState(currentTrip ? currentTrip.routeId : 0); // Tuyến đường được chọn
     // PHÂN TÍCH HỌC SINH TỪ CHUYẾN ĐANG CHỌN

@@ -10,6 +10,7 @@ interface User {
   role: "admin" | "driver" | "parent";
   studentIds?: string[];
   routeIds?: string[];
+  MaTX?: number; // Mã tài xế (chỉ có khi role là "driver")
 }
 
 interface AuthContextType {
@@ -35,8 +36,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
 
-    if (storedUser) setUser(JSON.parse(storedUser));
-    if (storedToken) setToken(storedToken);
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Failed to parse stored user:", e);
+        localStorage.removeItem("user");
+      }
+    }
+    if (storedToken) {
+      setToken(storedToken);
+    } else {
+      setToken(null);
+    }
 
     setIsInitialized(true);
   }, []);
@@ -60,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("user", JSON.stringify(data.user));
 
       setUser(data.user);
+      setToken(data.token); // Sync token state
       router.push("/home");
     } catch (err: any) {
       alert(err.message || "Lỗi kết nối server");

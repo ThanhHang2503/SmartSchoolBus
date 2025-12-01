@@ -1,146 +1,218 @@
-import type { Request, Response } from 'express';
-import { asyncHandler } from '../../middlewares/asyncHandler.js';
-import { ResponseHandler } from '../../utils/responseHandler.js';
-import * as notificationModel from '../Models/notificationModel.js';
-import { getIO } from '../../config/socket.js';
-import dotenv from 'dotenv';
-import sgMail from '@sendgrid/mail';
+// backend/Notification/Controllers/NotificationController.ts
+import { Request, Response } from 'express';
+import {
+  getAllNotifications as getAllNotificationsModel,
+  getNotificationById,
+  getNotificationsByAccount as getNotificationsByAccountModel,
+  createNotification,
+  sendNotificationToAccount,
+  sendNotificationToAccounts,
+  sendNotificationByRole,
+  deleteNotification as deleteNotificationModel,
+} from '../Models/notificationModel';
 
-dotenv.config();
-// Định nghĩa kiểu dữ liệu cho một email
-interface EmailOptions {
-  to: string;
-  subject: string;
-  body: string; // Đây là HTML
-}
+// GET /api/notifications
+export const getAllNotifications = async (_req: Request, res: Response) => {
+  try {
+    const notifications = await getAllNotificationsModel();
+    res.json({ success: true, data: notifications });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
+  }
+};
 
-class EmailService {
-  private fromEmail: string;
-
-  constructor() {
-    // Lấy API key từ file .env
-    const apiKey = process.env.SENDGRID_API_KEY;
-
-    if (!apiKey) {
-      console.error('SENDGRID_API_KEY không được tìm thấy. Hãy kiểm tra file .env');
-      throw new Error('Missing SendGrid API Key');
+// GET /api/notifications/:id (không dùng trong routes hiện tại, nhưng giữ lại để tương lai)
+export const getNotificationByIdCtrl = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id || '');
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'ID không hợp lệ' });
     }
 
-    sgMail.setApiKey(apiKey);
-
-    // QUAN TRỌNG: Bạn phải dùng email mà bạn đã xác thực với SendGrid
-    this.fromEmail = 'lequoccuong2204@gmail.com'; 
-  }
-
-  /**
-   * Gửi một email cơ bản
-   */
-  async sendEmail(options: EmailOptions): Promise<boolean> {
-    const msg = {
-      to: options.to,
-      from: this.fromEmail, // Email bạn đã xác thực
-      subject: options.subject,
-      html: options.body, // Dùng 'html' thay vì 'text' nếu body là HTML
-    };
-
-    console.log('--- Đang chuẩn bị gửi email qua SendGrid ---');
-    
-    try {
-      // Đây là logic gửi email thật
-      await sgMail.send(msg);
-
-      console.log('Email đã gửi thành công tới:', options.to);
-      return true;
-
-    } catch (error: any) {
-      // Xử lý lỗi từ SendGrid
-      console.error('Lỗi khi gửi email:', error);
-      if (error.response) {
-        console.error(error.response.body)
-      }
-      return false;
+    const noti = await getNotificationById(id);
+    if (!noti) {
+      return res.status(404).json({ success: false, message: 'Thông báo không tồn tại' });
     }
+
+    res.json({ success: true, data: noti });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
+};
 
-  /**
-   * Gửi email chào mừng người dùng mới
-   */
-  async sendWelcomeEmail(to: string, name: string) {
-    const subject = `Chào mừng ${name} đến với dịch vụ!`;
+// GET /api/notifications/account/:maTK
+export const getNotificationsByAccount = async (req: Request, res: Response) => {
+  try {
+    const maTK = parseInt(req.params.maTK || '');
+    if (isNaN(maTK)) {
+      return res.status(400).json({ success: false, message: 'MaTK không hợp lệ' });
+    }
 
-    // TODO: Đọc nội dung từ file template
-    const body = `<h1>Chào ${name},</h1><p>Cảm ơn bạn đã đăng ký.</p>`;
-
-    return this.sendEmail({ to, subject, body });
+    const list = await getNotificationsByAccountModel(maTK);
+    res.json({ success: true, data: list });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
-}
+};
 
-// Xuất ra một instance duy nhất (Singleton Pattern)
-export const emailService = new EmailService();
+// POST /api/notifications → Tạo + gửi luôn
+export const createAndSendNotification = async (req: Request, res: Response) => {
+  try {
+    // Fix lỗi TypeScript: lấy dữ liệu an toàn
+    const NoiDung: string | undefined = req.body.NoiDung;
+    const LoaiTB: string | undefined = req.body.LoaiTB;
+    const MaTKList: unknown = req.body.MaTKList;
+    const Role: unknown = req.body.Role;
+    const senderMaTK: number | undefined = req.body.senderMaTK; // MaTK của người gửi
 
-// ==================== NOTIFICATION CONTROLLERS ====================
+    // Validate nội dung
+    if (!NoiDung || typeof NoiDung !== 'string' || NoiDung.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Nội dung thông báo không được để trống',
+      });
+    }
 
-// Lấy tất cả thông báo
-export const getAllNotifications = asyncHandler(async (req: Request, res: Response) => {
-  const notifications = await notificationModel.getAllNotifications();
-  ResponseHandler.success(res, notifications, 'Lấy danh sách thông báo thành công');
-});
-
-// Lấy thông báo theo tài khoản
-export const getNotificationsByAccount = asyncHandler(async (req: Request, res: Response) => {
-  const maTK = parseInt(req.params.maTK!);
-  const notifications = await notificationModel.getNotificationsByAccount(maTK);
-  ResponseHandler.success(res, notifications, 'Lấy thông báo thành công');
-});
-
-// Tạo và gửi thông báo REALTIME 🚀
-export const createAndSendNotification = asyncHandler(async (req: Request, res: Response) => {
-  const { NoiDung, LoaiTB, recipients, role } = req.body;
-
-  if (!NoiDung || !LoaiTB) {
-    return ResponseHandler.badRequest(res, 'Thiếu thông tin bắt buộc');
-  }
-
-  // Tạo thông báo trong database
-  const maTB = await notificationModel.createNotification({ NoiDung, LoaiTB });
-
-  // Gửi đến người nhận trong database
-  if (recipients && Array.isArray(recipients)) {
-    await notificationModel.sendNotificationToAccounts(maTB, recipients);
-  } else if (role) {
-    await notificationModel.sendNotificationByRole(maTB, role);
-  }
-
-  // 🚀 GỬI THÔNG BÁO REALTIME QUA SOCKET.IO
-  const io = getIO();
-  const notification = {
-    MaTB: maTB,
-    NoiDung,
-    LoaiTB,
-    ThoiGian: new Date()
-  };
-
-  if (recipients && Array.isArray(recipients)) {
-    // Gửi đến từng người dùng cụ thể
-    recipients.forEach(maTK => {
-      io.to(`user_${maTK}`).emit('notification', notification);
+    // Tạo thông báo
+    const maTB = await createNotification({ 
+      NoiDung: NoiDung.trim(),
+      LoaiTB: LoaiTB || 'Khác'
     });
-  } else if (role) {
-    // Broadcast theo role (1=PhuHuynh, 2=QuanLy, 3=TaiXe)
-    io.to(`role_${role}`).emit('notification', notification);
+
+    let sentInfo = 'Chưa gửi cho ai';
+
+    // Ưu tiên gửi theo danh sách tài khoản
+    if (Array.isArray(MaTKList)) {
+      let validIds = (MaTKList as any[])
+        .filter((id): id is number => typeof id === 'number' && !isNaN(id) && id > 0);
+
+      // Loại bỏ người gửi khỏi danh sách người nhận
+      if (senderMaTK && typeof senderMaTK === 'number') {
+        validIds = validIds.filter(id => id !== senderMaTK);
+      }
+
+      if (validIds.length > 0) {
+        await sendNotificationToAccounts(maTB, validIds, senderMaTK);
+        sentInfo = `Đã gửi cho ${validIds.length} tài khoản`;
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Không có người nhận hợp lệ (đã loại bỏ chính bạn)',
+        });
+      }
+    }
+    // Gửi theo vai trò
+    else if (typeof Role === 'number' && [1, 2, 3].includes(Role)) {
+      await sendNotificationByRole(maTB, Role, senderMaTK);
+      const roleName = Role === 1 ? 'Phụ huynh' : Role === 2 ? 'Quản lý' : 'Tài xế';
+      sentInfo = `Đã gửi cho tất cả ${roleName}`;
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Tạo thông báo thành công',
+      data: {
+        MaTB: maTB,
+        sentTo: sentInfo,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
   }
+};
 
-  ResponseHandler.success(res, { MaTB: maTB }, '🚀 Đã gửi thông báo realtime!', 201);
-});
+// POST /api/notifications/:id/send-to-account (không dùng trong routes hiện tại)
+export const sendToOneAccountCtrl = async (req: Request, res: Response) => {
+  try {
+    const maTB = parseInt(req.params.id || '');
+    const MaTK: unknown = req.body.MaTK;
 
-// Xóa thông báo
-export const deleteNotification = asyncHandler(async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id!);
-  const deleted = await notificationModel.deleteNotification(id);
+    if (isNaN(maTB) || typeof MaTK !== 'number' || MaTK <= 0) {
+      return res.status(400).json({ success: false, message: 'Dữ liệu không hợp lệ' });
+    }
 
+    const noti = await getNotificationById(maTB);
+    if (!noti) {
+      return res.status(404).json({ success: false, message: 'Thông báo không tồn tại' });
+    }
+
+    await sendNotificationToAccount(maTB, MaTK);
+    res.json({ success: true, message: 'Đã gửi thông báo đến tài khoản' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
+  }
+};
+
+// POST /api/notifications/:id/send-to-accounts (không dùng trong routes hiện tại)
+export const sendToManyAccountsCtrl = async (req: Request, res: Response) => {
+  try {
+    const maTB = parseInt(req.params.id || '');
+    const MaTKList: unknown = req.body.MaTKList;
+
+    if (isNaN(maTB)) {
+      return res.status(400).json({ success: false, message: 'ID thông báo không hợp lệ' });
+    }
+    if (!Array.isArray(MaTKList)) {
+      return res.status(400).json({ success: false, message: 'MaTKList phải là mảng' });
+    }
+
+    const validIds = (MaTKList as any[])
+      .filter((id): id is number => typeof id === 'number' && !isNaN(id) && id > 0);
+
+    if (validIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Không có tài khoản hợp lệ để gửi' });
+    }
+
+    const noti = await getNotificationById(maTB);
+    if (!noti) {
+      return res.status(404).json({ success: false, message: 'Thông báo không tồn tại' });
+    }
+
+    await sendNotificationToAccounts(maTB, validIds);
+    res.json({ success: true, message: `Đã gửi thông báo đến ${validIds.length} tài khoản` });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
+  }
+};
+
+// POST /api/notifications/:id/send-by-role (không dùng trong routes hiện tại)
+export const sendByRoleCtrl = async (req: Request, res: Response) => {
+  try {
+    const maTB = parseInt(req.params.id || '');
+    const Role: unknown = req.body.Role;
+
+    if (isNaN(maTB) || typeof Role !== 'number' || ![1, 2, 3].includes(Role)) {
+      return res.status(400).json({ success: false, message: 'Vai trò không hợp lệ (1, 2, 3)' });
+    }
+
+    const noti = await getNotificationById(maTB);
+    if (!noti) {
+      return res.status(404).json({ success: false, message: 'Thông báo không tồn tại' });
+    }
+
+    await sendNotificationByRole(maTB, Role);
+    const roleName = Role === 1 ? 'Phụ huynh' : Role === 2 ? 'Quản lý' : 'Tài xế';
+    res.json({ success: true, message: `Đã gửi thông báo đến tất cả ${roleName}` });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
+  }
+};
+
+// DELETE /api/notifications/:id
+export const deleteNotification = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id || '');
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'ID không hợp lệ' });
+    }
+
+    const deleted = await deleteNotificationModel(id);
   if (!deleted) {
-    return ResponseHandler.notFound(res, 'Không tìm thấy thông báo');
-  }
+      return res.status(404).json({ success: false, message: 'Thông báo không tồn tại hoặc đã bị xóa' });
+    }
 
-  ResponseHandler.success(res, null, 'Xóa thông báo thành công');
-});
+    res.json({ success: true, message: 'Xóa thông báo thành công' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Lỗi server' });
+  }
+};

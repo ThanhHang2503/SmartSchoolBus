@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Map as LeafletMap } from 'leaflet';
@@ -26,6 +26,30 @@ type Props = {
   simulateRoute?: Point[];
   height?: string;
   simulateSpeedKmh?: number; // optional speed in km/h for simulator
+};
+
+// Component to set map reference when map is created
+const MapRefSetter: React.FC<{ mapRef: React.MutableRefObject<LeafletMap | null> }> = ({ mapRef }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    mapRef.current = map;
+    // ensure correct sizing after mount
+    setTimeout(() => {
+      try {
+        if (map) {
+          const container = map.getContainer();
+          if (container && (container as any)._leaflet_id) {
+            map.invalidateSize();
+          }
+        }
+      } catch (e) {
+        console.warn('Error invalidating map size:', e);
+      }
+    }, 200);
+  }, [map, mapRef]);
+  
+  return null;
 };
 
 export default function MapWithGps({ simulate = false, simulateRoute, height = '500px', simulateSpeedKmh }: Props) {
@@ -78,12 +102,36 @@ export default function MapWithGps({ simulate = false, simulateRoute, height = '
     if (!pos) return;
     const map = mapRef.current;
     if (!map) return;
+    
+    // Check if map container is still valid
+    try {
+      const container = map.getContainer();
+      if (!container || !(container as any)._leaflet_id) {
+        return;
+      }
+    } catch (e) {
+      return;
+    }
+    
     try {
       map.panTo([pos.lat, pos.lng]);
       // calling invalidateSize can fix tiled artifacts when container layout changed
-      setTimeout(() => map.invalidateSize(), 150);
+      setTimeout(() => {
+        try {
+          const currentMap = mapRef.current;
+          if (currentMap) {
+            const container = currentMap.getContainer();
+            if (container && (container as any)._leaflet_id) {
+              currentMap.invalidateSize();
+            }
+          }
+        } catch (e) {
+          // ignore errors
+        }
+      }, 150);
     } catch (e) {
       // ignore errors
+      console.warn('Error panning map:', e);
     }
   }, [pos]);
 
@@ -95,12 +143,8 @@ export default function MapWithGps({ simulate = false, simulateRoute, height = '
         center={center}
         zoom={14}
         style={{ height: '100%', width: '100%' }}
-        whenCreated={(map) => {
-          mapRef.current = map;
-          // ensure correct sizing after mount
-          setTimeout(() => map.invalidateSize(), 200);
-        }}
       >
+        <MapRefSetter mapRef={mapRef} />
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {pos && <Marker position={[pos.lat, pos.lng]} />}
       </MapContainer>

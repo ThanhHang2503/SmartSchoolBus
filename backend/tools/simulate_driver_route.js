@@ -14,7 +14,6 @@ async function ensureFetch() {
     const nf = await import('node-fetch');
     return nf.default;
   } catch (e) {
-    console.error('No fetch available. Please run with Node 18+ or install node-fetch (`npm i node-fetch`).');
     process.exit(1);
   }
 }
@@ -23,24 +22,20 @@ async function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
 
 (async () => {
   const _fetch = await ensureFetch();
-  console.log(`Fetching stops for route ${routeId}...`);
   const r = await _fetch(`${base}/route/${routeId}/stops`);
   if (!r.ok) {
-    console.error('Failed to get route stops:', r.status, await r.text());
     process.exit(1);
   }
   const route = await r.json();
   // API returns { success, message, data }
   const stops = route?.data?.stops || [];
   if (!stops.length) {
-    console.error('No stops found for route', routeId);
     process.exit(1);
   }
   // choose target stop = first stop
   const target = stops[0];
   const targetLat = Number(target.ViDo);
   const targetLon = Number(target.KinhDo);
-  console.log('Target stop:', target.TenTram, targetLat, targetLon);
 
   // create a start point offset ~500m to the north (approx 0.0045 deg lat ~500m)
   const startLat = targetLat + 0.0045;
@@ -58,13 +53,11 @@ async function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      const txt = await res.text();
-      console.log(`POST ${i}/${steps} -> ${lat.toFixed(6)},${lon.toFixed(6)} => ${res.status} ${txt}`);
+      await res.text();
     } catch (e) {
-      console.error('POST error', e.message || e);
+      // Silently handle POST errors
     }
     await sleep(intervalMs);
   }
-  console.log('Simulation finished.');
   process.exit(0);
 })();

@@ -17,4 +17,6 @@ app.use(bodyParser.json());
 app.use("/buses", busRoutes);
 app.use("/students", studentRoutes);
 const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  // Server started
+});

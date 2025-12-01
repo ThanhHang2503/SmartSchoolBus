@@ -40,9 +40,26 @@ const Notification: React.FC = () => {
               key={n.MaTB}
               className="bg-sky-50 p-4 rounded-xl shadow-sm hover:bg-sky-100 transition"
             >
+              <div className="flex justify-between items-start mb-2">
+                {n.LoaiTB && (
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      n.LoaiTB === "Xe trễ"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : n.LoaiTB === "Sự cố"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-purple-100 text-purple-800"
+                    }`}
+                  >
+                    {n.LoaiTB}
+                  </span>
+                )}
+                <p className="text-sm text-gray-500">
+                  {n.ThoiGian ? new Date(n.ThoiGian).toLocaleString('vi-VN') : 
+                   n.NgayTao && n.GioTao ? `${n.NgayTao} ${n.GioTao}` : 'Chưa có thời gian'}
+                </p>
+              </div>
               <p className="text-black">{n.NoiDung}</p>
-              <p className="text-sm text-gray-500 mt-1">{new Date(n.ThoiGian).toLocaleString()}</p>
-              <p className="text-xs text-gray-400 mt-1">Loại: {n.LoaiTB}</p>
             </li>
           ))}
         </ul>

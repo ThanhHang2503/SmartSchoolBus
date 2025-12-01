@@ -52,10 +52,8 @@ export const updateDriverLocation = (req: any, res: Response) => {
     let id: number | null = null;
     if (req.user && (req.user.id || req.user.MaTK || req.user.MaTX)) {
       id = Number(req.user.id || req.user.MaTK || req.user.MaTX);
-      console.log(`[location] using id from token: ${id}`);
     } else if (bodyDriverId) {
       id = Number(bodyDriverId);
-      console.log(`[location] using id from body: ${id}`);
     }
 
     if (!id) {
@@ -63,7 +61,6 @@ export const updateDriverLocation = (req: any, res: Response) => {
     }
 
     setDriverPosition(id, Number(latitude), Number(longitude));
-    console.log(`[location] received driver ${id} pos=${latitude},${longitude}`);
     // After updating position, check schedules for this driver and notify parents
     (async () => {
       try {
@@ -75,7 +72,6 @@ export const updateDriverLocation = (req: any, res: Response) => {
           for (const alt of altIds) {
             schedules = await getDriverSchedulesByAccountId(alt);
             if (schedules && schedules.length > 0) {
-              console.log(`[location] found schedules for alt account id ${alt}`);
               break;
             }
           }
@@ -148,25 +144,21 @@ export const updateDriverLocation = (req: any, res: Response) => {
                 const action = s.tenDon === stop.TenTram ? 'đón' : 'trả';
                 const message = `Xe sắp tới trạm ${stop.TenTram} để ${action} học sinh ${s.studentName}.`;
                 try {
-                  console.log(`[notify] creating notification for parent ${s.parentId} (student ${s.maHS}) message="${message}"`);
-                  const maTB = await createNotification({ NoiDung: message, LoaiTB: 'vehicle_near_stop' } as any);
-                  console.log(`[notify] created MaTB=${maTB}`);
+                  const maTB = await createNotification({ NoiDung: message });
                   await sendNotificationToAccount(maTB, s.parentId);
-                  console.log(`[notify] sent MaTB=${maTB} to MaTK=${s.parentId}`);
                 } catch (e) {
-                  console.error('notify parent error', e);
+                  // Silently handle notification errors
                 }
               }
             }
           }
         }
       } catch (e) {
-        console.error('Error while checking schedules for notifications', e);
+        // Silently handle schedule checking errors
       }
     })();
     return res.json({ success: true });
   } catch (err) {
-    console.error("updateDriverLocation error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -199,7 +191,6 @@ export const getDriverLocation = (req: Request, res: Response) => {
     res.set('Expires', '0');
     return res.json({ success: true, position: pos });
   } catch (err) {
-    console.error("getDriverLocation error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };

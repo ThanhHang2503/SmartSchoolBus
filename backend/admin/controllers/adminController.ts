@@ -16,7 +16,6 @@ export const getCurrentAdmin = async (req: Request, res: Response) => {
 
     res.json(admin);
   } catch (err) {
-    console.error("Lỗi khi lấy thông tin admin:", err);
     res.status(500).json({ message: "Lỗi server" });
   }
 };
@@ -26,7 +25,6 @@ export const getAdmins = async (_req: Request, res: Response) => {
     const admins = await getAllAdmins();
     res.json(admins || []);
   } catch (err) {
-    console.error("Lỗi khi lấy danh sách admin:", err);
     res.status(500).json({ message: "Lỗi server" });
   }
 };

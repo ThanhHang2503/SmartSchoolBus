@@ -18,7 +18,6 @@ router.get("/", async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error("Lỗi khi lấy danh sách tài khoản:", err);
     res.status(500).json({ message: "Lỗi server" });
   }
 });
@@ -37,7 +36,6 @@ router.get("/:id", async (req, res) => {
 
     res.json(rows[0]);
   } catch (err) {
-    console.error("Lỗi khi lấy tài khoản:", err);
     res.status(500).json({ message: "Lỗi server" });
   }
 });

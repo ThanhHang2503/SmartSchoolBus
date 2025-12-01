@@ -12,7 +12,6 @@ export const getParentAndStudents = async (req: Request, res: Response) => {
     if (!data) return res.status(404).json({ message: "Không tìm thấy phụ huynh với tài khoản này" });
     res.json(data);
   } catch (err) {
-    console.error("Lỗi khi lấy thông tin phụ huynh và học sinh:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
@@ -22,7 +21,6 @@ export const getParents = async (req: Request, res: Response) => {
     const parents = await getAllParents();
     res.json(parents);
   } catch (err) {
-    console.error("Lỗi khi lấy danh sách Phụ huynh:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
@@ -33,7 +31,6 @@ export const getParent = async (req: Request, res: Response) => {
     if (!parent) return res.status(404).json({ message: "Không tìm thấy Phụ huynh này" });
     res.json(parent);
   } catch (err) {
-    console.error("Lỗi khi lấy thông tin Phụ huynh:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
@@ -46,7 +43,6 @@ export const getParentNotifications = async (req: Request, res: Response) => {
     const notifications = await getNotificationsByAccountId(maTK);
     res.json(notifications);
   } catch (err) {
-    console.error("Lỗi khi lấy thông báo:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
@@ -91,7 +87,6 @@ export const getDriverLocationForParent = async (req: Request, res: Response) =>
     res.set('Expires', '0');
     return res.json({ success: true, driver: { MaTX: driverMaTX, MaTK: driverAccountId }, position: pos });
   } catch (e) {
-    console.error('getDriverLocationForParent error', e);
     return res.status(500).json({ success: false, message: 'Server error' });
   }
 };

@@ -1,11 +1,11 @@
-const express = require('express');
-const {
+import express from 'express';
+import {
   getAllStops,
   getStopById,
   createStop,
   updateStop,
   deleteStop,
-} = require('../controllers/stopController');
+} from '../controllers/stopController';
 
 const router = express.Router();
 
@@ -15,4 +15,4 @@ router.post('/', createStop);           // Tạo trạm dừng mới
 router.put('/:id', updateStop);         // Cập nhật trạm dừng
 router.delete('/:id', deleteStop);      // Xóa trạm dừng
 
-module.exports = router;
+export default router;

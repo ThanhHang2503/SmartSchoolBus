@@ -26,10 +26,11 @@ import PeopleIcon from "@mui/icons-material/People"
 import { getAllParents } from "@/api/parentApi"
 import { getAllDrivers } from "@/api/driverApi"
 import { getAllAdmins } from "@/api/adminApi"
-import { getNoticesByUser, sendNotice, type INotice } from "@/api/noticeApi"
+import { getNoticesByUser, getAllNotices, sendNotice, type INotice } from "@/api/noticeApi"
+import { createAndSendNotification, getAllNotifications, getNotificationsByAccount, type INotification } from "@/api/notificationApi"
 
 type UserType = "driver" | "parent" | "admin"
-type NoticeType = "all" | "all-driver" | "all-parent" | "all-admin" | "single"
+type NoticeType = "all" | "all-driver" | "all-parent" | "single"
 
 type ChatUser = {
   id: string
@@ -44,12 +45,15 @@ const AdminNotifyPage = () => {
   const [noticeType, setNoticeType] = useState<NoticeType>("all")
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null)
   const [content, setContent] = useState("")
+  const [loaiTB, setLoaiTB] = useState<string>("Khác") // Loại thông báo
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [currentAdminMaTK, setCurrentAdminMaTK] = useState<number | null>(null)
 
   const [generalHistory, setGeneralHistory] = useState<INotice[]>([])
   const [singleHistory, setSingleHistory] = useState<INotice[]>([])
+  const [notificationHistory, setNotificationHistory] = useState<INotification[]>([])
 
   useEffect(() => {
     if (success) {
@@ -62,41 +66,66 @@ const AdminNotifyPage = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        // Lấy MaTK của admin hiện tại từ token
+        const token = localStorage.getItem('token')
+        if (token) {
+          try {
+            // Decode JWT token để lấy thông tin user
+            const payload = JSON.parse(atob(token.split('.')[1]))
+            if (payload.userId || payload.id || payload.MaTK) {
+              const maTK = Number(payload.userId || payload.id || payload.MaTK)
+              setCurrentAdminMaTK(maTK)
+              console.log("Admin MaTK từ token:", maTK)
+            }
+          } catch (e) {
+            console.error("Lỗi decode token:", e)
+            // Fallback: thử lấy từ localStorage user
+            const storedUser = localStorage.getItem('user')
+            if (storedUser) {
+              try {
+                const user = JSON.parse(storedUser)
+                if (user.id || user.MaTK) {
+                  setCurrentAdminMaTK(Number(user.id || user.MaTK))
+                }
+              } catch (e2) {
+                console.error("Lỗi parse user từ localStorage:", e2)
+              }
+            }
+          }
+        }
+
         const [parentsRes, driversRes, adminsRes] = await Promise.all([
           getAllParents(),
           getAllDrivers(),
           getAllAdmins(),
         ])
 
-        const activeParents = (parentsRes || []).filter((p: any) => p.Active === 1)
-        const activeDrivers = (driversRes || []).filter((d: any) => d.Active === 1)
+        const activeParents = (parentsRes || []).filter((p: any) => (p.Active ?? 1) === 1)
+        const activeDrivers = (driversRes || []).filter((d: any) => (d.Active ?? 1) === 1)
         const activeAdmins = (adminsRes || []).filter((a: any) => a.TrangThai === 1)
 
-        const parentList: ChatUser[] = activeParents.map((p: any) => ({
-          id: `parent-${p.MaPH}`,
+        const parentList: ChatUser[] = activeParents
+          .filter((p: any) => p.MaTK) // Chỉ lấy những người có MaTK
+          .map((p: any) => ({
+            id: `parent-${p.MaPH || p.id}`,
           rawId: String(p.MaTK),
-          name: p.HoTen,
+            name: p.HoTen || p.name || "Không có tên",
           type: "parent" as const,
-          extraId: p.MaPH,
+            extraId: p.MaPH || p.id,
         }))
 
-        const driverList: ChatUser[] = activeDrivers.map((d: any) => ({
-          id: `driver-${d.MaTX}`,
+        const driverList: ChatUser[] = activeDrivers
+          .filter((d: any) => d.MaTK) // Chỉ lấy những người có MaTK
+          .map((d: any) => ({
+            id: `driver-${d.MaTX || d.id}`,
           rawId: String(d.MaTK),
-          name: d.HoTen,
+            name: d.HoTen || d.name || "Không có tên",
           type: "driver" as const,
-          extraId: d.MaTX,
+            extraId: d.MaTX || d.id,
         }))
 
-        const adminList: ChatUser[] = activeAdmins.map((a: any) => ({
-          id: `admin-${a.MaQL}`,
-          rawId: String(a.MaTK),
-          name: a.HoTen,
-          type: "admin" as const,
-          extraId: a.MaQL,
-        }))
-
-        setChatUsers([...driverList, ...parentList, ...adminList])
+        // Không thêm admin vào danh sách vì admin chỉ có thể gửi cho tài xế và phụ huynh
+        setChatUsers([...driverList, ...parentList])
       } catch (err) {
         console.error("Lỗi tải danh sách người dùng:", err)
         setError("Không thể tải danh sách người dùng. Vui lòng thử lại.")
@@ -104,6 +133,25 @@ const AdminNotifyPage = () => {
     }
 
     fetchUsers()
+  }, [])
+
+  // Load lịch sử tổng quát khi vào trang
+  useEffect(() => {
+    const fetchGeneralHistory = async () => {
+      try {
+        // Load từ cả 2 API: notice và notifications
+        const [notices, notifications] = await Promise.all([
+          getAllNotices().catch(() => []),
+          getAllNotifications().catch(() => []),
+        ])
+        setGeneralHistory(notices)
+        setNotificationHistory(notifications)
+      } catch (err) {
+        console.error("Lỗi lấy lịch sử tổng quát:", err)
+      }
+    }
+
+    fetchGeneralHistory()
   }, [])
 
   // Load lịch sử khi chọn user
@@ -131,73 +179,76 @@ const AdminNotifyPage = () => {
       return
     }
 
-    let receivers: number[] = []
-
-    switch (noticeType) {
-      case "all":
-        receivers = chatUsers.map((u) => Number(u.rawId))
-        break
-      case "all-driver":
-        receivers = chatUsers.filter((u) => u.type === "driver").map((u) => Number(u.rawId))
-        break
-      case "all-admin":
-        receivers = chatUsers.filter((u) => u.type === "admin").map((u) => Number(u.rawId))
-        break
-      case "all-parent":
-        receivers = chatUsers.filter((u) => u.type === "parent").map((u) => Number(u.rawId))
-        break
-      case "single":
-        if (!selectedUser) {
-          setError("Vui lòng chọn người nhận!")
-          return
-        }
-        receivers = [Number(selectedUser.rawId)]
-        break
-    }
-
-    console.log("Gửi thông báo:", {
-      noticeType,
-      receiversCount: receivers.length,
-      receiversSample: receivers.slice(0, 10),
-    })
-
     setLoading(true)
     setError("")
     setSuccess(false)
 
     try {
-      console.log('Calling sendNotice API...', { content: content.trim(), receivers })
-      const resp = await sendNotice(content.trim(), receivers)
-      console.log('sendNotice response:', resp)
-
-      const now = new Date()
-      const newNotice: INotice = {
-        MaTB: Date.now(),
-        NoiDung: content.trim(),
-        NgayTao: now.toLocaleDateString("vi-VN"),
-        GioTao: now.toLocaleTimeString("vi-VN"),
-        ThoiGian: now.toISOString(),
-        MaTK: noticeType === "single" ? Number(selectedUser?.rawId) : 0,
+      let result
+      
+      // Xử lý theo loại thông báo
+    switch (noticeType) {
+      case "all":
+          // Gửi cho tất cả tài xế và phụ huynh (không gửi cho admin)
+          const allReceivers = chatUsers.map((u) => Number(u.rawId))
+          // Gửi qua API notice (sẽ tự động lọc admin)
+          result = await sendNotice(content.trim(), allReceivers, currentAdminMaTK || undefined)
+        break
+          
+      case "all-driver":
+          // Gửi cho tất cả tài xế - dùng Role = 3
+          result = await createAndSendNotification(content.trim(), undefined, 3, currentAdminMaTK || undefined, loaiTB)
+        break
+          
+      case "all-parent":
+          // Gửi cho tất cả phụ huynh - dùng Role = 1
+          result = await createAndSendNotification(content.trim(), undefined, 1, currentAdminMaTK || undefined, loaiTB)
+        break
+          
+      case "single":
+        if (!selectedUser) {
+          setError("Vui lòng chọn người nhận!")
+            setLoading(false)
+            return
+          }
+          // Kiểm tra không được gửi cho chính mình
+          if (currentAdminMaTK && Number(selectedUser.rawId) === currentAdminMaTK) {
+            setError("Bạn không thể gửi thông báo cho chính mình!")
+            setLoading(false)
+          return
+        }
+          // Gửi cho 1 người - dùng API notice (sẽ tự động lọc admin)
+          result = await sendNotice(content.trim(), [Number(selectedUser.rawId)], currentAdminMaTK || undefined)
+        break
+          
+        default:
+          throw new Error("Loại thông báo không hợp lệ")
       }
 
-      if (noticeType === "single") {
-        setSingleHistory((prev) => [newNotice, ...prev])
-      } else {
-        setGeneralHistory((prev) => [
-          {
-            ...newNotice,
-            NoiDung:
-              noticeType === "all"
-                ? `Đã gửi cho tất cả (${receivers.length} người)`
-                : noticeType === "all-driver"
-                ? `Đã gửi cho tất cả tài xế (${receivers.length} người)`
-                : noticeType === "all-parent"
-                ? `Đã gửi cho tất cả phụ huynh (${receivers.length} người)`
-                : `Đã gửi cho tất cả quản trị viên (${receivers.length} người)`,
-          },
-          ...prev,
+      console.log('createAndSendNotification response:', result)
+
+      // Refresh lịch sử từ server
+    try {
+        const [notices, notifications] = await Promise.all([
+          getAllNotices().catch(() => []),
+          getAllNotifications().catch(() => []),
         ])
+        setGeneralHistory(notices)
+        setNotificationHistory(notifications)
+      } catch (err) {
+        console.error("Lỗi refresh lịch sử:", err)
       }
+
+      // Nếu đang xem lịch sử của user cụ thể, refresh luôn
+      if (selectedUser) {
+        try {
+          const userNotices = await getNoticesByUser(Number(selectedUser.rawId))
+          setSingleHistory(userNotices)
+        } catch (err) {
+          console.error("Lỗi refresh lịch sử user:", err)
+        }
+      }
+
       setContent("")
       setSelectedUser(null)
       setSuccess(true)
@@ -209,10 +260,33 @@ const AdminNotifyPage = () => {
     }
   }
 
-  const historyToShow = selectedUser ? singleHistory : generalHistory
+  // Kết hợp lịch sử từ cả notice và notifications
+  const combinedHistory = selectedUser 
+    ? singleHistory 
+    : [...generalHistory, ...notificationHistory.map(n => ({
+        MaTB: n.MaTB,
+        NoiDung: n.NoiDung,
+        NgayTao: typeof n.NgayTao === 'string' ? n.NgayTao : n.NgayTao?.toString() || '',
+        GioTao: typeof n.GioTao === 'string' ? n.GioTao : n.GioTao?.toString() || '',
+        ThoiGian: (n.NgayTao && n.GioTao) 
+          ? `${typeof n.NgayTao === 'string' ? n.NgayTao : n.NgayTao.toString()} ${typeof n.GioTao === 'string' ? n.GioTao : n.GioTao.toString()}`
+          : '',
+      } as INotice))]
+  
+  // Loại bỏ trùng lặp theo MaTB và sắp xếp theo thời gian
+  const uniqueHistory = combinedHistory
+    .filter((notice, index, self) => 
+      index === self.findIndex(n => n.MaTB === notice.MaTB)
+    )
+    .sort((a, b) => {
+      const timeA = a.ThoiGian ? new Date(a.ThoiGian).getTime() : 0
+      const timeB = b.ThoiGian ? new Date(b.ThoiGian).getTime() : 0
+      return timeB - timeA
+    })
+  
+  const historyToShow = uniqueHistory
   const driverCount = chatUsers.filter((u) => u.type === "driver").length
   const parentCount = chatUsers.filter((u) => u.type === "parent").length
-  const adminCount = chatUsers.filter((u) => u.type === "admin").length
 
   return (
     <Box
@@ -315,12 +389,11 @@ const AdminNotifyPage = () => {
                   <MenuItem value="all">
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <PeopleIcon sx={{ fontSize: 18 }} />
-                      Tất cả người dùng
+                      Tất cả tài xế và phụ huynh
                     </Box>
                   </MenuItem>
                   <MenuItem value="all-driver">Tất cả tài xế ({driverCount})</MenuItem>
                   <MenuItem value="all-parent">Tất cả phụ huynh ({parentCount})</MenuItem>
-                  <MenuItem value="all-admin">Tất cả quản trị viên ({adminCount})</MenuItem>
                   <MenuItem value="single">Gửi cá nhân</MenuItem>
                 </Select>
               </Box>
@@ -406,6 +479,51 @@ const AdminNotifyPage = () => {
                   </Box>
                 </Fade>
               )}
+
+              {/* Loại thông báo */}
+              <Box sx={{ mb: 4, flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    textTransform: "uppercase",
+                    fontWeight: 700,
+                    color: "#475569",
+                    letterSpacing: "0.05em",
+                    mb: 1.5,
+                  }}
+                >
+                  Loại thông báo
+                </Typography>
+                <Select
+                  fullWidth
+                  value={loaiTB}
+                  onChange={(e) => setLoaiTB(e.target.value)}
+                  sx={{
+                    background: "#f1f5f9",
+                    border: "1px solid #cbd5e1",
+                    color: "#1e293b",
+                    borderRadius: 2,
+                    height: 52,
+                    fontSize: 16,
+                    "&:hover": {
+                      background: "#e2e8f0",
+                      border: "1px solid #94a3b8",
+                    },
+                    "&.Mui-focused": {
+                      background: "#ffffff",
+                      border: "1px solid #3b82f6",
+                      boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "transparent",
+                    },
+                  }}
+                >
+                  <MenuItem value="Xe trễ">Xe trễ</MenuItem>
+                  <MenuItem value="Sự cố">Sự cố</MenuItem>
+                  <MenuItem value="Khác">Khác</MenuItem>
+                </Select>
+              </Box>
 
               {/* Content Textarea - Increased rows and padding */}
               <Box sx={{ mb: 4, flex: 1 }}>
@@ -534,6 +652,7 @@ const AdminNotifyPage = () => {
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
+                maxHeight: "calc(100vh - 64px)", // Giới hạn chiều cao tối đa
               }}
             >
               {/* Header - Increased padding */}
@@ -545,6 +664,7 @@ const AdminNotifyPage = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  flexShrink: 0, // Không co lại khi cuộn
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -593,10 +713,32 @@ const AdminNotifyPage = () => {
                 </Box>
               </Box>
 
-              <Divider sx={{ borderColor: "#e2e8f0" }} />
+              <Divider sx={{ borderColor: "#e2e8f0", flexShrink: 0 }} />
 
-              {/* History List - Increased maxHeight and padding */}
-              <List sx={{ flex: 1, overflowY: "auto", p: 0}}>
+              {/* History List - Fixed height with scroll */}
+              <List 
+                sx={{ 
+                  flex: 1, 
+                  overflowY: "auto", 
+                  p: 0,
+                  height: "100%",
+                  maxHeight: "600px", // Chiều cao cố định
+                  "&::-webkit-scrollbar": {
+                    width: "8px",
+                  },
+                  "&::-webkit-scrollbar-track": {
+                    background: "#f1f5f9",
+                    borderRadius: "4px",
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    background: "#cbd5e1",
+                    borderRadius: "4px",
+                    "&:hover": {
+                      background: "#94a3b8",
+                    },
+                  },
+                }}
+              >
                 {historyToShow.length === 0 ? (
                   <Box
                     sx={{
@@ -631,11 +773,45 @@ const AdminNotifyPage = () => {
                         <Box
                           sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}
                         >
+                          <Box>
                           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1e293b" }}>
                             {selectedUser ? selectedUser.name : "Thông báo hệ thống"}
+                              {!selectedUser && (notice as any).SoNguoiNhan && (
+                                <Typography component="span" variant="body2" sx={{ color: "#64748b", ml: 1 }}>
+                                  ({(notice as any).SoNguoiNhan} người nhận)
+                                </Typography>
+                              )}
+                            </Typography>
+                            {(notice as any).LoaiTB && (
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  display: "inline-block",
+                                  px: 1,
+                                  py: 0.5,
+                                  borderRadius: 1,
+                                  backgroundColor: 
+                                    (notice as any).LoaiTB === "Xe trễ" ? "#fef3c7" :
+                                    (notice as any).LoaiTB === "Sự cố" ? "#fee2e2" :
+                                    "#e0e7ff",
+                                  color: 
+                                    (notice as any).LoaiTB === "Xe trễ" ? "#92400e" :
+                                    (notice as any).LoaiTB === "Sự cố" ? "#991b1b" :
+                                    "#3730a3",
+                                  fontWeight: 600,
+                                  mt: 0.5,
+                                }}
+                              >
+                                {(notice as any).LoaiTB}
                           </Typography>
+                            )}
+                          </Box>
                           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                            {new Date(notice.ThoiGian || "").toLocaleString("vi-VN")}
+                            {notice.ThoiGian 
+                              ? new Date(notice.ThoiGian).toLocaleString("vi-VN")
+                              : (notice.NgayTao && notice.GioTao 
+                                  ? `${notice.NgayTao} ${notice.GioTao}`
+                                  : "Chưa có thời gian")}
                           </Typography>
                         </Box>
                         <Typography variant="body1" sx={{ color: "#475569", lineHeight: 1.6, fontSize: 15 }}>
