@@ -18,8 +18,33 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
 // POST /driver/location
 export const updateDriverLocation = (req: any, res: Response) => {
   try {
-    const { driverId: bodyDriverId, latitude, longitude } = req.body || {};
-    if (latitude === undefined || longitude === undefined) {
+    const { driverId: bodyDriverId, latitude: rawLat, longitude: rawLng } = req.body || {};
+    console.log('[location] raw POST body:', req.body);
+    // Accept messy payloads: try to coerce values to numbers and detect swapped coordinates
+    let latitude = rawLat;
+    let longitude = rawLng;
+    // coerce strings to numbers when possible
+    const toNum = (v: any) => {
+      if (v === undefined || v === null) return NaN;
+      const n = Number(v);
+      if (!isNaN(n)) return n;
+      // try extract numeric substring
+      const m = String(v).match(/[+-]?\d+(?:\.\d+)?/g);
+      if (!m) return NaN;
+      return Number(m.join(''));
+    };
+    latitude = toNum(latitude);
+    longitude = toNum(longitude);
+    // If coords appear swapped (lat outside [-90,90] but lng inside), swap them
+    if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+      if (Math.abs(latitude) > 90 && Math.abs(longitude) <= 90) {
+        console.warn('[location] detected lat/lng likely swapped in payload — swapping values');
+        const t = latitude;
+        latitude = longitude;
+        longitude = t;
+      }
+    }
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       return res.status(400).json({ success: false, message: "latitude, longitude required" });
     }
 
