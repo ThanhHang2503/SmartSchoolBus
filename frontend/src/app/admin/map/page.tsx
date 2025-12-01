@@ -19,6 +19,7 @@ import {
 import { getAllRoutes, addRoute, type IRouteDetail } from "../../../api/routeApi";
 import { getAllStops, createStop, type IStop } from "../../../api/stopApi";
 import { getRouteWithStops, addStopToRoute } from "../../../api/routeApi";
+import { getAllDrivers, type IDriverDetail } from "../../../api/driverApi";
 import CreateStopForm from "./CreateStopForm";
 import MyMap from "../../../components/Map";
 
@@ -37,6 +38,17 @@ const AdminRoutesPage: React.FC = () => {
   const [routeStops, setRouteStops] = useState<any[]>([]);
   const [selectedStopId, setSelectedStopId] = useState<number | "">("");
   const [stopOrder, setStopOrder] = useState<number | "">("");
+  
+  // Driver location tracking
+  const [drivers, setDrivers] = useState<IDriverDetail[]>([]);
+  const [selectedDriverId, setSelectedDriverId] = useState<number | "">("");
+  const [driverLocation, setDriverLocation] = useState<{
+    MaTX: number;
+    ViDo: number;
+    KinhDo: number;
+    ThoiGian: string;
+    HoTen: string;
+  } | null>(null);
 
   const loadRoutes = async () => {
     setLoading(true);
@@ -79,7 +91,21 @@ const AdminRoutesPage: React.FC = () => {
   useEffect(() => {
     loadRoutes();
     loadStops();
+    loadDrivers();
   }, []);
+
+  // Poll selected driver location every 5 seconds
+  useEffect(() => {
+    if (selectedDriverId === "" || !selectedDriverId) {
+      setDriverLocation(null);
+      return;
+    }
+
+    fetchDriverLocation(selectedDriverId);
+    const interval = setInterval(() => fetchDriverLocation(selectedDriverId), 5000);
+    
+    return () => clearInterval(interval);
+  }, [selectedDriverId, drivers]);
 
   const resetForm = () => {
     setFrom("");
@@ -175,16 +201,74 @@ const AdminRoutesPage: React.FC = () => {
     }
   };
 
+  const loadDrivers = async () => {
+    try {
+      const list = await getAllDrivers();
+      setDrivers(list.filter(d => d.Active === 1));
+    } catch (err) {
+      console.error("Error loading drivers:", err);
+    }
+  };
+
+  const fetchDriverLocation = async (driverId: number) => {
+    try {
+      const response = await fetch(`http://localhost:5000/driver/location/${driverId}`);
+      if (!response.ok) {
+        setDriverLocation(null);
+        return;
+      }
+      const data = await response.json();
+      
+      if (data && data.success && data.position && data.position.latitude && data.position.longitude) {
+        const driver = drivers.find(d => d.MaTX === driverId);
+        setDriverLocation({
+          MaTX: driverId,
+          ViDo: data.position.latitude,
+          KinhDo: data.position.longitude,
+          ThoiGian: new Date(data.position.updatedAt).toISOString(),
+          HoTen: driver?.HoTen || "Unknown Driver",
+        });
+      } else {
+        setDriverLocation(null);
+      }
+    } catch (err) {
+      console.error("Error fetching driver location:", err);
+      setDriverLocation(null);
+    }
+  };
+
   return (
     
     <Box sx={{ p: 3, maxWidth: "100%", mx: "auto" }}>
         <Box sx={{ p: 3 }}>
-              <Typography variant="h5" fontWeight={600} gutterBottom>
-                Bản đồ tuyến và vị trí
-              </Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2 }}>
+                <Typography variant="h5" fontWeight={600}>
+                  Bản đồ tuyến và vị trí
+                </Typography>
+                <TextField
+                  select
+                  label="Chọn tài xế"
+                  value={selectedDriverId}
+                  onChange={(e) => setSelectedDriverId(e.target.value === "" ? "" : Number(e.target.value))}
+                  sx={{ minWidth: 200 }}
+                  size="small"
+                >
+                  <MenuItem value="">-- Không hiển thị --</MenuItem>
+                  {drivers.map((driver) => (
+                    <MenuItem key={driver.MaTX} value={driver.MaTX}>
+                      {driver.HoTen}
+                    </MenuItem>
+                  ))}
+
+                </TextField>
+              </Box>
         
               <Paper sx={{ height: 520, borderRadius: 3, overflow: "hidden", p: 0 }} elevation={1}>
-                <MyMap routeId={selectedRouteId ?? undefined} />
+                <MyMap 
+                  routeId={selectedRouteId ?? undefined} 
+                  driverLocations={driverLocation ? [driverLocation] : []}
+                  showCurrentLocation={false}
+                />
               </Paper>
             </Box>
       <Typography variant="h4" gutterBottom fontWeight="bold">

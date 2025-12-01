@@ -43,6 +43,8 @@ interface MyMapProps {
   routeId?: number; // ID tuyến đường cần hiển thị (optional)
   useDriverPosition?: boolean; // when true, show driver's last known position (parent view)
   driverId?: number; // id of driver to track when useDriverPosition is true
+  driverLocations?: Array<{ MaTX: number; ViDo: number; KinhDo: number; ThoiGian?: string; HoTen?: string }>; // Array of all driver locations for admin view
+  showCurrentLocation?: boolean; // when false, hide admin's current location marker (default: true)
 }
 
 // Component để vẽ routing
@@ -92,7 +94,7 @@ const RoutingControl: React.FC<{ stops: Array<{ ViDo: number; KinhDo: number }> 
   return null;
 };
 
-const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, driverId }) => {
+const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, driverId, driverLocations, showCurrentLocation = true }) => {
   const { loading, error, latitude, longitude } = useGeolocation();
   // Auth to detect if current user is driver (to POST location)
   const { user: authUser } = useAuth();
@@ -101,6 +103,17 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, d
 
   // Driver position state (for parent view)
   const [driverPos, setDriverPos] = React.useState<{ latitude: number; longitude: number } | null>(null);
+
+  // Create icon for driver markers (blue)
+  const driverIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+    iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+    shadowUrl: shadowUrl,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
 
   // Lấy tuyến đường từ backend
   useEffect(() => {
@@ -128,7 +141,7 @@ const MyMap: React.FC<MyMapProps> = ({ routeId = 1, useDriverPosition = false, d
       // dynamic import to avoid cycles
       import('../api/driverApi').then(mod => {
         const token = localStorage.getItem('token');
-        const driverId = Number(authUser.id || authUser.MaTX || authUser.id);
+        const driverId = Number(authUser.MaTX || authUser.id);
         mod.postDriverLocation(driverId, latitude, longitude, token || undefined)
           .catch(() => {
             // Silently handle location post errors
@@ -237,7 +250,7 @@ const pos = await mod.getDriverLocation(Number(driverId));
         ))}
 
         {/* Marker vị trí hiện tại (driver view) or driver's marker (parent view) */}
-        {!useDriverPosition && latitude && longitude && (
+        {!useDriverPosition && showCurrentLocation && latitude && longitude && (
           <>
             <Marker position={[latitude, longitude]}>
               <Popup>Vị trí của bạn</Popup>
@@ -254,6 +267,35 @@ const pos = await mod.getDriverLocation(Number(driverId));
             <FollowUser lat={driverPos.latitude} lng={driverPos.longitude} />
           </>
         )}
+
+        {/* Display all driver locations (admin view) */}
+        {driverLocations && driverLocations.map((driver) => (
+          <Marker 
+            key={driver.MaTX} 
+            position={[driver.ViDo, driver.KinhDo]}
+            icon={driverIcon}
+          >
+            <Popup>
+              {driver.HoTen && (
+                <>
+                  <strong>{driver.HoTen}</strong>
+                  <br />
+                </>
+              )}
+              <strong>Tài xế ID: {driver.MaTX}</strong>
+              <br />
+              Vĩ độ: {driver.ViDo.toFixed(6)}
+              <br />
+              Kinh độ: {driver.KinhDo.toFixed(6)}
+              {driver.ThoiGian && (
+                <>
+                  <br />
+                  Cập nhật: {new Date(driver.ThoiGian).toLocaleString('vi-VN')}
+                </>
+              )}
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
 
       {/* Overlay messages for loading / error / no-route to avoid unmounting the map */}

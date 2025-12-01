@@ -25,6 +25,28 @@ if (process.env.NODE_ENV !== 'production') {
 		res.json({ success: true, positions: getAllDriverPositions() });
 	});
 }
+
+// Get all active driver locations (for admin realtime map)
+router.get("/locations", async (req, res) => {
+	try {
+		const { getAllDriverPositions } = require('../locationStore');
+		const positions = getAllDriverPositions();
+		
+		// Convert to array format with driver info
+		const locations = Object.entries(positions).map(([driverId, pos]: [string, any]) => ({
+			MaTX: Number(driverId),
+			ViDo: pos.latitude,
+			KinhDo: pos.longitude,
+			ThoiGian: new Date(pos.updatedAt).toISOString(),
+		}));
+		
+		res.json(locations);
+	} catch (error) {
+		console.error("Error getting driver locations:", error);
+		res.status(500).json({ error: "Failed to get driver locations" });
+	}
+});
+
 router.get("/location/:driverId", getDriverLocation); // GET last known location for driver
 router.put("/update-status", UpdateStudentStatus);
 export default router;

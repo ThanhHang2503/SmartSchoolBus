@@ -23,6 +23,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         name: user.name,
         role: user.role,
         VaiTro: user.VaiTro,
+        MaTX: user.MaTX || null,
       },
       JWT_SECRET,
       { expiresIn: "8h" }
@@ -38,6 +39,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         email: user.email,
         name: user.name,
         role: user.role,
+        MaTX: user.MaTX || undefined, // Thêm MaTX cho driver
       },
     });
   } catch (err: any) {

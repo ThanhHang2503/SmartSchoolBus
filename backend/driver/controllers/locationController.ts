@@ -50,8 +50,8 @@ export const updateDriverLocation = (req: any, res: Response) => {
 
     // Prefer driver id from authenticated token (req.user) when available to avoid id mismatch
     let id: number | null = null;
-    if (req.user && (req.user.id || req.user.MaTK || req.user.MaTX)) {
-      id = Number(req.user.id || req.user.MaTK || req.user.MaTX);
+    if (req.user && (req.user.MaTX || req.user.id || req.user.MaTK)) {
+      id = Number(req.user.MaTX || req.user.id || req.user.MaTK);
     } else if (bodyDriverId) {
       id = Number(bodyDriverId);
     }

@@ -25,13 +25,38 @@ export default function GpsDemoPage() {
   const parseCoord = (v: any): number => {
     if (typeof v === 'number') return v;
     if (typeof v !== 'string') return NaN;
+    // Try direct conversion first for simple numeric strings
+    const direct = Number(v);
+    if (!isNaN(direct)) return direct;
+    // Fallback: extract all numeric tokens and sum (for concatenated expressions like "10.7769000-0.00005517375867693177")
     const matches = v.match(/[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g);
-    if (!matches) return NaN;
+    if (!matches || matches.length === 0) return NaN;
+    // If single match, return it; if multiple, sum them
+    if (matches.length === 1) return Number(matches[0]);
     return matches.map(Number).reduce((a, b) => a + b, 0);
   };
 
   const stopsToPoints = (stops: RouteWithStops['stops'], useSwap: boolean) => {
-    return stops.map(s => ({ lat: parseCoord(useSwap ? s.KinhDo : s.ViDo), lng: parseCoord(useSwap ? s.ViDo : s.KinhDo) } as Point)).filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
+    // Normal: ViDo=latitude, KinhDo=longitude
+    // Swapped: values are reversed in DB, so read KinhDo as lat, ViDo as lng
+    const points = stops.map(s => ({ 
+      lat: parseCoord(useSwap ? s.KinhDo : s.ViDo),
+      lng: parseCoord(useSwap ? s.ViDo : s.KinhDo)
+    } as Point)).filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
+    
+    // Validate coordinates
+    if (points.length > 0) {
+      const first = points[0];
+      if (Math.abs(first.lat) > 90 || Math.abs(first.lng) > 180) {
+        console.error(`❌ Invalid coordinates! useSwap=${useSwap}, first point:`, first, 'from stop:', stops[0]);
+        console.error('⚠️ Latitude must be -90 to 90, Longitude must be -180 to 180');
+        console.error('💡 Try toggling the "Swap coords" checkbox');
+      } else {
+        console.log(`✅ Valid coords: useSwap=${useSwap}, first point:`, first);
+      }
+    }
+    
+    return points;
   };
 
   const [route, setRoute] = useState<Point[] | null>(null);
@@ -131,6 +156,11 @@ export default function GpsDemoPage() {
                 if (!swapCoords) setSwapCoords(true);
               } else {
                 setAutoDetectedSwap(false);
+                // Auto-reset swap if coords are normal (not swapped)
+                if (swapCoords) {
+                  console.log('Coords are normal (ViDo < 90), disabling swap');
+                  setSwapCoords(false);
+                }
               }
 
               // decide swap for this run (use current swapCoords OR detected)
@@ -226,7 +256,7 @@ export default function GpsDemoPage() {
       }
     })();
     return () => { mounted = false; };
-  }, [simulate, selectedRouteId, swapCoords, baseRoute, route]);
+  }, [simulate, selectedRouteId, baseRoute, route]); // Removed swapCoords to avoid duplicate fetch
 
   // Start/stop global mock using installGeolocationMock and persist config
   const startGlobalMock = async (routeOverride?: Point[]) => {
@@ -344,9 +374,10 @@ export default function GpsDemoPage() {
               <input type="checkbox" checked={loop} onChange={(e) => setLoop(e.target.checked)} />
             </span>
             <span style={{ marginLeft: 12 }}>
-              <label>Swap coords (ViDo ↔ KinhDo): </label>
+              <label title="Chỉ tích nếu database bị hoán đổi lat/lng (ViDo > 90)">Swap coords (ViDo ↔ KinhDo): </label>
               <input type="checkbox" checked={swapCoords} onChange={(e) => setSwapCoords(e.target.checked)} />
               {autoDetectedSwap === true && <em style={{ marginLeft: 6, color: '#b45309' }}>Auto-detected swap</em>}
+              {autoDetectedSwap === false && swapCoords && <em style={{ marginLeft: 6, color: '#dc2626' }}>⚠️ Manual swap (coords may be invalid!)</em>}
             </span>
 
             <span style={{ marginLeft: 12 }}>
