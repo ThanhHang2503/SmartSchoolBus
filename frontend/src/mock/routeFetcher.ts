@@ -8,6 +8,9 @@ export async function fetchRouteFromOsrm(points: Point[]): Promise<Point[]> {
   // build coordinates string lon,lat;lon,lat;...
   const coords = points.map((p) => `${p.lng},${p.lat}`).join(';');
   const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+  
+  console.log('[OSRM] Input points:', points);
+  console.log('[OSRM] URL:', url);
 
   const res = await fetch(url);
   if (!res.ok) throw new Error(`OSRM error: ${res.status}`);

@@ -9,7 +9,8 @@ export const findUserByCredentials = async (email: string, password: string) => 
       tk.MaTK AS id,
       tk.TenDangNhap AS email,
       tk.VaiTro,
-      COALESCE(ph.HoTen, tx.HoTen, ql.HoTen, 'Người dùng') AS name
+      COALESCE(ph.HoTen, tx.HoTen, ql.HoTen, 'Người dùng') AS name,
+      tx.MaTX AS MaTX
     FROM TaiKhoan tk
     LEFT JOIN PhuHuynh ph ON tk.MaTK = ph.MaTK
     -- Some DB seeds map TaiKhoan.MaTK to TaiXe.MaTX + 13, so join using expression
@@ -37,6 +38,7 @@ export const findUserByCredentials = async (email: string, password: string) => 
     name: user.name || "Người dùng",
     role: roleText,    // TEXT
     VaiTro: user.VaiTro, // SỐ THẬT — QUAN TRỌNG
+    MaTX: user.MaTX || null, // Mã tài xế (chỉ có khi là driver)
   };
 };
 export { pool };

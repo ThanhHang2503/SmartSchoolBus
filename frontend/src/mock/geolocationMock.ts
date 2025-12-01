@@ -28,6 +28,12 @@ export function installGeolocationMock(route: Point[], opts?: GeoMockOptions) {
 
   // save original geolocation if present
   const originalGeolocation = (navigator as any).geolocation;
+  let installedViaAssignment = false;
+  const originalMethods: {
+    getCurrentPosition?: any;
+    watchPosition?: any;
+    clearWatch?: any;
+  } = {};
 
   // internal relay from simulator -> registered watchers
   sim.onPosition((p) => {
@@ -60,8 +66,31 @@ export function installGeolocationMock(route: Point[], opts?: GeoMockOptions) {
     },
   } as unknown as Geolocation;
 
-  // install mock
-  (navigator as any).geolocation = mock;
+  // install mock: try direct assignment first; if navigator.geolocation is read-only,
+  // patch the methods on the existing object instead and restore them on uninstall.
+  try {
+    (navigator as any).geolocation = mock;
+    installedViaAssignment = true;
+  } catch (assignErr) {
+    // assignment failed (read-only). Try to patch methods on the existing object.
+    if (originalGeolocation) {
+      try {
+        originalMethods.getCurrentPosition = originalGeolocation.getCurrentPosition?.bind(originalGeolocation);
+        originalMethods.watchPosition = originalGeolocation.watchPosition?.bind(originalGeolocation);
+        originalMethods.clearWatch = originalGeolocation.clearWatch?.bind(originalGeolocation);
+
+        (originalGeolocation as any).getCurrentPosition = mock.getCurrentPosition.bind(mock);
+        (originalGeolocation as any).watchPosition = mock.watchPosition.bind(mock);
+        (originalGeolocation as any).clearWatch = mock.clearWatch.bind(mock);
+        installedViaAssignment = false;
+      } catch (patchErr) {
+        throw new Error('Cannot install geolocation mock: navigator.geolocation is read-only and its methods cannot be patched');
+      }
+    } else {
+      // no original geolocation object and assignment failed
+      throw new Error('Cannot install geolocation mock: navigator.geolocation is not present and cannot be defined');
+    }
+  }
 
   function start() {
     sim.start();
@@ -70,8 +99,22 @@ export function installGeolocationMock(route: Point[], opts?: GeoMockOptions) {
     sim.stop();
   }
   function uninstall() {
-    // restore original geolocation
-    (navigator as any).geolocation = originalGeolocation;
+    // restore original geolocation or restore patched methods
+    try {
+      if (installedViaAssignment) {
+        (navigator as any).geolocation = originalGeolocation;
+      } else if (originalGeolocation) {
+        try {
+          if (originalMethods.getCurrentPosition) (originalGeolocation as any).getCurrentPosition = originalMethods.getCurrentPosition;
+          if (originalMethods.watchPosition) (originalGeolocation as any).watchPosition = originalMethods.watchPosition;
+          if (originalMethods.clearWatch) (originalGeolocation as any).clearWatch = originalMethods.clearWatch;
+        } catch (e) {
+          // ignore restore errors
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
     stop();
   }
 

@@ -58,6 +58,28 @@ export const getRouteWithStops = async (id: number): Promise<IRouteWithStops | n
   };
 };
 
+// Cập nhật NoiBatDau và NoiKetThuc dựa trên danh sách trạm
+export const updateRouteStartEnd = async (maTD: number): Promise<void> => {
+  const [stops] = await pool.query<RowDataPacket[]>(
+    `SELECT td.TenTram, cttd.ThuTuDung 
+     FROM CTTD cttd
+     JOIN TramDung td ON cttd.MaTram = td.MaTram
+     WHERE cttd.MaTD = ?
+     ORDER BY cttd.ThuTuDung`,
+    [maTD]
+  );
+
+  if (stops.length > 0) {
+    const firstStop = stops[0].TenTram;
+    const lastStop = stops[stops.length - 1].TenTram;
+    
+    await pool.query(
+      "UPDATE TuyenDuong SET NoiBatDau = ?, NoiKetThuc = ? WHERE MaTD = ?",
+      [firstStop, lastStop, maTD]
+    );
+  }
+};
+
 // Tạo tuyến đường mới
 export const createRoute = async (route: Omit<IRoute, "MaTD">): Promise<number> => {
   const [result] = await pool.query<ResultSetHeader>(
@@ -77,6 +99,8 @@ export const addStopToRoute = async (params: {
     "INSERT INTO CTTD (MaTram, MaTD, MaTramDon, ThuTuDung) VALUES (?, ?, ?, ?)",
     [params.MaTram, params.MaTD, params.MaTram, params.ThuTuDung]
   );
+  // Cập nhật NoiBatDau và NoiKetThuc sau khi thêm trạm
+  await updateRouteStartEnd(params.MaTD);
 };
 
 // Xóa trạm khỏi tuyến đường
@@ -85,6 +109,10 @@ export const removeStopFromRoute = async (maTD: number, maTram: number): Promise
     "DELETE FROM CTTD WHERE MaTD = ? AND MaTram = ?",
     [maTD, maTram]
   );
+  if (result.affectedRows > 0) {
+    // Cập nhật NoiBatDau và NoiKetThuc sau khi xóa trạm
+    await updateRouteStartEnd(maTD);
+  }
   return result.affectedRows > 0;
 };
 

@@ -5,7 +5,7 @@ import React from 'react';
 import { User } from '@/types/auth';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaCalendar, FaUser, FaMap, FaBell, FaSignOutAlt, FaTasks } from 'react-icons/fa';
+import { FaHome, FaCalendar, FaUser, FaMap, FaBell, FaSignOutAlt, FaTasks, FaMapMarkerAlt } from 'react-icons/fa';
 import { styled } from '@mui/material/styles';
 
 // MÀU NỀN CHUNG: Dùng màu header mới
@@ -174,12 +174,11 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
               </StyledLink>
             </MenuItem>
             <MenuItem>
-              <StyledLink href="/admin/map" className={getLinkClasses('/driver/map')}>
+              <StyledLink href="/admin/map" className={getLinkClasses('/admin/map')}>
                 <FaMap />
                 <span>Hành trình</span>
               </StyledLink>
-            </MenuItem>
-          </>
+            </MenuItem>          </>
         )}
 
         {user.role === 'driver' && (
