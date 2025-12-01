@@ -167,7 +167,7 @@ export default function GpsDemoPage() {
               const useSwap = swapCoords || detectedSwap;
               // build pts applying swap decision immediately (avoid async state timing)
               const ptsStops = stopsToPoints(routeWithStops.stops, useSwap);
-              await loadRouteFromStops(ptsStops);
+              await loadRouteFromPoints(ptsStops);
               // set preview stops using raw stops from backend (apply swap if enabled)
               if (mounted) setPreviewStops(routeWithStops.stops.map(s => ({ lat: parseCoord(useSwap ? s.KinhDo : s.ViDo), lng: parseCoord(useSwap ? s.ViDo : s.KinhDo), name: s.TenTram })));
             } else if (mounted) {
@@ -337,7 +337,7 @@ export default function GpsDemoPage() {
       stopGlobalMock();
       // small delay to allow previous mock to fully uninstall
       const t = setTimeout(() => {
-        startGlobalMock(route).catch((e) => console.warn('Failed to restart mock after route change', e));
+        startGlobalMock(route ?? undefined).catch((e) => console.warn('Failed to restart mock after route change', e));
       }, 200);
       return () => clearTimeout(t);
     } catch (e) {
@@ -403,7 +403,7 @@ export default function GpsDemoPage() {
         )}
 
         {route ? (
-          <MapWithGps simulate={simulate} simulateRoute={route} height="600px" simulateSpeedKmh={speedKmh} previewStops={previewStops ?? undefined} skipNormalize={true} />
+          <MapWithGps simulate={simulate} simulateRoute={route} height="600px" simulateSpeedKmh={speedKmh} />
         ) : (
           <div>
             <p>Loading route...</p>
