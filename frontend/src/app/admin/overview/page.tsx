@@ -3,6 +3,7 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { Card, Typography, Box, CircularProgress, Alert, TextField, Button } from "@mui/material"
+import { useTranslation } from "react-i18next"
 import {
   PieChart,
   Pie,
@@ -31,13 +32,14 @@ import { getTripsMonthly } from "@/api/statsApi"
 const COLORS = ["#2196f3", "#ef5350"]
 
 export default function OverviewPage() {
+  const { t } = useTranslation('common')
   const [inputYear, setInputYear] = useState<string>(new Date().getFullYear().toString())
   const [displayYear, setDisplayYear] = useState<number>(new Date().getFullYear())
   const [stats, setStats] = useState({ buses: 0, drivers: 0, students: 0, routes: 0 })
   const [tripData, setTripData] = useState<{ name: string; trips: number }[]>([])
   const [busStatus, setBusStatus] = useState([
-    { name: "Đang hoạt động", value: 0 },
-    { name: "Bảo trì", value: 0 },
+    { name: t('admin.activeBuses'), value: 0 },
+    { name: t('admin.maintenance'), value: 0 },
   ])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -63,8 +65,8 @@ export default function OverviewPage() {
 
       const active = buses.filter((b: IBus) => b.TinhTrang === 1).length
       setBusStatus([
-        { name: "Đang hoạt động", value: active },
-        { name: "Bảo trì", value: buses.length - active },
+        { name: t('admin.activeBuses'), value: active },
+        { name: t('admin.maintenance'), value: buses.length - active },
       ])
 
       const rawData = await getTripsMonthly(year)
@@ -89,7 +91,7 @@ export default function OverviewPage() {
 
       setTripData(normalizedData)
     } catch (err) {
-      setError("Không thể tải dữ liệu từ máy chủ!")
+      setError(t('admin.cannotLoadData'))
     } finally {
       setLoading(false)
     }
@@ -105,10 +107,10 @@ export default function OverviewPage() {
   }, [displayYear])
 
   const statItems: StatItem[] = [
-    { label: "Xe buýt", value: stats.buses, icon: <DirectionsBusIcon />, bg: "#e3f2fd" },
-    { label: "Tài xế", value: stats.drivers, icon: <PersonIcon />, bg: "#e3f2fd" },
-    { label: "Học sinh", value: stats.students, icon: <SchoolIcon />, bg: "#e8f5e8" },
-    { label: "Tuyến đường", value: stats.routes, icon: <RouteIcon />, bg: "#fff3e0" },
+    { label: t('admin.buses'), value: stats.buses, icon: <DirectionsBusIcon />, bg: "#e3f2fd" },
+    { label: t('admin.drivers'), value: stats.drivers, icon: <PersonIcon />, bg: "#e3f2fd" },
+    { label: t('admin.students'), value: stats.students, icon: <SchoolIcon />, bg: "#e8f5e8" },
+    { label: t('admin.routes'), value: stats.routes, icon: <RouteIcon />, bg: "#fff3e0" },
   ]
 
   const renderPieLabel = (props: PieLabelRenderProps) => {
@@ -129,7 +131,7 @@ export default function OverviewPage() {
         dominantBaseline="central"
         style={{ fontSize: "15px", fontWeight: "bold" }}
       >
-        {`${name}: ${value} xe`}
+        {`${name}: ${value} ${t('admin.busesUnit')}`}
       </text>
     )
   }
@@ -139,14 +141,14 @@ export default function OverviewPage() {
       <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 2, sm: 3 } }}>
         {/* Tiêu đề trang */}
         <Typography variant="h4" fontWeight="bold" color="primary.dark" textAlign="center" mb={6}>
-          Tổng quan hệ thống
+          {t('admin.systemOverview')}
         </Typography>
 
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh", gap: 3 }}>
             <CircularProgress size={50} thickness={4} />
             <Typography variant="h6" color="text.secondary">
-              Đang tải dữ liệu năm {displayYear}...
+              {t('admin.loadingYear')} {displayYear}...
             </Typography>
           </Box>
         )}
@@ -205,12 +207,12 @@ export default function OverviewPage() {
                     }}
                   >
                     <Typography variant="h6" fontWeight="bold" color="primary.dark">
-                      Số chuyến xe theo tháng trong năm {displayYear}
+                      {t('admin.tripsByMonth')} {displayYear}
                     </Typography>
 
                     <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                       <TextField
-                        label="Nhập năm"
+                        label={t('admin.enterYear')}
                         variant="outlined"
                         size="small"
                         value={inputYear}
@@ -220,7 +222,7 @@ export default function OverviewPage() {
                         type="number"
                       />
                       <Button variant="contained" onClick={handleStatClick}>
-                        Thống kê
+                        {t('admin.statistics')}
                       </Button>
                     </Box>
                   </Box>
@@ -230,7 +232,7 @@ export default function OverviewPage() {
                       <CartesianGrid strokeDasharray="4 4" stroke="#e0e0e0" />
                       <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} interval={0} />
                       <YAxis tick={{ fontSize: 14 }} />
-                      <Tooltip formatter={(value: number) => `${value} chuyến`} />
+                      <Tooltip formatter={(value: number) => `${value} ${t('admin.trips')}`} />
                       <Bar dataKey="trips" fill="#2196f3" radius={[12, 12, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -240,7 +242,7 @@ export default function OverviewPage() {
               <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 48%" }, maxWidth: { xs: "100%", md: "48%" }, minWidth: 0 }}>
                 <Card sx={{ p: 4, borderRadius: 3, boxShadow: 6 }}>
                   <Typography variant="h6" fontWeight="bold" gutterBottom color="primary.dark" textAlign="center">
-                    Trạng thái xe buýt hiện tại
+                    {t('admin.busStatus')}
                   </Typography>
                   <ResponsiveContainer width="100%" height={320}>
                     <PieChart>
@@ -259,7 +261,7 @@ export default function OverviewPage() {
                           <Cell key={i} fill={COLORS[i]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: number) => `${value} xe`} />
+                      <Tooltip formatter={(value: number) => `${value} ${t('admin.busesUnit')}`} />
                     </PieChart>
                   </ResponsiveContainer>
                 </Card>

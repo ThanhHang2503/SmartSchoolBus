@@ -20,8 +20,10 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { IDriver, getCurrentDriver, parseStudentList, getCurrentDriverSchedules, IDriverNotification, getDriverNotifications} from "@/api/driverApi";
 import { useDriverSchedules } from '@/context/driverSchedulesContext';
+import { useTranslation } from "react-i18next";
 
 export default function DriverDashboard() {
+  const { t } = useTranslation('common');
 
   // 1. GỌI TẤT CẢ CÁC HOOKS LÊN TRÊN CÙNG
   const { token } = useAuth(); // Hook 1: Lấy token
@@ -140,22 +142,22 @@ export default function DriverDashboard() {
   }, [schedules, loading, todaySchedules.length]); // Re-run khi schedules load xong hoặc thay đổi
 
   // 4. KIỂM TRA ĐIỀU KIỆN 
-  if (!driver) return <Typography>Đang tải thông tin tài xế...</Typography>;
+  if (!driver) return <Typography>{t('driver.loadingDriverInfo')}</Typography>;
   
 
   // Hàm hiển thị chi tiết từng chuyến làm việc (giờ và tuyến đường)
   const renderScheduleDetails = () => {
     if (loading) {
-      return <Typography variant="body2" sx={{ paddingLeft: '24px' }}>Đang tải lịch làm việc...</Typography>;
+      return <Typography variant="body2" sx={{ paddingLeft: '24px' }}>{t('driver.loadingSchedule')}</Typography>;
     }
     if (todaySchedules.length === 0) {
-      return <Typography variant="body2" sx={{ paddingLeft: '24px' }}>Hôm nay không có lịch làm việc.</Typography>;
+      return <Typography variant="body2" sx={{ paddingLeft: '24px' }}>{t('driver.todaySchedule')}: 0</Typography>;
     }
     // Sử dụng .map để lặp qua từng lịch trình
     return todaySchedules.map((schedule, index) => (
       // Áp dụng thụt lề cho Typography
       <Typography key={schedule.id} variant="body2"> 
-        Chuyến {index + 1}: {schedule.startTime} - {schedule.endTime || 'Kết thúc'} 
+        {t('driver.routeInfo')} {index + 1}: {schedule.startTime} - {schedule.endTime || t('common.close')} 
         <span style={{ display: 'block', color: '#555', fontSize: '0.9em' }}>
           ({schedule.routeStart} → {schedule.routeEnd})
         </span>
@@ -163,7 +165,7 @@ export default function DriverDashboard() {
     ));
   };
 
-  const busLicensePlate = todaySchedules.length > 0 ? todaySchedules[0].busLicensePlate : "Chưa xác định";
+  const busLicensePlate = todaySchedules.length > 0 ? todaySchedules[0].busLicensePlate : t('common.noInformation');
 
   // hàm xem chi tiết thông báo
   const handleViewDetails = () => { setIsNotificationDialogOpen(true); };
@@ -189,7 +191,7 @@ export default function DriverDashboard() {
             <Box display="flex" alignItems="center" gap={2}>
               <AccessTimeIcon fontSize="large" color="primary" />
               <Box>
-                <Typography variant="subtitle1" fontWeight={600}>Lịch làm việc hôm nay: {todaySchedules.length}</Typography>
+                <Typography variant="subtitle1" fontWeight={600}>{t('driver.todaySchedule')}: {todaySchedules.length}</Typography>
                 {/* Gọi hàm hiển thị chi tiết lịch trình */}
                 {renderScheduleDetails()}
               </Box>
@@ -203,9 +205,9 @@ export default function DriverDashboard() {
             <Box display="flex" alignItems="center" gap={2}>
               <SchoolIcon fontSize="large" color="success" />
               <Box>
-                <Typography variant="subtitle1" fontWeight={600}>Học sinh cần đón</Typography>
-                <Typography variant="body2">Tổng: {studentStats.total} học sinh</Typography>
-                <Typography variant="body2">Đã đón/trả: {studentStats.pickedUp} học sinh</Typography>
+                <Typography variant="subtitle1" fontWeight={600}>{t('driver.studentList')}</Typography>
+                <Typography variant="body2">{t('driver.totalStudents')}: {studentStats.total}</Typography>
+                <Typography variant="body2">{t('driver.pickedUpStudents')}: {studentStats.pickedUp}</Typography>
               </Box>
             </Box>
           </CardContent>
@@ -230,8 +232,8 @@ export default function DriverDashboard() {
             <Box display="flex" alignItems="center" gap={2}>
               <NotificationsActiveIcon fontSize="large" color="error" />
               <Box>
-                <Typography variant="subtitle1" fontWeight={600}>Thông báo</Typography>
-                <Typography variant="body2">Thông báo mới: {notifications.length}</Typography>
+                <Typography variant="subtitle1" fontWeight={600}>{t('driver.notifications')}</Typography>
+                <Typography variant="body2">{t('driver.notifications')}: {notifications.length}</Typography>
                 <Button 
                   size="small" 
                   sx={{ mt: 1, textTransform: "none"}} 

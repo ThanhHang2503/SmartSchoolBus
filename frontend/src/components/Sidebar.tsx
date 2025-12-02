@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FaHome, FaCalendar, FaUser, FaMap, FaBell, FaSignOutAlt, FaTasks, FaMapMarkerAlt } from 'react-icons/fa';
 import { styled } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 
 // MÀU NỀN CHUNG: Dùng màu header mới
 const BACKGROUND_COLOR = '#d4e8ff';
@@ -128,6 +129,7 @@ interface SidebarProps {
 
 const Sidebar = ({ user, logout }: SidebarProps) => {
   const pathname = usePathname();
+  const { t } = useTranslation('common');
 
   if (!user) {
     console.log('Sidebar: No user, hiding Sidebar');
@@ -146,37 +148,37 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
             <MenuItem>
               <StyledLink href="/admin/overview" className={getLinkClasses('/admin/overview')}>
                 <FaHome />
-                <span>Tổng quan</span>
+                <span>{t('sidebar.overview')}</span>
               </StyledLink>
             </MenuItem>
             <MenuItem>
               <StyledLink href="/admin/info_admin" className={getLinkClasses('/admin/info_admin')}>
                 <FaCalendar />
-                <span>Quản lý thông tin</span>
+                <span>{t('sidebar.infoManagement')}</span>
               </StyledLink>
             </MenuItem>
             <MenuItem>
               <StyledLink href="/admin/list" className={getLinkClasses('/admin/list')}>
                 <FaUser/>
-                <span>Xem danh sách</span>
+                <span>{t('sidebar.viewList')}</span>
               </StyledLink>
             </MenuItem>
             <MenuItem>
               <StyledLink href="/admin/schedule" className={getLinkClasses('/admin/schedule')}>
                 <FaCalendar />
-                <span>Lịch trình và phân công</span>
+                <span>{t('sidebar.scheduleAssignment')}</span>
               </StyledLink>
             </MenuItem>
             <MenuItem>
               <StyledLink href="/admin/notify" className={getLinkClasses('/admin/follow-and-notify')}>
                 <FaBell />
-                <span>Thông báo</span>
+                <span>{t('sidebar.notification')}</span>
               </StyledLink>
             </MenuItem>
             <MenuItem>
               <StyledLink href="/admin/map" className={getLinkClasses('/admin/map')}>
                 <FaMap />
-                <span>Hành trình</span>
+                <span>{t('sidebar.route')}</span>
               </StyledLink>
             </MenuItem>          </>
         )}
@@ -186,19 +188,19 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
             <MenuItem>
               <StyledLink href="/driver/overview" className={getLinkClasses('/driver/overview')}>
                 <FaHome />
-                <span>Tổng quan</span>
+                <span>{t('sidebar.overview')}</span>
               </StyledLink>
             </MenuItem>
             <MenuItem>
               <StyledLink href="/driver/map" className={getLinkClasses('/driver/map')}>
                 <FaMap />
-                <span>Hành trình</span>
+                <span>{t('sidebar.route')}</span>
               </StyledLink>
             </MenuItem>
             <MenuItem>
               <StyledLink href="/driver/schedule" className={getLinkClasses('/driver/schedule')}>
                 <FaTasks />
-                <span>Lịch trình</span>
+                <span>{t('sidebar.schedule')}</span>
               </StyledLink>
             </MenuItem>
           </>
@@ -209,19 +211,19 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
             <MenuItem>
 <StyledLink href="/parent/overview" className={getLinkClasses('/parent/overview')}>
                 <FaHome />
-                <span>Tổng quan</span>
+                <span>{t('sidebar.overview')}</span>
               </StyledLink>
             </MenuItem>
             <MenuItem>
               <StyledLink href="/parent/tracking" className={getLinkClasses('/parent/tracking')}>
                 <FaMap />
-                <span>Theo dõi</span>
+                <span>{t('sidebar.tracking')}</span>
               </StyledLink>
             </MenuItem>
             <MenuItem>
               <StyledLink href="/parent/notification" className={getLinkClasses('/parent/notifications')}>
                 <FaBell />
-                <span>Thông báo</span>
+                <span>{t('sidebar.notification')}</span>
               </StyledLink>
             </MenuItem>
           </>
@@ -229,7 +231,7 @@ const Sidebar = ({ user, logout }: SidebarProps) => {
       </MenuList>
       <LogoutButton onClick={logout}>
         <FaSignOutAlt />
-        <span>Đăng xuất</span>
+        <span>{t('sidebar.logout')}</span>
       </LogoutButton>
     </StyledSidebar>
   );

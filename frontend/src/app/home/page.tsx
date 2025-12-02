@@ -5,8 +5,10 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function HomePage() {
+  const { t } = useTranslation('common');
   const settings = {
     dots: true,
     infinite: true,
@@ -99,7 +101,7 @@ export default function HomePage() {
               lineHeight: 1.2,
             }}
           >
-            Chào mừng đến với Smart School Bus
+            {t('welcomeTitle')}
           </Typography>
         </motion.div>
 
@@ -112,7 +114,7 @@ export default function HomePage() {
             variant="h5"
             sx={{
               mt: { xs: 1, sm: 2 },
-fontWeight: 300,
+              fontWeight: 300,
               letterSpacing: "1px",
               textShadow: "0 3px 10px rgba(0,0,0,0.5)",
               fontFamily: "'Poppins', sans-serif",
@@ -120,7 +122,7 @@ fontWeight: 300,
               lineHeight: 1.4,
             }}
           >
-            Giải pháp thông minh cho hành trình an toàn của học sinh
+            {t('welcomeSubtitle')}
           </Typography>
         </motion.div>
       </Box>
