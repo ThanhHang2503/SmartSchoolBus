@@ -271,18 +271,18 @@ export default function DriverDashboard() {
                   </Box>
                   {/* Hàng 3: Số điện thoại */}
                   <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 1 }}>
-                      <Typography variant="body2" component="span" fontWeight={500} sx={{ mr: 2, minWidth: 100 }}>Số điện thoại:</Typography>
-                      <Typography variant="body2" component="span">{driver.phone || "Chưa cập nhật"}</Typography>
+                      <Typography variant="body2" component="span" fontWeight={500} sx={{ mr: 2, minWidth: 100 }}>{t('common.phone')}:</Typography>
+                      <Typography variant="body2" component="span">{driver.phone || t('common.notUpdated')}</Typography>
                   </Box>
                   {/* Hàng 4: Bằng lái */}
                   <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 1 }}>
-                      <Typography variant="body2" component="span" fontWeight={500} sx={{ mr: 2, minWidth: 100 }}>Bằng lái:</Typography>
-                      <Typography variant="body2" component="span">{driver.license || "Chưa cập nhật"}</Typography>
+                      <Typography variant="body2" component="span" fontWeight={500} sx={{ mr: 2, minWidth: 100 }}>License:</Typography>
+                      <Typography variant="body2" component="span">{driver.license || t('common.notUpdated')}</Typography>
                   </Box>
                   {/* Hàng 5: Trạng thái (có màu sắc) */}
                   <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 1 }}>
-                      <Typography variant="body2" component="span" fontWeight={500} sx={{ mr: 2, minWidth: 100 }}>Trạng thái:</Typography>
-                      <Typography variant="body2" component="span" color={driver.status === 1 ? "success.main" : "error.main"}>{driver.status === 1 ? "Đang hoạt động" : "Nghỉ"}</Typography>
+                      <Typography variant="body2" component="span" fontWeight={500} sx={{ mr: 2, minWidth: 100 }}>{t('common.status')}:</Typography>
+                      <Typography variant="body2" component="span" color={driver.status === 1 ? "success.main" : "error.main"}>{driver.status === 1 ? t('common.active') : t('common.rest')}</Typography>
                   </Box>
               </Box>
           </Card>
@@ -294,13 +294,13 @@ export default function DriverDashboard() {
           maxWidth="sm"
           fullWidth
       >
-          <DialogTitle>Tất cả Thông báo (Tổng: {notifications.length})</DialogTitle>
+          <DialogTitle>{t('driver.notifications')} ({t('driver.notifications')}: {notifications.length})</DialogTitle>
           
           <DialogContent dividers>
               {isNotificationLoading ? (
-                  <Typography>Đang tải thông báo...</Typography>
+                  <Typography>{t('parent.loadingNotifications')}</Typography>
               ) : notifications.length === 0 ? (
-                  <Typography color="text.secondary">Hiện không có thông báo nào.</Typography>
+                  <Typography color="text.secondary">{t('driver.noNotifications')}</Typography>
               ) : (
                   <Box
                     sx={{
@@ -327,11 +327,11 @@ export default function DriverDashboard() {
                           // Sử dụng key để React có thể theo dõi các phần tử
                           <Box key={n.id} sx={{ mb: 2, p: 1 , borderBottom: '1px solid #eee'}}> 
                               <Typography variant="subtitle1" fontWeight={600} color="primary">
-                                  {n.message || "Không có nội dung"} 
+                                  {n.message || t('common.noContent')} 
                               </Typography>
                               <Box sx={{ ml: 1, mt: 0.5 }}>
                                   <Typography variant="body2" color="text.secondary">
-                                      Thời gian: {n.date || (n.ngayTao && n.gioTao ? `${n.ngayTao} ${n.gioTao}` : 'Chưa có thời gian')}
+                                      {t('common.time')}: {n.date || (n.ngayTao && n.gioTao ? `${n.ngayTao} ${n.gioTao}` : t('common.noTimeAvailable'))}
                                   </Typography>
                               </Box>
                           </Box>
@@ -340,7 +340,7 @@ export default function DriverDashboard() {
               )}
           </DialogContent>
           <DialogActions>
-              <Button onClick={() => setIsNotificationDialogOpen(false)}>Đóng</Button>
+              <Button onClick={() => setIsNotificationDialogOpen(false)}>{t('common.close')}</Button>
           </DialogActions>
       </Dialog>
     </Box>

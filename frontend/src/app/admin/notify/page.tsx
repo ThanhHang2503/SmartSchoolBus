@@ -28,6 +28,7 @@ import { getAllDrivers } from "@/api/driverApi"
 import { getAllAdmins } from "@/api/adminApi"
 import { getNoticesByUser, getAllNotices, sendNotice, type INotice } from "@/api/noticeApi"
 import { createAndSendNotification, getAllNotifications, getNotificationsByAccount, type INotification } from "@/api/notificationApi"
+import { useTranslation } from "react-i18next"
 
 type UserType = "driver" | "parent" | "admin"
 type NoticeType = "all" | "all-driver" | "all-parent" | "single"
@@ -41,11 +42,12 @@ type ChatUser = {
 }
 
 const AdminNotifyPage = () => {
+  const { t } = useTranslation('common')
   const [chatUsers, setChatUsers] = useState<ChatUser[]>([])
   const [noticeType, setNoticeType] = useState<NoticeType>("all")
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null)
   const [content, setContent] = useState("")
-  const [loaiTB, setLoaiTB] = useState<string>("Khác") // Loại thông báo
+  const [loaiTB, setLoaiTB] = useState<string>(t('admin.other')) // Loại thông báo
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
@@ -109,7 +111,7 @@ const AdminNotifyPage = () => {
           .map((p: any) => ({
             id: `parent-${p.MaPH || p.id}`,
           rawId: String(p.MaTK),
-            name: p.HoTen || p.name || "Không có tên",
+            name: p.HoTen || p.name || t('common.noName'),
           type: "parent" as const,
             extraId: p.MaPH || p.id,
         }))
@@ -119,7 +121,7 @@ const AdminNotifyPage = () => {
           .map((d: any) => ({
             id: `driver-${d.MaTX || d.id}`,
           rawId: String(d.MaTK),
-            name: d.HoTen || d.name || "Không có tên",
+            name: d.HoTen || d.name || t('common.noName'),
           type: "driver" as const,
             extraId: d.MaTX || d.id,
         }))
@@ -128,7 +130,7 @@ const AdminNotifyPage = () => {
         setChatUsers([...driverList, ...parentList])
       } catch (err) {
         console.error("Lỗi tải danh sách người dùng:", err)
-        setError("Không thể tải danh sách người dùng. Vui lòng thử lại.")
+        setError(t('admin.cannotLoadUserList'))
       }
     }
 
@@ -175,7 +177,7 @@ const AdminNotifyPage = () => {
 
   const handleSendNotice = async () => {
     if (!content.trim()) {
-      setError("Vui lòng nhập nội dung thông báo!")
+      setError(t('admin.pleaseEnterNotificationContent'))
       return
     }
 
@@ -207,13 +209,13 @@ const AdminNotifyPage = () => {
           
       case "single":
         if (!selectedUser) {
-          setError("Vui lòng chọn người nhận!")
+          setError(t('admin.pleaseSelectReceiver'))
             setLoading(false)
             return
           }
           // Kiểm tra không được gửi cho chính mình
           if (currentAdminMaTK && Number(selectedUser.rawId) === currentAdminMaTK) {
-            setError("Bạn không thể gửi thông báo cho chính mình!")
+            setError(t('admin.cannotSendToYourself'))
             setLoading(false)
           return
         }
@@ -222,7 +224,7 @@ const AdminNotifyPage = () => {
         break
           
         default:
-          throw new Error("Loại thông báo không hợp lệ")
+          throw new Error(t('admin.invalidNotificationType'))
       }
 
       console.log('createAndSendNotification response:', result)
@@ -254,7 +256,7 @@ const AdminNotifyPage = () => {
       setSuccess(true)
     } catch (err: any) {
       console.error("Lỗi gửi:", err)
-      setError(err.message || "Gửi thất bại. Vui lòng thử lại.")
+      setError(err.message || t('admin.sendFailedRetry'))
     } finally {
       setLoading(false)
     }
@@ -333,10 +335,10 @@ const AdminNotifyPage = () => {
                 </Box>
                 <Box>
                   <Typography variant="h5" sx={{ fontWeight: 700, color: "#1e293b" }}>
-                    Tạo thông báo
+                    {t('admin.sendNotification')}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#64748b" }}>
-                    Soạn nội dung và gửi ngay
+                    {t('admin.sendNotification')}
                   </Typography>
                 </Box>
               </Box>
@@ -355,7 +357,7 @@ const AdminNotifyPage = () => {
                     mb: 1.5,
                   }}
                 >
-                  Loại thông báo
+                  {t('admin.notificationType')}
                 </Typography>
                 <Select
                   fullWidth
@@ -389,12 +391,12 @@ const AdminNotifyPage = () => {
                   <MenuItem value="all">
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <PeopleIcon sx={{ fontSize: 18 }} />
-                      Tất cả tài xế và phụ huynh
+                      {t('admin.sendToAll')}
                     </Box>
                   </MenuItem>
-                  <MenuItem value="all-driver">Tất cả tài xế ({driverCount})</MenuItem>
-                  <MenuItem value="all-parent">Tất cả phụ huynh ({parentCount})</MenuItem>
-                  <MenuItem value="single">Gửi cá nhân</MenuItem>
+                  <MenuItem value="all-driver">{t('admin.sendToAllDrivers')} ({driverCount})</MenuItem>
+                  <MenuItem value="all-parent">{t('admin.sendToAllParents')} ({parentCount})</MenuItem>
+                  <MenuItem value="single">{t('admin.sendToSingle')}</MenuItem>
                 </Select>
               </Box>
 
@@ -412,7 +414,7 @@ const AdminNotifyPage = () => {
                         mb: 1.5,
                       }}
                     >
-                      Chọn người nhận
+                      {t('admin.selectUser')}
                     </Typography>
                     <Select
                       fullWidth
@@ -444,7 +446,7 @@ const AdminNotifyPage = () => {
                       }}
                     >
                       <MenuItem value="" disabled>
-                        Chọn người nhận...
+                        {t('admin.selectUser')}...
                       </MenuItem>
                       {chatUsers.map((user) => (
                         <MenuItem key={user.id} value={user.id}>
@@ -492,7 +494,7 @@ const AdminNotifyPage = () => {
                     mb: 1.5,
                   }}
                 >
-                  Loại thông báo
+                  {t('admin.notificationType')}
                 </Typography>
                 <Select
                   fullWidth
@@ -519,9 +521,9 @@ const AdminNotifyPage = () => {
                     },
                   }}
                 >
-                  <MenuItem value="Xe trễ">Xe trễ</MenuItem>
-                  <MenuItem value="Sự cố">Sự cố</MenuItem>
-                  <MenuItem value="Khác">Khác</MenuItem>
+                  <MenuItem value={t('admin.lateBus')}>{t('admin.lateBus')}</MenuItem>
+                  <MenuItem value={t('admin.incident')}>{t('admin.incident')}</MenuItem>
+                  <MenuItem value={t('admin.other')}>{t('admin.other')}</MenuItem>
                 </Select>
               </Box>
 
@@ -537,7 +539,7 @@ const AdminNotifyPage = () => {
                       letterSpacing: "0.05em",
                     }}
                   >
-                    Nội dung
+                    {t('admin.notificationContent')}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 500 }}>
                     {content.length}/500
@@ -547,7 +549,7 @@ const AdminNotifyPage = () => {
                   fullWidth
                   multiline
                   rows={9}
-                  placeholder="Nhập nội dung thông báo..."
+                  placeholder={t('admin.enterNotificationContentPlaceholder')}
                   value={content}
                   onChange={(e) => setContent(e.target.value.slice(0, 500))}
                   sx={{
@@ -628,12 +630,12 @@ const AdminNotifyPage = () => {
                 {loading ? (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <CircularProgress size={20} sx={{ color: "inherit" }} />
-                    Đang gửi...
+                    {t('common.loading')}
                   </Box>
                 ) : (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <SendIcon />
-                    Gửi thông báo
+                    {t('admin.send')} {t('admin.sendNotification')}
                   </Box>
                 )}
               </Button>
@@ -684,17 +686,17 @@ const AdminNotifyPage = () => {
                   </Box>
                   <Box>
                     <Typography variant="h5" sx={{ fontWeight: 700, color: "#1e293b" }}>
-                      Lịch sử thông báo
+                      {t('admin.notificationHistory')}
                     </Typography>
                     {selectedUser && (
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
                         <Chip
                           label={
                             selectedUser.type === "driver"
-                              ? "Tài xế"
+                              ? t('admin.driverLabel')
                               : selectedUser.type === "parent"
-                              ? "Phụ huynh"
-                              : "Quản trị"
+                              ? t('admin.parentLabel')
+                              : t('admin.adminLabel')
                           }
                           size="small"
                           sx={{
@@ -752,9 +754,9 @@ const AdminNotifyPage = () => {
                   >
                     <HistoryIcon sx={{ fontSize: 56, mb: 2, opacity: 0.5 }} />
                     <Typography variant="h6" sx={{ fontWeight: 500, mb: 1 }}>
-                      Chưa có thông báo nào
+                      {t('common.noData')}
                     </Typography>
-                    <Typography variant="body2">Thông báo sẽ xuất hiện ở đây</Typography>
+                    <Typography variant="body2">{t('admin.sendNotification')}</Typography>
                   </Box>
                 ) : (
                   historyToShow.map((notice, index) => (
@@ -775,10 +777,10 @@ const AdminNotifyPage = () => {
                         >
                           <Box>
                           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1e293b" }}>
-                            {selectedUser ? selectedUser.name : "Thông báo hệ thống"}
+                            {selectedUser ? selectedUser.name : t('common.systemNotification')}
                               {!selectedUser && (notice as any).SoNguoiNhan && (
                                 <Typography component="span" variant="body2" sx={{ color: "#64748b", ml: 1 }}>
-                                  ({(notice as any).SoNguoiNhan} người nhận)
+                                  ({(notice as any).SoNguoiNhan} {t('admin.selectUser')})
                                 </Typography>
                               )}
                             </Typography>
@@ -791,12 +793,12 @@ const AdminNotifyPage = () => {
                                   py: 0.5,
                                   borderRadius: 1,
                                   backgroundColor: 
-                                    (notice as any).LoaiTB === "Xe trễ" ? "#fef3c7" :
-                                    (notice as any).LoaiTB === "Sự cố" ? "#fee2e2" :
+                                    (notice as any).LoaiTB === t('admin.lateBus') || (notice as any).LoaiTB === "Xe trễ" ? "#fef3c7" :
+                                    (notice as any).LoaiTB === t('admin.incident') || (notice as any).LoaiTB === "Sự cố" ? "#fee2e2" :
                                     "#e0e7ff",
                                   color: 
-                                    (notice as any).LoaiTB === "Xe trễ" ? "#92400e" :
-                                    (notice as any).LoaiTB === "Sự cố" ? "#991b1b" :
+                                    (notice as any).LoaiTB === t('admin.lateBus') || (notice as any).LoaiTB === "Xe trễ" ? "#92400e" :
+                                    (notice as any).LoaiTB === t('admin.incident') || (notice as any).LoaiTB === "Sự cố" ? "#991b1b" :
                                     "#3730a3",
                                   fontWeight: 600,
                                   mt: 0.5,
@@ -810,8 +812,8 @@ const AdminNotifyPage = () => {
                             {notice.ThoiGian 
                               ? new Date(notice.ThoiGian).toLocaleString("vi-VN")
                               : (notice.NgayTao && notice.GioTao 
-                                  ? `${notice.NgayTao} ${notice.GioTao}`
-                                  : "Chưa có thời gian")}
+                              ? `${notice.NgayTao} ${notice.GioTao}`
+                              : t('common.noTimeAvailable'))}
                           </Typography>
                         </Box>
                         <Typography variant="body1" sx={{ color: "#475569", lineHeight: 1.6, fontSize: 15 }}>

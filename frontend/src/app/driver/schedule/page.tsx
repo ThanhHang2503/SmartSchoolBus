@@ -27,7 +27,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { useDriverSchedules } from '@/context/driverSchedulesContext';
-import { IScheduleDriver, IStudentDetail, parseStudentList } from "@/api/driverApi"; 
+import { IScheduleDriver, IStudentDetail, parseStudentList } from "@/api/driverApi";
+import { useTranslation } from "react-i18next"; 
 
 
 
@@ -35,6 +36,7 @@ import { IScheduleDriver, IStudentDetail, parseStudentList } from "@/api/driverA
 dayjs.extend(isSameOrBefore);
 
 export default function SchedulePage() {
+  const { t } = useTranslation('common');
   const theme = useTheme();
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [expandedScheduleId, setExpandedScheduleId] = useState<number | null>(null);
@@ -199,7 +201,7 @@ export default function SchedulePage() {
               <Box sx={{ mt: 2 }}>
                 <Box display="flex" alignItems="center" gap={1}>
                   <Box sx={{ width: 14, height: 14, bgcolor: "#bbdefb", border: "1px solid #1976d2", borderRadius: "50%" }} />
-                  <Typography variant="body2">Có lịch làm việc</Typography>
+                  <Typography variant="body2">{t('driver.todaySchedule')}</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -210,7 +212,7 @@ export default function SchedulePage() {
         <Grid size={{xs: 12, md: 8}}> 
           <Card>
             <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>Chi tiết lịch làm việc ngày {selectedDate.format("DD/MM/YYYY")}</Typography>
+              <Typography variant="h6" fontWeight={600} gutterBottom>{t('common.workScheduleDetails')} {selectedDate.format("DD/MM/YYYY")}</Typography>
               
               <Box sx={{ mt: 2 }}>
                 {/* HIỂN THỊ DANH SÁCH CHUYẾN ĐI DẠNG ACCORDION */}

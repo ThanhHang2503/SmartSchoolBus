@@ -33,8 +33,10 @@ import { useDriverSchedules } from '@/context/driverSchedulesContext';
 import { IStudentDetail, parseStudentList, updateStudentStatus } from "@/api/driverApi";
 import { sendNotice } from "@/api/noticeApi";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 export default function MapAndStudentPage() {
+  const { t } = useTranslation('common');
   //LẤY DỮ LIỆU THỰC TẾ
   const { schedules, loading } = useDriverSchedules();
   const { token, logout } = useAuth();
@@ -117,18 +119,18 @@ export default function MapAndStudentPage() {
 
   const receivers = getReceivers();
   if (receivers.length === 0) {
-    setSnackbar({ open: true, message: "Chưa có người nhận!", severity: "error" });
+    setSnackbar({ open: true, message: t('common.noReceivers'), severity: "error" });
     return;
   }
 
   try {
     await sendNotice(message, receivers);
-    setSnackbar({ open: true, message: "Thông báo đã gửi!", severity: "success" });
+    setSnackbar({ open: true, message: t('common.notificationSent'), severity: "success" });
     setMessage("");
     setSelectedParentIds([]);  // reset về tất cả phụ huynh
   } catch (err: any) {
     console.error(err);
-    setSnackbar({ open: true, message: err.message || "Gửi thất bại!", severity: "error" });
+    setSnackbar({ open: true, message: err.message || t('common.sendFailed'), severity: "error" });
   }
 };
 
@@ -143,7 +145,7 @@ export default function MapAndStudentPage() {
         };
 
         if (loading) {
-            return <Typography sx={{ p: 2 }}>Đang tải dữ liệu học sinh...</Typography>;
+            return <Typography sx={{ p: 2 }}>{t('driver.loadingStudentData')}</Typography>;
         }
 
         return (
@@ -205,7 +207,7 @@ export default function MapAndStudentPage() {
                         {students.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={7} align="center">
-                                    {currentTrip ? "Không tìm thấy học sinh theo tiêu chí tìm kiếm." : "Chưa có học sinh đăng ký cho chuyến này."}
+                                    {currentTrip ? t('common.noStudentsFound') : t('common.noStudentsForTrip')}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -217,12 +219,12 @@ export default function MapAndStudentPage() {
 
 
     if (loading) {
-        return <Box sx={{ p: 3 }}><Typography>Đang tải dữ liệu lịch trình...</Typography></Box>;
+        return <Box sx={{ p: 3 }}><Typography>{t('driver.loadingSchedule')}</Typography></Box>;
     }
     // 1. Kiểm tra nếu không có lịch trình nào trong ngày hôm nay
     if (!todaySchedules || todaySchedules.length === 0) {
         return (
-            <Box sx={{ p: 3 }}><Typography variant="h6">Hôm nay bạn không có lịch làm việc.</Typography></Box>
+            <Box sx={{ p: 3 }}><Typography variant="h6">{t('driver.todaySchedule')}: 0</Typography></Box>
         );
     }
 
@@ -230,7 +232,7 @@ export default function MapAndStudentPage() {
     if (!currentTrip) {
         return (
             <Box sx={{ p: 3 }}>
-              <Typography variant="h6">Bạn đã hoàn thành tất cả lịch trình trong ngày hôm nay.</Typography>
+              <Typography variant="h6">{t('driver.todaySchedule')}</Typography>
             </Box>
         );
     }
@@ -238,13 +240,13 @@ export default function MapAndStudentPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="body2" fontWeight={600} gutterBottom>
-        Xe buýt: {currentTrip.busLicensePlate}
+        {t('driver.assignedBus')}: {currentTrip.busLicensePlate}
       </Typography>
       <Typography variant="body2" fontWeight={600} gutterBottom>
-       Chuyến: {currentTrip.startTime} - {currentTrip.endTime || "Chưa kết thúc"}
+       {t('common.trip')}: {currentTrip.startTime} - {currentTrip.endTime || t('common.notFinished')}
       </Typography>
       <Typography variant="body2" fontWeight={600} gutterBottom>
-       Tuyến: {currentTrip.routeStart} → {currentTrip.routeEnd}
+       {t('admin.routes')}: {currentTrip.routeStart} → {currentTrip.routeEnd}
       </Typography>
       
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -269,12 +271,12 @@ export default function MapAndStudentPage() {
           <Card sx={{ p: 2, height: "90%" }}>
             <CardContent>
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                Gửi cảnh báo khẩn
+                {t('admin.sendNotification')}
               </Typography>
 
               {/* 1. Chọn phụ huynh */}
               <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="parent-select-label">Chọn phụ huynh</InputLabel>
+                <InputLabel id="parent-select-label">{t('common.selectParents')}</InputLabel>
                 <Select
                   labelId="parent-select-label"
                   multiple
@@ -288,10 +290,10 @@ export default function MapAndStudentPage() {
                       setSelectedParentIds(val);
                     }
                   }}
-                  input={<OutlinedInput label="Chọn phụ huynh" />}
+                  input={<OutlinedInput label={t('common.selectParents')} />}
                   renderValue={(selected) => {
                     const selectedIds = selected as number[];
-                    if (selectedIds.length === allStudents.length) return "Tất cả phụ huynh";
+                    if (selectedIds.length === allStudents.length) return t('common.allParents');
 
                     return selectedIds
                       .map((id) => {
@@ -303,7 +305,7 @@ export default function MapAndStudentPage() {
                 >
                   <MenuItem value={0}>
                     <Checkbox checked={selectedParentIds.length === allStudents.length} />
-                    <ListItemText primary="Tất cả phụ huynh" />
+                    <ListItemText primary={t('common.allParents')} />
                   </MenuItem>
 
                   {allStudents.map((s) => (
@@ -318,14 +320,14 @@ export default function MapAndStudentPage() {
 
               {/* 2. Nhập nội dung */}
               <TextField
-                label="Nội dung chi tiết"
+                label={t('common.notificationContent')}
                 multiline
                 rows={4}
                 fullWidth
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 sx={{ mb: 2 }}
-                placeholder="Nhập nội dung thông báo..."
+                placeholder={t('common.enterNotificationContent')}
               />
 
               {/* 3. Nút gửi */}
@@ -336,7 +338,7 @@ export default function MapAndStudentPage() {
                 onClick={handleSendNotice}
                 disabled={!message.trim() || selectedParentIds.length === 0}
               >
-                Gửi thông báo
+                {t('admin.send')} {t('admin.sendNotification')}
               </Button>
             </CardContent>
           </Card>
@@ -346,7 +348,7 @@ export default function MapAndStudentPage() {
       {/* TÌM KIẾM */}
       <Box sx={{ mb: 2 }}>
         <TextField
-          label="Tìm kiếm theo tên học sinh"
+          label={t('common.searchByStudentName')}
           variant="outlined"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

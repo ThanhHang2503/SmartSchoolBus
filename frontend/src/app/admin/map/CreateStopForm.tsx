@@ -2,12 +2,14 @@
 
 import React, { useState } from "react";
 import { Box, Button, TextField, CircularProgress } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   onCreate: (ten: string, diachi: string, kinh: number, vi: number) => Promise<void>;
 };
 
 const CreateStopForm: React.FC<Props> = ({ onCreate }) => {
+  const { t } = useTranslation('common');
   const [ten, setTen] = useState("");
   const [diachi, setDiachi] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,7 +34,7 @@ const CreateStopForm: React.FC<Props> = ({ onCreate }) => {
   const submit = async () => {
     setError(null);
     if (!ten.trim() || !diachi.trim()) {
-      setError("Vui lòng nhập tên trạm và địa chỉ");
+      setError(t('common.pleaseEnterStopNameAndAddress'));
       return;
     }
 
@@ -40,7 +42,7 @@ const CreateStopForm: React.FC<Props> = ({ onCreate }) => {
     try {
       const geo = await geocodeAddress(diachi.trim());
       if (!geo) {
-        setError("Không tìm thấy toạ độ cho địa chỉ này. Vui lòng kiểm tra lại địa chỉ.");
+        setError(t('common.cannotFindCoordinates'));
         setLoading(false);
         return;
       }
@@ -50,7 +52,7 @@ const CreateStopForm: React.FC<Props> = ({ onCreate }) => {
       setDiachi("");
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || "Tạo trạm thất bại");
+      setError(err?.message || t('common.createStopFailed'));
     } finally {
       setLoading(false);
     }
@@ -58,11 +60,11 @@ const CreateStopForm: React.FC<Props> = ({ onCreate }) => {
 
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, alignItems: 'center' }}>
-      <TextField label="Tên trạm" value={ten} onChange={(e) => setTen(e.target.value)} fullWidth />
-      <TextField label="Địa chỉ (nhập đủ địa chỉ để geocode)" value={diachi} onChange={(e) => setDiachi(e.target.value)} fullWidth />
+      <TextField label={t('common.stopName')} value={ten} onChange={(e) => setTen(e.target.value)} fullWidth />
+      <TextField label={t('common.stopAddress')} value={diachi} onChange={(e) => setDiachi(e.target.value)} fullWidth />
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
         <Button variant="contained" onClick={submit} disabled={loading}>
-          {loading ? <CircularProgress size={20} color="inherit" /> : 'Tạo trạm'}
+          {loading ? <CircularProgress size={20} color="inherit" /> : t('common.add') + ' ' + t('common.stopName')}
         </Button>
         {error && <Box sx={{ color: 'error.main', ml: 2 }}>{error}</Box>}
       </Box>
