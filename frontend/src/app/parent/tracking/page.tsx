@@ -2,8 +2,10 @@
 import React, { useState } from "react";
 import MyMap from "@/components/Map";
 import Paper from "@mui/material/Paper";
+import { useTranslation } from "react-i18next";
  
 const Tracking: React.FC = () => {
+  const { t } = useTranslation('common');
   const [selectedRouteId, setSelectedRouteId] = useState<number>(1); // Tuyến đường được chọn
   // Determine driver's id to track for this parent by asking backend which driver is assigned today
   const [driverIdToTrack, setDriverIdToTrack] = useState<number | null>(null);
@@ -32,11 +34,11 @@ const Tracking: React.FC = () => {
           // backend returns { success:true, driver: { MaTX, MaTK }, position }
           const maTX = data?.driver?.MaTX;
           if (maTX) setDriverIdToTrack(Number(maTX));
-          else setDriverError('Không tìm thấy tài xế cho lịch trình hôm nay.');
+          else setDriverError(t('driver.loadingDriverInfo'));
         })
         .catch((err) => {
           console.warn('Failed to fetch driver for parent', err);
-          setDriverError('Lỗi khi lấy thông tin tài xế');
+          setDriverError(t('driver.loadingDriverInfo'));
         })
         .finally(() => setLoadingDriver(false));
     } catch (e) {
@@ -46,7 +48,7 @@ const Tracking: React.FC = () => {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4 text-sky-700">Theo dõi hành trình</h2>
+      <h2 className="text-xl font-semibold mb-4 text-sky-700">{t('parent.tracking')}</h2>
       <div className="bg-sky-50 p-4 rounded-xl shadow-sm" style={{ height: "520px" }}>
         <Paper elevation={0} sx={{ height: "100%" }}>
           <MyMap routeId={selectedRouteId} useDriverPosition={true} driverId={driverIdToTrack ?? undefined} />

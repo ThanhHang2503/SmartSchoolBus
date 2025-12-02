@@ -27,6 +27,7 @@ import { getAllBuses, type IBus } from "@/api/busApi"
 import { getAllDrivers, type IDriverDetail } from "@/api/driverApi"
 import { getAllRoutes, type IRouteDetail } from "@/api/routeApi"
 import { createSchedule, getSchedulesByDate, type ICreateSchedule, type ISchedule } from "@/api/scheduleApi"
+import { useTranslation } from "react-i18next"
 
 type Trip = {
   dayFormatted: string
@@ -37,6 +38,7 @@ type Trip = {
 }
 
 const ScheduleAssignmentPage = () => {
+  const { t } = useTranslation('common')
   const [busList, setBusList] = useState<IBus[]>([])
   const [driverList, setDriverList] = useState<IDriverDetail[]>([])
   const [routeList, setRouteList] = useState<IRouteDetail[]>([])
@@ -119,17 +121,17 @@ const ScheduleAssignmentPage = () => {
 
   const handleSave = async () => {
     if (!currentDriverId)
-      return showDialog("Cảnh báo", "Vui lòng chọn tài xế!")
+      return showDialog(t('admin.warning'), t('admin.pleaseSelectDriver'))
     if (!schedule.dayFormatted || !schedule.MaXe || !schedule.MaTD || !schedule.startTime || !schedule.endTime)
-      return showDialog("Cảnh báo", "Vui lòng nhập đầy đủ thông tin!")
+      return showDialog(t('admin.warning'), t('admin.pleaseEnterFullInfoSchedule'))
     if (schedule.startTime >= schedule.endTime)
-      return showDialog("Cảnh báo", "Giờ bắt đầu phải nhỏ hơn giờ kết thúc!")
+      return showDialog(t('admin.warning'), t('admin.startTimeMustBeLessThanEndTime'))
 
     const [y, m, d] = schedule.dayFormatted.split("-").map(Number)
     const scheduleDate = new Date(y, m - 1, d)
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
     if (scheduleDate < todayDate)
-      return showDialog("Cảnh báo", "Ngày phải lớn hơn hoặc bằng hôm nay!")
+      return showDialog(t('admin.warning'), t('admin.dateMustBeGreaterOrEqualToday'))
 
     try {
       const schedulesInDay = await getSchedulesByDate(schedule.dayFormatted)
@@ -140,11 +142,11 @@ const ScheduleAssignmentPage = () => {
       if (conflict) {
         const driverName = driverList.find(d => d.id === conflict.MaTX)?.HoTen
         const busPlate = busList.find(b => b.id === conflict.MaXe)?.BienSo
-        return showDialog("Cảnh báo", `Tài xế ${driverName} hoặc xe ${busPlate} đã có lịch trùng giờ trong ngày!`)
+        return showDialog(t('admin.warning'), t('admin.driverOrBusHasConflictingSchedule', { driverName: driverName || '', busPlate: busPlate || '' }))
       }
     } catch (err) {
       console.error(err)
-      return showDialog("Lỗi", "Không thể kiểm tra lịch trùng giờ!")
+      return showDialog(t('admin.error'), t('admin.cannotCheckScheduleConflict'))
     }
 
     const payload: ICreateSchedule = {
@@ -163,9 +165,9 @@ const ScheduleAssignmentPage = () => {
         [currentDriverId]: { ...defaultTrip },
       }))
       setDateInput("")
-      showDialog("Thành công", "Lịch trình đã được lưu thành công!")
+      showDialog(t('admin.success'), t('admin.scheduleSavedSuccessfully'))
     } catch (error: any) {
-      showDialog("Lỗi", error.message || "Lưu thất bại! Vui lòng thử lại.")
+      showDialog(t('admin.error'), error.message || t('admin.saveFailedRetry'))
     }
   }
 
@@ -195,7 +197,7 @@ const ScheduleAssignmentPage = () => {
       const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
       const selectedDateObj = new Date(y, m - 1, d)
       if (selectedDateObj < todayDate) {
-        setDateError("Ngày phải lớn hơn hoặc bằng hôm nay!")
+        setDateError(t('admin.dateMustBeGreaterOrEqualTodayError'))
         handleChange("dayFormatted", "")
         return
       }
@@ -220,7 +222,7 @@ const ScheduleAssignmentPage = () => {
         <TextField
           select
           fullWidth
-          label="Chọn tài xế "
+          label={t('common.selectDriver')}
           value={selectedDriver}
           onChange={(e) => setSelectedDriver(String(e.target.value ?? ""))}
           SelectProps={{
@@ -233,7 +235,7 @@ const ScheduleAssignmentPage = () => {
             backgroundColor: "#f8f9ff",
           }}
         >
-          <MenuItem value="">-- Chọn tài xế --</MenuItem>
+          <MenuItem value="">-- {t('common.selectDriver')} --</MenuItem>
           {driverList.map((driver) => (
             <MenuItem key={driver.id} value={driver.id}>
               <Box component="span" sx={{ fontWeight: "bold", color: "#1976d2", mr: 1 }}>
@@ -252,19 +254,19 @@ const ScheduleAssignmentPage = () => {
       {selectedDriver && (
         <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 3, boxShadow: 4, overflow: "hidden" }}>
           <Typography variant="h6" gutterBottom color="#1e293b" fontWeight="bold" mb={3}>
-            Nhập thông tin lịch trình
+            {t('admin.scheduleManagement')}
           </Typography>
 
           <Box sx={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <Table sx={{ minWidth: 800 }}>
               <TableHead>
                 <TableRow sx={{ backgroundColor: "#f1f5f9" }}>
-                  <TableCell sx={{ width: { xs: 130, sm: 150 }, fontWeight: "bold" }}>Ngày</TableCell>
-                  <TableCell sx={{ width: 130, fontWeight: "bold" }}>Số xe</TableCell>
-                  <TableCell sx={{ width: 180, fontWeight: "bold" }}>Tuyến đường</TableCell>
-                  <TableCell sx={{ width: 120, fontWeight: "bold" }}>Giờ bắt đầu</TableCell>
-                  <TableCell sx={{ width: 120, fontWeight: "bold" }}>Giờ kết thúc</TableCell>
-                  <TableCell align="center" sx={{ width: 110, fontWeight: "bold" }}>Hành động</TableCell>
+                  <TableCell sx={{ width: { xs: 130, sm: 150 }, fontWeight: "bold" }}>{t('common.date')}</TableCell>
+                  <TableCell sx={{ width: 130, fontWeight: "bold" }}>{t('admin.buses')}</TableCell>
+                  <TableCell sx={{ width: 180, fontWeight: "bold" }}>{t('admin.routes')}</TableCell>
+                  <TableCell sx={{ width: 120, fontWeight: "bold" }}>{t('common.time')}</TableCell>
+                  <TableCell sx={{ width: 120, fontWeight: "bold" }}>{t('common.time')}</TableCell>
+                  <TableCell align="center" sx={{ width: 110, fontWeight: "bold" }}>{t('common.action')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -282,7 +284,7 @@ const ScheduleAssignmentPage = () => {
                           fullWidth: true,
                           placeholder: todayFormatted,
                           error: Boolean(dateError),
-                          helperText: dateError || "dd/mm/yyyy hoặc click icon lịch",
+                          helperText: dateError || t('admin.dateFormatHelper'),
                           inputProps: { maxLength: 10 },
                           sx: {
                             "& .MuiInputBase-root": {
@@ -324,10 +326,10 @@ const ScheduleAssignmentPage = () => {
                       }}
                       sx={{ "& .MuiInputBase-root": { height: 44 } }}
                     >
-                      <MenuItem value="">-- Chọn xe --</MenuItem>
+                      <MenuItem value="">-- {t('common.pleaseSelect')} --</MenuItem>
                       {busList.map((bus) => (
                         <MenuItem key={bus.id} value={bus.id} disabled={bus.TinhTrang !== 1}>
-                          {bus.BienSo} {bus.TinhTrang === 1 ? "" : "(Bảo trì)"}
+                          {bus.BienSo} {bus.TinhTrang === 1 ? "" : t('admin.maintenanceLabel')}
                         </MenuItem>
                       ))}
                     </TextField>
@@ -346,7 +348,7 @@ const ScheduleAssignmentPage = () => {
                       }}
                       sx={{ "& .MuiInputBase-root": { height: 44 } }}
                     >
-                      <MenuItem value="">-- Chọn tuyến --</MenuItem>
+                      <MenuItem value="">-- {t('common.selectRoute')} --</MenuItem>
                       {routeList.map((route) => (
                         <MenuItem key={route.id} value={route.id}>
                           {route.NoiBatDau} → {route.NoiKetThuc}
@@ -396,7 +398,7 @@ const ScheduleAssignmentPage = () => {
                         "&:hover": { background: "linear-gradient(135deg, #1565c0 0%, #1976d2 100%)" },
                       }}
                     >
-                      Lưu
+                      {t('common.save')}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -416,7 +418,7 @@ const ScheduleAssignmentPage = () => {
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
           <Button onClick={() => setOpenDialog(false)} variant="contained" size="large">
-            Đóng
+            {t('common.close')}
           </Button>
         </DialogActions>
       </Dialog>

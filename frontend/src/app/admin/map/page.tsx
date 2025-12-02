@@ -22,8 +22,10 @@ import { getRouteWithStops, addStopToRoute } from "../../../api/routeApi";
 import { getAllDrivers, type IDriverDetail } from "../../../api/driverApi";
 import CreateStopForm from "./CreateStopForm";
 import MyMap from "../../../components/Map";
+import { useTranslation } from "react-i18next";
 
 const AdminRoutesPage: React.FC = () => {
+  const { t } = useTranslation('common');
   const [routes, setRoutes] = useState<IRouteDetail[]>([]);
   const [loading, setLoading] = useState(false);
   const [from, setFrom] = useState("");
@@ -58,7 +60,7 @@ const AdminRoutesPage: React.FC = () => {
     } catch (err) {
       console.error(err);
       setSnackSeverity("error");
-      setSnackMessage("Không thể tải danh sách tuyến đường");
+      setSnackMessage(t('common.cannotLoadRoutes'));
       setSnackOpen(true);
     } finally {
       setLoading(false);
@@ -117,7 +119,7 @@ const AdminRoutesPage: React.FC = () => {
   const handleCreate = async () => {
     if (!from.trim() || !to.trim() || speed === "" || length === "") {
       setSnackSeverity("error");
-      setSnackMessage("Vui lòng điền đầy đủ thông tin");
+      setSnackMessage(t('common.pleaseEnterFullInfo'));
       setSnackOpen(true);
       return;
     }
@@ -141,7 +143,7 @@ const AdminRoutesPage: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       setSnackSeverity("error");
-      setSnackMessage(err?.message || "Tạo tuyến thất bại");
+      setSnackMessage(err?.message || t('common.createRouteFailed'));
       setSnackOpen(true);
     }
   };
@@ -154,19 +156,19 @@ const AdminRoutesPage: React.FC = () => {
   const handleAddStopToRoute = async () => {
     if (!selectedRouteId) {
       setSnackSeverity("error");
-      setSnackMessage("Vui lòng chọn tuyến trước");
+      setSnackMessage(t('common.pleaseSelectRoute'));
       setSnackOpen(true);
       return;
     }
     if (selectedStopId === "") {
       setSnackSeverity("error");
-      setSnackMessage("Vui lòng chọn trạm");
+      setSnackMessage(t('common.pleaseSelectStop'));
       setSnackOpen(true);
       return;
     }
     if (stopOrder === "") {
       setSnackSeverity("error");
-      setSnackMessage("Vui lòng nhập thứ tự dừng");
+      setSnackMessage(t('common.pleaseEnterStopOrder'));
       setSnackOpen(true);
       return;
     }
@@ -174,14 +176,14 @@ const AdminRoutesPage: React.FC = () => {
     try {
       await addStopToRoute({ MaTram: Number(selectedStopId), MaTD: selectedRouteId, ThuTuDung: Number(stopOrder) });
       setSnackSeverity("success");
-      setSnackMessage("Thêm trạm vào tuyến thành công");
+      setSnackMessage(t('common.addStopSuccess'));
       setSnackOpen(true);
       // refresh route stops
       await loadRouteStops(selectedRouteId);
     } catch (err: any) {
       console.error(err);
       setSnackSeverity("error");
-      setSnackMessage(err?.message || "Thêm trạm thất bại");
+      setSnackMessage(err?.message || t('common.addStopFailed'));
       setSnackOpen(true);
     }
   };
@@ -196,7 +198,7 @@ const AdminRoutesPage: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       setSnackSeverity("error");
-      setSnackMessage(err?.message || "Tạo trạm thất bại");
+      setSnackMessage(err?.message || t('common.createStopFailed'));
       setSnackOpen(true);
     }
   };
@@ -243,17 +245,17 @@ const AdminRoutesPage: React.FC = () => {
         <Box sx={{ p: 3 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2 }}>
                 <Typography variant="h5" fontWeight={600}>
-                  Bản đồ tuyến và vị trí
+                  {t('admin.routeManagement')}
                 </Typography>
                 <TextField
                   select
-                  label="Chọn tài xế"
+                  label={t('common.selectDriver')}
                   value={selectedDriverId}
                   onChange={(e) => setSelectedDriverId(e.target.value === "" ? "" : Number(e.target.value))}
                   sx={{ minWidth: 200 }}
                   size="small"
                 >
-                  <MenuItem value="">-- Không hiển thị --</MenuItem>
+                  <MenuItem value="">-- {t('common.close')} --</MenuItem>
                   {drivers.map((driver) => (
                     <MenuItem key={driver.MaTX} value={driver.MaTX}>
                       {driver.HoTen}
@@ -272,41 +274,41 @@ const AdminRoutesPage: React.FC = () => {
               </Paper>
             </Box>
       <Typography variant="h4" gutterBottom fontWeight="bold">
-        Quản lý tuyến đường
+        {t('admin.routeManagement')}
       </Typography>
 
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" mb={2} fontWeight={600}>
-          Thêm tuyến đường mới
+          {t('admin.routeManagement')}
         </Typography>
 
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-          <TextField label="Nơi bắt đầu" value={from} onChange={(e) => setFrom(e.target.value)} fullWidth />
-          <TextField label="Nơi kết thúc" value={to} onChange={(e) => setTo(e.target.value)} fullWidth />
-          <TextField label="Vận tốc TB (km/h)" type="number" value={speed} onChange={(e) => setSpeed(e.target.value === "" ? "" : Number(e.target.value))} fullWidth />
-          <TextField label="Độ dài (km)" type="number" value={length} onChange={(e) => setLength(e.target.value === "" ? "" : Number(e.target.value))} fullWidth />
+          <TextField label={t('common.startLocation')} value={from} onChange={(e) => setFrom(e.target.value)} fullWidth />
+          <TextField label={t('common.endLocation')} value={to} onChange={(e) => setTo(e.target.value)} fullWidth />
+          <TextField label={t('common.avgSpeed')} type="number" value={speed} onChange={(e) => setSpeed(e.target.value === "" ? "" : Number(e.target.value))} fullWidth />
+          <TextField label={t('common.length')} type="number" value={length} onChange={(e) => setLength(e.target.value === "" ? "" : Number(e.target.value))} fullWidth />
         </Box>
 
         <Box sx={{ mt: 2 }}>
           <Button variant="contained" onClick={handleCreate}>
-            Tạo tuyến
+            {t('common.add')} {t('admin.routes')}
           </Button>
         </Box>
       </Paper>
 
       <Paper sx={{ p: 3 }}>
         <Typography variant="h6" mb={2} fontWeight={600}>
-          Danh sách tuyến đường {loading ? "(Đang tải...)" : ""}
+          {t('common.routeList')} {loading ? `(${t('common.loadingRouteList')})` : ""}
         </Typography>
 
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Mã</TableCell>
-              <TableCell>Nơi bắt đầu</TableCell>
-              <TableCell>Nơi kết thúc</TableCell>
-              <TableCell>Vận tốc TB</TableCell>
-              <TableCell>Độ dài</TableCell>
+              <TableCell>{t('common.name')}</TableCell>
+              <TableCell>{t('common.startLocation')}</TableCell>
+              <TableCell>{t('common.endLocation')}</TableCell>
+              <TableCell>{t('common.avgSpeed')}</TableCell>
+              <TableCell>{t('common.length')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -331,13 +333,13 @@ const AdminRoutesPage: React.FC = () => {
       {/* Quản lý trạm cho tuyến */}
       <Paper sx={{ p: 3, mt: 3 }}>
         <Typography variant="h6" mb={2} fontWeight={600}>
-          Quản lý trạm dừng cho tuyến
+          {t('admin.routeManagement')}
         </Typography>
 
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField
             select
-            label="Chọn tuyến"
+            label={t('common.selectRoute')}
             value={selectedRouteId ?? ""}
             onChange={(e) => {
               const id = Number(e.target.value);
@@ -346,7 +348,7 @@ const AdminRoutesPage: React.FC = () => {
             }}
             sx={{ minWidth: 240 }}
           >
-            <MenuItem value="">-- Chọn --</MenuItem>
+            <MenuItem value="">-- {t('common.pleaseSelect')} --</MenuItem>
             {routes.map((r) => (
               <MenuItem key={r.id} value={r.id}>
                 {r.id} — {r.NoiBatDau} → {r.NoiKetThuc}
@@ -356,12 +358,12 @@ const AdminRoutesPage: React.FC = () => {
 
           <TextField
             select
-            label="Chọn trạm"
+            label={t('common.selectStop')}
             value={selectedStopId}
             onChange={(e) => setSelectedStopId(e.target.value === '' ? '' : Number(e.target.value))}
             sx={{ minWidth: 240 }}
           >
-            <MenuItem value="">-- Chọn trạm --</MenuItem>
+            <MenuItem value="">-- {t('common.selectStop')} --</MenuItem>
             {stops.map((s) => (
               <MenuItem key={s.MaTram} value={s.MaTram}>
                 {s.TenTram} — {s.DiaChi}
@@ -370,25 +372,25 @@ const AdminRoutesPage: React.FC = () => {
           </TextField>
 
           <TextField
-            label="Thứ tự dừng"
+            label={t('common.stopOrder')}
             type="number"
             value={stopOrder}
             onChange={(e) => setStopOrder(e.target.value === '' ? '' : Number(e.target.value))}
             sx={{ width: 140 }}
           />
 
-          <Button variant="contained" onClick={handleAddStopToRoute}>Thêm trạm vào tuyến</Button>
+          <Button variant="contained" onClick={handleAddStopToRoute}>{t('common.add')} {t('common.selectStop')}</Button>
         </Box>
 
         <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" fontWeight={600}>Trạm trong tuyến</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>{t('common.selectStop')}</Typography>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>STT</TableCell>
-                <TableCell>Tên trạm</TableCell>
-                <TableCell>Địa chỉ</TableCell>
-                <TableCell>Thứ tự</TableCell>
+                <TableCell>{t('common.stopName')}</TableCell>
+                <TableCell>{t('common.address')}</TableCell>
+                <TableCell>{t('common.stopOrder')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -402,7 +404,7 @@ const AdminRoutesPage: React.FC = () => {
               ))}
               {routeStops.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">Chưa có trạm cho tuyến này</TableCell>
+                  <TableCell colSpan={4} align="center">{t('common.noData')}</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -410,7 +412,7 @@ const AdminRoutesPage: React.FC = () => {
         </Box>
 
         <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" fontWeight={600}>Tạo trạm mới</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>{t('common.add')} {t('common.stopName')}</Typography>
           <CreateStopForm onCreate={handleCreateStop} />
         </Box>
       </Paper>

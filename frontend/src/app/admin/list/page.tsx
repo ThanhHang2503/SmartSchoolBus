@@ -27,11 +27,13 @@ import AddIcon from "@mui/icons-material/Add"
 import { getAllDrivers } from "@/api/driverApi";
 import { getAllParents } from "@/api/parentApi";
 import { getAllStudents } from "@/api/studentApi";
+import { useTranslation } from "react-i18next";
 
 // Kiểu dữ liệu chung cho UI
 type ViewType = "driver" | "parent" | "student";
 
 export default function DanhSachPage() {
+  const { t } = useTranslation('common');
   const [view, setView] = useState<ViewType | "">("");
   const [loading, setLoading] = useState(false) // Đổi thành false vì ban đầu chưa cần load
   const [dataList, setDataList] = useState<any[]>([])
@@ -86,7 +88,7 @@ export default function DanhSachPage() {
   }
 
   const getStatusLabel = (status: boolean) => {
-    return status ? "Hoạt động" : "Không hoạt động"
+    return status ? t('common.active') : t('common.inactive')
   }
 
   // Hàm lọc dữ liệu dựa trên từ khóa tìm kiếm (chỉ lọc theo tên)
@@ -159,9 +161,9 @@ export default function DanhSachPage() {
                 letterSpacing: "-0.5px",
               }}
             >
-              Xem Danh Sách
+              {t('admin.viewList')}
             </Typography>
-            <Typography sx={{ color: "#64748b", fontSize: "0.95rem", mt: 0.5 }}>Quản lý thông tin</Typography>
+            <Typography sx={{ color: "#64748b", fontSize: "0.95rem", mt: 0.5 }}>{t('admin.infoManagement')}</Typography>
           </Box>
         </Box>
       </Box>
@@ -177,7 +179,7 @@ export default function DanhSachPage() {
       >
         <TextField
           select
-          label="Phân loại"
+          label={t('common.classification')}
           value={view}
           onChange={(e) => {
             setView(e.target.value as ViewType)
@@ -204,9 +206,9 @@ export default function DanhSachPage() {
             },
           }}
         >
-          <MenuItem value="driver">🚌 Tài xế</MenuItem>
-          <MenuItem value="parent">👨‍👩‍👧 Phụ huynh</MenuItem>
-          <MenuItem value="student">🎓 Học sinh</MenuItem>
+          <MenuItem value="driver">🚌 {t('admin.driver')}</MenuItem>
+          <MenuItem value="parent">👨‍👩‍👧 {t('admin.parent')}</MenuItem>
+          <MenuItem value="student">🎓 {t('admin.student')}</MenuItem>
         </TextField>
         
         {/* Search Box */}
@@ -228,7 +230,7 @@ export default function DanhSachPage() {
         >
           <TextField
             type="text"
-            placeholder="Tìm kiếm…"
+            placeholder={t('common.searchPlaceholder')}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             onKeyPress={(e) => {
@@ -277,7 +279,7 @@ export default function DanhSachPage() {
             },
           }}
         >
-          Tìm kiếm
+          {t('common.search')}
         </Button>
       </Box>
 
@@ -540,7 +542,7 @@ export default function DanhSachPage() {
                 <TableRow>
                   <TableCell colSpan={view === "student" ? 4 : view === "driver" ? 4 : 3} align="center" sx={{ py: 6, color: "#94a3b8" }}>
                     <Typography variant="h6" sx={{ color: "#64748b" }}>
-                      {searchKeyword.trim() ? "Không tìm thấy kết quả phù hợp" : "Không có dữ liệu"}
+                      {searchKeyword.trim() ? t('common.noResultsFound') : t('common.noData')}
                     </Typography>
                   </TableCell>
                 </TableRow>
