@@ -1,11 +1,14 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 import type React from "react";
 import { useState } from "react";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
+  const { t } = useTranslation('common');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -37,10 +40,15 @@ export default function LoginPage() {
         backgroundRepeat: "no-repeat",
       }}
     >
+      {/* Language Switcher - Góc trên bên phải */}
+      <LanguageSwitcher />
+
       {/* Form Container */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="relative bg-white/25 backdrop-blur-sm p-8 rounded-2xl shadow-lg pointer-events-auto w-[360px] text-center">
-          <h1 className="text-4xl font-bold text-[#2d4f7f] mb-8">Đăng nhập</h1>
+          <h1 className="text-4xl font-bold text-[#2d4f7f] mb-8">
+            {t('loginTitle')}
+          </h1>
 
           {/* Nếu đăng nhập thành công thì hiển thị icon ✅ */}
           {isSuccess ? (
@@ -60,7 +68,7 @@ export default function LoginPage() {
                 />
               </svg>
               <p className="mt-4 font-semibold text-lg text-[#FCFCFC]">
-                Đăng nhập thành công!
+                {t('loginSuccess')}
               </p>
             </div>
           ) : (
@@ -71,7 +79,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value.trim())}
-                  placeholder="Tài khoản"
+                  placeholder={t('account')}
                   className="w-full px-4 py-3 rounded-lg bg-white text-[#2d4f7f] placeholder-[#9dc4d8] border-2 border-[#b8d4e8] focus:outline-none focus:border-[#7eb3d4] transition-colors"
                 />
               </div>
@@ -81,7 +89,7 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value.trim())}
-                  placeholder="Mật khẩu"
+                  placeholder={t('password')}
                   className="w-full px-4 py-3 rounded-lg bg-white text-[#2d4f7f] placeholder-[#9dc4d8] border-2 border-[#b8d4e8] focus:outline-none focus:border-[#7eb3d4] transition-colors"
                 />
               </div>
@@ -91,7 +99,7 @@ export default function LoginPage() {
                 disabled={isLoading}
                 className="w-full py-3 rounded-lg bg-[#7eb3d4] hover:bg-[#6a9fc0] text-white font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+                {isLoading ? t('loggingIn') : t('submitLogin')}
               </button>
             </form>
           )}

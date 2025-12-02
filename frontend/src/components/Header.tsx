@@ -1,8 +1,11 @@
 // src/components/Header.tsx
+'use client';
+
 import React from 'react';
 import { User } from '@/types/auth';
 import { styled } from '@mui/material/styles';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 // ĐỊNH NGHĨA MÀU CHUNG
 const HEADER_BACKGROUND_COLOR = '#d4e8ff';
@@ -113,6 +116,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user }) => {
+  const { t } = useTranslation('common');
+  
   if (!user) return null;
 
   return (
@@ -124,7 +129,7 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
 
       
       <TitleWrapper>
-        <Title>Smart School Bus SSB 1.0</Title>
+        <Title>{t('header.title')}</Title>
       </TitleWrapper>
     </StyledHeader>
   );

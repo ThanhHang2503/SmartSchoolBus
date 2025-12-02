@@ -1,8 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const Notification: React.FC = () => {
+  const { t } = useTranslation('common');
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,14 +27,14 @@ const Notification: React.FC = () => {
     fetchNotifications();
   }, [user]);
 
-  if (loading) return <div>Đang tải thông báo...</div>;
-  if (!user) return <div>Vui lòng đăng nhập để xem thông báo.</div>;
+  if (loading) return <div>{t('parent.loadingNotifications')}</div>;
+  if (!user) return <div>{t('parent.pleaseLogin')}</div>;
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4 text-sky-700">Thông báo</h2>
+      <h2 className="text-xl font-semibold mb-4 text-sky-700">{t('parent.notifications')}</h2>
       {notifications.length === 0 ? (
-        <p className="text-gray-500">Chưa có thông báo.</p>
+        <p className="text-gray-500">{t('parent.noNotifications')}</p>
       ) : (
         <ul className="space-y-3">
           {notifications.map((n: any) => (
@@ -44,9 +46,9 @@ const Notification: React.FC = () => {
                 {n.LoaiTB && (
                   <span
                     className={`px-2 py-1 rounded text-xs font-semibold ${
-                      n.LoaiTB === "Xe trễ"
+                      n.LoaiTB === "Xe trễ" || n.LoaiTB === t('parent.lateBus')
                         ? "bg-yellow-100 text-yellow-800"
-                        : n.LoaiTB === "Sự cố"
+                        : n.LoaiTB === "Sự cố" || n.LoaiTB === t('parent.incident')
                         ? "bg-red-100 text-red-800"
                         : "bg-purple-100 text-purple-800"
                     }`}
@@ -56,7 +58,7 @@ const Notification: React.FC = () => {
                 )}
                 <p className="text-sm text-gray-500">
                   {n.ThoiGian ? new Date(n.ThoiGian).toLocaleString('vi-VN') : 
-                   n.NgayTao && n.GioTao ? `${n.NgayTao} ${n.GioTao}` : 'Chưa có thời gian'}
+                   n.NgayTao && n.GioTao ? `${n.NgayTao} ${n.GioTao}` : t('parent.noTime')}
                 </p>
               </div>
               <p className="text-black">{n.NoiDung}</p>

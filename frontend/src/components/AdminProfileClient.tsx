@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react"
 import { Loader2, User, Phone, Mail, Shield } from "lucide-react"
 import { type IAdminDetail, getAdminById } from "@/api/adminApi"
+import { useTranslation } from "react-i18next"
 
 interface AdminDetailWithEmail extends IAdminDetail {
   TenDangNhap?: string
 }
 
 export default function AdminProfileClient() {
+  const { t } = useTranslation('common')
   const [admin, setAdmin] = useState<AdminDetailWithEmail | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -41,7 +43,7 @@ export default function AdminProfileClient() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
-          <p className="text-slate-600 dark:text-slate-400">Đang tải thông tin...</p>
+          <p className="text-slate-600 dark:text-slate-400">{t('profile.loadingInfo')}</p>
         </div>
       </div>
     )
@@ -68,7 +70,7 @@ export default function AdminProfileClient() {
               </div>
               <div className="pb-2 pt-4">
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">{admin.HoTen}</h1>
-                <p className="text-base text-slate-500 dark:text-slate-400 font-medium">Quản trị viên hệ thống</p>
+                <p className="text-base text-slate-500 dark:text-slate-400 font-medium">{t('profile.systemAdministrator')}</p>
               </div>
             </div>
 
@@ -82,10 +84,10 @@ export default function AdminProfileClient() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                      Số điện thoại
+                      {t('profile.phoneNumber')}
                     </p>
                     <p className="text-lg font-bold text-slate-900 dark:text-white mt-2 break-all">
-                      {admin.SoDienThoai || "Không có thông tin"}
+                      {admin.SoDienThoai || t('common.noInformation')}
                     </p>
                   </div>
                 </div>
@@ -99,10 +101,10 @@ export default function AdminProfileClient() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                      Email
+                      {t('profile.email')}
                     </p>
                     <p className="text-lg font-bold text-slate-900 dark:text-white mt-2 break-all">
-                      {admin.TenDangNhap || "Không có thông tin"}
+                      {admin.TenDangNhap || t('common.noInformation')}
                     </p>
                   </div>
                 </div>
@@ -118,14 +120,14 @@ export default function AdminProfileClient() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                      Trạng thái
+                      {t('profile.status')}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <span
                         className={`w-3 h-3 rounded-full ${admin.TrangThai === 1 ? "bg-green-500" : "bg-red-500"}`}
                       />
                       <p className="text-lg font-bold text-slate-900 dark:text-white">
-                        {admin.TrangThai === 1 ? "Hoạt động" : "Không hoạt động"}
+                        {admin.TrangThai === 1 ? t('profile.active') : t('profile.inactive')}
                       </p>
                     </div>
                   </div>
@@ -137,7 +139,7 @@ export default function AdminProfileClient() {
 
         {/* Footer Info */}
         <div className="text-center text-slate-500 dark:text-slate-400 text-sm">
-          <p>Cập nhật lần cuối: {new Date().toLocaleDateString("vi-VN")}</p>
+          <p>{t('common.lastUpdated')}: {new Date().toLocaleDateString("vi-VN")}</p>
         </div>
       </div>
     </div>

@@ -1,9 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 
 const Overview: React.FC = () => {
+  const { t } = useTranslation('common');
   const { user } = useAuth();
   const [parent, setParent] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
@@ -15,7 +17,7 @@ const Overview: React.FC = () => {
       try {
         // Giả sử user.id là MaTK
         const res = await fetch(`http://localhost:5000/parent/account/${user.id}`);
-        if (!res.ok) throw new Error("Không lấy được dữ liệu phụ huynh");
+        if (!res.ok) throw new Error(t('parent.cannotLoadParentData'));
         const data = await res.json();
         setParent(data.parent);
         setStudents(data.students);
@@ -29,30 +31,30 @@ const Overview: React.FC = () => {
     fetchData();
   }, [user]);
 
-  if (loading) return <div>Đang tải dữ liệu...</div>;
-  if (!parent) return <div>Không tìm thấy thông tin phụ huynh.</div>;
+  if (loading) return <div>{t('parent.loadingData')}</div>;
+  if (!parent) return <div>{t('parent.parentNotFound')}</div>;
 
   return (
     <div className="text-gray-700">
-      <h2 className="text-xl font-semibold mb-4 text-sky-700">Tổng quan</h2>
+      <h2 className="text-xl font-semibold mb-4 text-sky-700">{t('parent.overview')}</h2>
       <div className="bg-sky-50 p-4 rounded-xl shadow-sm mb-4">
-        <p><strong>Phụ huynh:</strong> {parent.HoTen}</p>
-        <p><strong>Số điện thoại:</strong> {parent.SoDienThoai}</p>
-        <p><strong>Tài khoản:</strong> {parent.TenDangNhap}</p>
+        <p><strong>{t('parent.parent')}:</strong> {parent.HoTen}</p>
+        <p><strong>{t('common.phone')}:</strong> {parent.SoDienThoai}</p>
+        <p><strong>{t('parent.account')}:</strong> {parent.TenDangNhap}</p>
       </div>
       <div className="bg-white p-4 rounded-xl shadow-sm">
-        <h3 className="font-semibold mb-2">Danh sách học sinh</h3>
+        <h3 className="font-semibold mb-2">{t('parent.studentList')}</h3>
         {students.length === 0 ? (
-          <p>Không có học sinh nào.</p>
+          <p>{t('parent.noStudents')}</p>
         ) : (
           <ul className="space-y-2">
             {students.map((hs) => (
               <li key={hs.MaHS} className="border-b pb-2">
-                <p><strong>Học sinh:</strong> {hs.HoTen}</p>
-                <p><strong>Lớp:</strong> {hs.Lop}</p>
-                <p><strong>Ngày sinh:</strong> {hs.NgaySinh}</p>
-                <p><strong>Trạm đón:</strong> {hs.TenTramDon}</p>
-                <p><strong>Trạm trả:</strong> {hs.TenTramTra}</p>
+                <p><strong>{t('parent.student')}:</strong> {hs.HoTen}</p>
+                <p><strong>{t('parent.class')}:</strong> {hs.Lop}</p>
+                <p><strong>{t('parent.birthday')}:</strong> {hs.NgaySinh}</p>
+                <p><strong>{t('parent.pickupStation')}:</strong> {hs.TenTramDon}</p>
+                <p><strong>{t('parent.dropoffStation')}:</strong> {hs.TenTramTra}</p>
               </li>
             ))}
           </ul>
