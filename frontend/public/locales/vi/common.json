@@ -179,7 +179,13 @@
     "saveFailedRetry": "Lưu thất bại! Vui lòng thử lại.",
     "dateMustBeGreaterOrEqualTodayError": "Ngày phải lớn hơn hoặc bằng hôm nay!",
     "dateFormatHelper": "dd/mm/yyyy hoặc click icon lịch",
-    "maintenanceLabel": "(Bảo trì)"
+    "maintenanceLabel": "(Bảo trì)",
+    "selectStudentsForSchedule": "Chọn học sinh cho lịch trình",
+    "selectStudents": "Chọn học sinh",
+    "noStudentsSelected": "Chưa chọn học sinh nào",
+    "selectedStudentsCount": "Đã chọn {count} học sinh",
+    "scheduleAndStudentsSavedSuccessfully": "Lịch trình và phân công học sinh đã được lưu thành công!",
+    "scheduleSavedButAssignFailed": "Lịch trình đã lưu nhưng phân công học sinh thất bại: {error}"
   },
   
   "driver": {

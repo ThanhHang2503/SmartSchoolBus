@@ -73,3 +73,61 @@ export const deleteSchedule = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Lỗi máy chủ", error: err });
   }
 };
+
+// Phân công học sinh cho lịch trình
+export const assignStudentsToSchedule = async (req: Request, res: Response) => {
+  const { scheduleId, studentIds } = req.body;
+
+  // Validate
+  if (!scheduleId || !studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+    return res.status(400).json({ message: "Thiếu dữ liệu bắt buộc: scheduleId và studentIds (mảng có ít nhất 1 học sinh)" });
+  }
+
+  try {
+    // 1. Kiểm tra scheduleId có tồn tại không
+    const scheduleCheck = await executeQuery(
+      "SELECT MaLT FROM LichTrinh WHERE MaLT = ?",
+      [scheduleId]
+    ) as any[];
+
+    if (scheduleCheck.length === 0) {
+      return res.status(404).json({ message: "Không tìm thấy lịch trình với ID này" });
+    }
+
+    // 2. Kiểm tra tất cả studentIds có tồn tại không
+    const placeholders = studentIds.map(() => "?").join(",");
+    const studentsCheck = await executeQuery(
+      `SELECT MaHS FROM HocSinh WHERE MaHS IN (${placeholders})`,
+      studentIds
+    ) as any[];
+
+    if (studentsCheck.length !== studentIds.length) {
+      return res.status(400).json({ message: "Một hoặc nhiều học sinh không tồn tại" });
+    }
+
+    // 3. Xóa các phân công cũ (nếu có)
+    await executeQuery(
+      "DELETE FROM CTLT WHERE MaLT = ?",
+      [scheduleId]
+    );
+
+    // 4. Thêm các phân công mới
+    const insertPromises = studentIds.map((studentId: number) =>
+      executeQuery(
+        "INSERT INTO CTLT (MaLT, MaHS, TrangThai) VALUES (?, ?, 0)",
+        [scheduleId, studentId]
+      )
+    );
+
+    await Promise.all(insertPromises);
+
+    res.json({ 
+      message: "Phân công học sinh thành công",
+      scheduleId,
+      assignedCount: studentIds.length
+    });
+  } catch (err: any) {
+    console.error("Lỗi khi phân công học sinh:", err);
+    res.status(500).json({ message: "Lỗi máy chủ", error: err.message });
+  }
+};

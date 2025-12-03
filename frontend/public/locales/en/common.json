@@ -179,7 +179,13 @@
     "saveFailedRetry": "Save failed! Please try again.",
     "dateMustBeGreaterOrEqualTodayError": "Date must be greater than or equal to today!",
     "dateFormatHelper": "dd/mm/yyyy or click calendar icon",
-    "maintenanceLabel": "(Maintenance)"
+    "maintenanceLabel": "(Maintenance)",
+    "selectStudentsForSchedule": "Select students for schedule",
+    "selectStudents": "Select students",
+    "noStudentsSelected": "No students selected",
+    "selectedStudentsCount": "Selected {count} students",
+    "scheduleAndStudentsSavedSuccessfully": "Schedule and student assignments saved successfully!",
+    "scheduleSavedButAssignFailed": "Schedule saved but student assignment failed: {error}"
   },
   
   "driver": {
