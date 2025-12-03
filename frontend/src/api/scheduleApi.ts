@@ -86,3 +86,29 @@ export const deleteSchedule = async (id: number) => {
     if (!response.ok) throw new Error(`Lỗi khi xóa lịch trình: ${response.statusText}`);
     return await response.json();
 };
+
+// Phân công học sinh cho lịch trình
+export interface IAssignStudents {
+    scheduleId: number;
+    studentIds: number[];
+}
+
+export const assignStudentsToSchedule = async (data: IAssignStudents) => {
+    const response = await fetch("http://localhost:5000/buses/schedule/assign-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        let body: any = null;
+        try {
+            body = await response.json();
+        } catch (e) {
+            // ignore parse errors
+        }
+        const msg = body && body.message ? body.message : response.statusText;
+        throw new Error(`Lỗi khi phân công học sinh: ${msg}`);
+    }
+    return await response.json();
+};

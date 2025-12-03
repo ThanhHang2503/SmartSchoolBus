@@ -16,6 +16,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Select,
+  InputLabel,
+  FormControl,
+  OutlinedInput,
+  Checkbox,
+  ListItemText,
+  Chip,
 } from "@mui/material"
 
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
@@ -26,7 +33,8 @@ import dayjs, { type Dayjs } from "dayjs"
 import { getAllBuses, type IBus } from "@/api/busApi"
 import { getAllDrivers, type IDriverDetail } from "@/api/driverApi"
 import { getAllRoutes, type IRouteDetail } from "@/api/routeApi"
-import { createSchedule, getSchedulesByDate, type ICreateSchedule, type ISchedule } from "@/api/scheduleApi"
+import { createSchedule, getSchedulesByDate, assignStudentsToSchedule, type ICreateSchedule, type ISchedule } from "@/api/scheduleApi"
+import { getAllStudents, type IStudentDetail } from "@/api/studentApi"
 import { useTranslation } from "react-i18next"
 
 type Trip = {
@@ -35,6 +43,7 @@ type Trip = {
   MaTD: number | null
   startTime: string
   endTime: string
+  studentIds: number[]
 }
 
 const ScheduleAssignmentPage = () => {
@@ -42,6 +51,7 @@ const ScheduleAssignmentPage = () => {
   const [busList, setBusList] = useState<IBus[]>([])
   const [driverList, setDriverList] = useState<IDriverDetail[]>([])
   const [routeList, setRouteList] = useState<IRouteDetail[]>([])
+  const [studentList, setStudentList] = useState<IStudentDetail[]>([])
   const [selectedDriver, setSelectedDriver] = useState<string>("")
   const [driverSchedules, setDriverSchedules] = useState<Record<number, Trip>>({})
   const [openDialog, setOpenDialog] = useState(false)
@@ -50,13 +60,15 @@ const ScheduleAssignmentPage = () => {
   const [dateInput, setDateInput] = useState("")
   const [dateError, setDateError] = useState("")
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null)
+  const [savedScheduleId, setSavedScheduleId] = useState<number | null>(null)
 
   useEffect(() => {
-    Promise.all([getAllBuses(), getAllDrivers(), getAllRoutes()]).then(
-      ([buses, drivers, routes]) => {
+    Promise.all([getAllBuses(), getAllDrivers(), getAllRoutes(), getAllStudents()]).then(
+      ([buses, drivers, routes, students]) => {
         setBusList(buses)
         setDriverList(drivers)
         setRouteList(routes)
+        setStudentList(students)
       }
     )
   }, [])
@@ -71,6 +83,7 @@ const ScheduleAssignmentPage = () => {
     MaTD: null,
     startTime: "",
     endTime: "",
+    studentIds: [],
   }
 
   const schedule: Trip = selectedDriver
@@ -159,13 +172,32 @@ const ScheduleAssignmentPage = () => {
     }
 
     try {
-      await createSchedule(payload)
+      const result = await createSchedule(payload)
+      const newScheduleId = result.id || result.MaLT
+      setSavedScheduleId(newScheduleId)
+      
+      // Nếu có chọn học sinh, phân công học sinh
+      if (schedule.studentIds && schedule.studentIds.length > 0) {
+        try {
+          await assignStudentsToSchedule({
+            scheduleId: newScheduleId,
+            studentIds: schedule.studentIds,
+          })
+          showDialog(t('admin.success'), t('admin.scheduleAndStudentsSavedSuccessfully'))
+        } catch (assignError: any) {
+          // Lịch trình đã lưu nhưng phân công học sinh thất bại
+          showDialog(t('admin.warning'), t('admin.scheduleSavedButAssignFailed', { error: assignError.message }))
+        }
+      } else {
+        showDialog(t('admin.success'), t('admin.scheduleSavedSuccessfully'))
+      }
+      
       setDriverSchedules((prev) => ({
         ...prev,
         [currentDriverId]: { ...defaultTrip },
       }))
       setDateInput("")
-      showDialog(t('admin.success'), t('admin.scheduleSavedSuccessfully'))
+      setSavedScheduleId(null)
     } catch (error: any) {
       showDialog(t('admin.error'), error.message || t('admin.saveFailedRetry'))
     }
@@ -213,9 +245,9 @@ const ScheduleAssignmentPage = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: 1200, mx: "auto" }}>
-      <Typography variant="h4" gutterBottom fontWeight="bold" color="#1e293b" sx={{ fontSize: { xs: "1.8rem", sm: "2.2rem" } }}>
-        Phân công lịch trình cho tài xế
-      </Typography>
+        <Typography variant="h4" gutterBottom fontWeight="bold" color="#1e293b" sx={{ fontSize: { xs: "1.8rem", sm: "2.2rem" } }}>
+          {t('sidebar.scheduleAssignment')}
+        </Typography>
 
       {/* Chọn tài xế */}
       <Paper sx={{ p: 3, mb: 4, borderRadius: 3, boxShadow: 3 }}>
@@ -404,6 +436,63 @@ const ScheduleAssignmentPage = () => {
                 </TableRow>
               </TableBody>
             </Table>
+          </Box>
+
+          {/* Phần chọn học sinh */}
+          <Box sx={{ mt: 4, pt: 3, borderTop: "2px solid #e2e8f0" }}>
+            <Typography variant="h6" gutterBottom color="#1e293b" fontWeight="bold" mb={2}>
+              {t('admin.selectStudentsForSchedule')}
+            </Typography>
+            <FormControl fullWidth>
+              <InputLabel id="students-select-label">{t('admin.selectStudents')}</InputLabel>
+              <Select
+                labelId="students-select-label"
+                multiple
+                value={schedule.studentIds || []}
+                onChange={(e) => {
+                  const value = e.target.value as number[]
+                  handleChange("studentIds", value)
+                }}
+                input={<OutlinedInput label={t('admin.selectStudents')} />}
+                renderValue={(selected) => {
+                  if (selected.length === 0) {
+                    return <em>{t('admin.noStudentsSelected')}</em>
+                  }
+                  return (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((studentId) => {
+                        const student = studentList.find(s => s.id === studentId)
+                        return (
+                          <Chip
+                            key={studentId}
+                            label={student ? `${student.name} (${student.Lop || ''})` : `ID: ${studentId}`}
+                            size="small"
+                          />
+                        )
+                      })}
+                    </Box>
+                  )
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300,
+                      width: 400,
+                    },
+                  },
+                }}
+              >
+                {studentList.map((student) => (
+                  <MenuItem key={student.id} value={student.id}>
+                    <Checkbox checked={(schedule.studentIds || []).indexOf(student.id) > -1} />
+                    <ListItemText 
+                      primary={`${student.name}${student.Lop ? ` - ${student.Lop}` : ''}`}
+                      secondary={student.TenPhuHuynh ? `${t('parent.parent')}: ${student.TenPhuHuynh}` : ''}
+                    />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
         </Paper>
       )}
